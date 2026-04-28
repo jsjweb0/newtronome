@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import {useLocation, useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Link} from "react-router-dom";
-import {useToast} from "../../contexts/toastContext.jsx";
+import {useToast} from "../../contexts/useToast.js";
 import {useEffect, useState} from "react";
 import {BaseButton} from "../../components/ui/BaseButton.jsx";
 import {

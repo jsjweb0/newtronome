@@ -1,4 +1,4 @@
-import {createContext, useContext, useEffect, useState} from "react";
+import {useState} from "react";
 import {
     collection,
     getDocs,
@@ -13,8 +13,7 @@ import {
     increment
 } from "firebase/firestore";
 import {auth, db} from "../firebase";
-
-const PostsContext = createContext();
+import {PostsContext} from "./postsContextValue.js";
 
 export function PostsProvider({children}) {
     const [postsByBoard, setPostsByBoard] = useState({});
@@ -164,12 +163,4 @@ export function PostsProvider({children}) {
             {children}
         </PostsContext.Provider>
     );
-}
-
-export function usePosts() {
-    const context = useContext(PostsContext);
-    if (!context) {
-        throw new Error("usePosts는 <PostsProvider> 안에서 사용해야 해요.");
-    }
-    return context;
 }

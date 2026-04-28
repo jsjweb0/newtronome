@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from "react";
-import {useAudioPlayerContext} from "../../contexts/AudioPlayerContext.jsx";
+import {useAudioPlayerContext} from "../../contexts/useAudioPlayerContext.js";
 import {
     SkipBack,
     SkipForward,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Tooltip from "../ui/Tooltip.jsx";
 import LikeButton from "../ui/LikeButton.jsx";
-import {useDarkMode} from "../../contexts/DarkModeContext.jsx";
+import {useDarkMode} from "../../contexts/useDarkMode.js";
 
 export default function PlayerBar({onPanelToggle, collapsed}) {
     const {

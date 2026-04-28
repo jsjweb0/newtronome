@@ -16,7 +16,7 @@ export default function ConfirmDialog({
         <DialogPanel className="flex justify-center items-center w-full max-w-xs md:max-w-md p-0 bg-transparent">
           <div className="grow ease-out transition-all shadow-lg">
             <div className="relative flex flex-col bg-background rounded-xl">
-              <div className="absolute top-2 end-2">
+              <div className="absolute top-2 bottom-2">
                 <button
                   type="button"
                   onClick={onDismiss}

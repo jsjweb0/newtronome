@@ -1,4 +1,4 @@
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
 import {Link} from "react-router-dom";
 import {Bell, LogOut, LogIn, UserRoundPlus, Settings, Dog} from "lucide-react";
 import Tooltip from "../ui/Tooltip.jsx";

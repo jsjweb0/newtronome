@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {Outlet, useLocation, useNavigate } from "react-router-dom";
 import useSoundCloudApi from "../hooks/useSoundCloudApi.js";
-import {useAudioPlayerContext} from "../contexts/AudioPlayerContext.jsx";
+import {useAudioPlayerContext} from "../contexts/useAudioPlayerContext.js";
 import "../assets/css/index.css";
 import 'preline'
 import Sidebar from "../components/layout/Sidebar.jsx";

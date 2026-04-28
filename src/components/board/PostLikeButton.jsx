@@ -2,8 +2,8 @@ import {useEffect, useState} from "react";
 import {Heart} from "lucide-react";
 import {doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, increment} from "firebase/firestore";
 import {db} from "../../firebase";
-import {useAuth} from "../../contexts/AuthContext.jsx";
-import {useToast} from "../../contexts/ToastContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
+import {useToast} from "../../contexts/useToast.js";
 
 export default function PostLikeButton({postId, boardType = "free", showCount = true}) {
     const {user} = useAuth();

@@ -1,4 +1,4 @@
-import {useDarkMode} from "../contexts/DarkModeContext.jsx";
+import {useDarkMode} from "../contexts/useDarkMode.js";
 import {SunMedium, Moon} from "lucide-react";
 import Tooltip from "./ui/Tooltip.jsx";
 import clsx from "clsx";

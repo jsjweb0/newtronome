@@ -1,10 +1,10 @@
 import {useNavigate, useParams, Navigate} from "react-router-dom";
 import {useEffect, useState} from "react";
-import {usePosts} from "../../contexts/postsContext.jsx";
-import {useToast} from "../../contexts/ToastContext.jsx";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {usePosts} from "../../contexts/usePosts.js";
+import {useToast} from "../../contexts/useToast.js";
+import {useAuth} from "../../contexts/useAuth.js";
 import PostForm from "../../components/board/PostForm.jsx";
-import {useNotifications} from "../../contexts/NotificationContext.jsx";
+import {useNotifications} from "../../contexts/useNotifications.js";
 
 export default function EditPostPage() {
     const {boardType, id} = useParams();

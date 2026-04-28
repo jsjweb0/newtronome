@@ -1,9 +1,9 @@
 import {BaseButton} from "../ui/BaseButton.jsx";
 import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {useToast} from "../../contexts/ToastContext.jsx";
+import {useToast} from "../../contexts/useToast.js";
 import FormInput from "../ui/FormInput.jsx";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
 import {AuthAccess} from "../auth/AuthAccess.jsx"
 import FormTextarea from "../ui/FormTextarea.jsx";
 

@@ -10,10 +10,10 @@ import {
     increment
 } from 'firebase/firestore';
 import {db} from '../../firebase';
-import {useAuth} from '../../contexts/AuthContext.jsx';
-import {useToast} from '../../contexts/ToastContext.jsx';
+import {useAuth} from '../../contexts/useAuth.js';
+import {useToast} from '../../contexts/useToast.js';
 import clsx from "clsx";
-import {useNotifications} from "../../contexts/NotificationContext.jsx";
+import {useNotifications} from "../../contexts/useNotifications.js";
 
 export default function LikeButton({
                                        type = 'heart',

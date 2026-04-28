@@ -1,9 +1,9 @@
 import {Link, useNavigate} from "react-router-dom";
-import {useAuth} from "../../contexts/AuthContext.jsx";
-import {useToast} from "../../contexts/ToastContext.jsx"
+import {useAuth} from "../../contexts/useAuth.js";
+import {useToast} from "../../contexts/useToast.js"
 import FormInput from "../ui/FormInput.jsx";
 import useForm from "../../hooks/useForm.js";
-import {useNotifications} from "../../contexts/NotificationContext.jsx";
+import {useNotifications} from "../../contexts/useNotifications.js";
 import clsx from "clsx";
 
 export default function SignupForm() {

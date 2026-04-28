@@ -1,6 +1,6 @@
 import {useMemo, useState} from "react";
 import ImageSlider from "../components/ui/Slider.jsx";
-import {useAudioPlayerContext} from "../contexts/AudioPlayerContext.jsx";
+import {useAudioPlayerContext} from "../contexts/useAudioPlayerContext.js";
 import {toHighResArtwork} from "../utils/image.js";
 import {LogoIcon, GridIcon, PlayRound, PauseRound} from "../components/icons/index.js";
 import {CircleX, Home, List, ListMusic, Play} from "lucide-react";

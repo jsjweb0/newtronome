@@ -1,4 +1,4 @@
-import { useAuth } from "../../contexts/AuthContext.jsx";
+import { useAuth } from "../../contexts/useAuth.js";
 import { getUserRole } from "../../utils/role.js";
 
 export function AuthAccess({ allow = [], children }) {

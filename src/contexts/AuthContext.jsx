@@ -3,15 +3,13 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
-    onAuthStateChanged,
-    updateProfile
+    onAuthStateChanged
 } from "firebase/auth";
-import {getFirestore, doc, setDoc, getDoc, serverTimestamp, onSnapshot} from "firebase/firestore";
-import {createContext, useContext, useEffect, useMemo, useState} from "react";
+import {doc, setDoc, getDoc, serverTimestamp, onSnapshot} from "firebase/firestore";
+import {useEffect, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {useToast} from "./ToastContext.jsx";
-
-const AuthContext = createContext();
+import {useToast} from "./useToast.js";
+import {AuthContext} from "./authContextValue.js";
 
 export function AuthProvider({children}) {
     const navigate = useNavigate();
@@ -76,7 +74,7 @@ export function AuthProvider({children}) {
             isMounted = false;
             unsubscribe();
         };
-    }, [db]);
+    }, []);
 
     const avatarUrl = useMemo(() => {
         if (!user?.email) return "";
@@ -112,8 +110,4 @@ export function AuthProvider({children}) {
             {children}
         </AuthContext.Provider>
     );
-}
-
-export function useAuth() {
-    return useContext(AuthContext);
 }

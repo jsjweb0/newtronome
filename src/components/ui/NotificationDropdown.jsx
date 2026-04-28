@@ -1,7 +1,7 @@
 import {useEffect, useState, useRef} from 'react';
 import {useLocation} from "react-router-dom";
 import {Bell, X as CloseIcon, CheckCircle, Circle, Ellipsis, Trash2} from 'lucide-react';
-import {useNotifications} from '../../contexts/NotificationContext.jsx';
+import {useNotifications} from '../../contexts/useNotifications.js';
 import Tooltip from "./Tooltip.jsx";
 import clsx from "clsx";
 import {LogoMoIcon} from "../icons/index.js"

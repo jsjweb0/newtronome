@@ -1,10 +1,10 @@
 import {useEffect, useMemo, useState} from "react";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
 import {getMyCommentsFromDB} from "../../utils/comment.js";
 import {Link} from "react-router-dom";
 import {ThumbsUp} from "lucide-react";
 import {BaseButton} from "../ui/BaseButton.jsx";
-import {useToast} from "../../contexts/ToastContext.jsx";
+import {useToast} from "../../contexts/useToast.js";
 import {deleteDoc, doc} from "firebase/firestore";
 import {db} from "../../firebase.js";
 import Pagination from "./Pagination.jsx";

@@ -1,12 +1,12 @@
 import {useNavigate} from "react-router-dom";
 import {useLocation, useSearchParams} from 'react-router-dom';
 import {useEffect, useMemo, useState} from "react";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
 import MyPostsList from "../../components/board/MyPostsList.jsx";
 import MyCommentSection from "../../components/board/MyCommentSection.jsx";
 import {MessageSquareText, NotebookPen} from "lucide-react";
-import {usePosts} from "../../contexts/postsContext.jsx";
-import {useToast} from "../../contexts/ToastContext.jsx";
+import {usePosts} from "../../contexts/usePosts.js";
+import {useToast} from "../../contexts/useToast.js";
 import SearchBar from "../../components/board/SearchBar.jsx";
 import PostListSkeleton from "../../components/board/PostListSkeleton.jsx";
 

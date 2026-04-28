@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { flushSync } from "react-dom";
-import {useToast} from "../contexts/ToastContext.jsx";
-import {useNotifications} from "../contexts/NotificationContext.jsx";
+import {useToast} from "../contexts/useToast.js";
+import {useNotifications} from "../contexts/useNotifications.js";
 
 export default function useAudioPlayer(initialTracks = [], initialIndex = 0) {
     const {showToast} = useToast();

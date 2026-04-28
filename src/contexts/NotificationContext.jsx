@@ -1,13 +1,5 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-
-const NotificationContext = createContext({
-    notifications: [],
-    addNotification: () => {},
-    removeNotification: () => {},
-    clearNotifications: () => {},
-    toggleRead: () => {},
-    markAllRead: () => {},
-});
+import { useState, useCallback } from 'react';
+import {NotificationContext} from "./notificationContextValue.js";
 
 export function NotificationProvider({ children }) {
     const [notifications, setNotifications] = useState([]);
@@ -63,5 +55,3 @@ export function NotificationProvider({ children }) {
         </NotificationContext.Provider>
     );
 }
-
-export const useNotifications = () => useContext(NotificationContext);

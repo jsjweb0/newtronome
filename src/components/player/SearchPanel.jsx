@@ -1,6 +1,6 @@
 import {useLocation, useSearchParams} from "react-router-dom";
 import {useEffect, useRef, useState} from 'react';
-import {useToast} from "../../contexts/ToastContext.jsx";
+import {useToast} from "../../contexts/useToast.js";
 import {Search, Clock3, Music2, X, CircleX, ChevronRight} from "lucide-react";
 import clsx from "clsx";
 

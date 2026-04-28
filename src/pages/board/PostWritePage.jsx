@@ -1,10 +1,10 @@
 import {useEffect, useState} from "react";
 import {useParams, useNavigate, Navigate} from "react-router-dom";
-import {usePosts} from "../../contexts/PostsContext";
-import {useToast} from "../../contexts/ToastContext.jsx";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {usePosts} from "../../contexts/usePosts.js";
+import {useToast} from "../../contexts/useToast.js";
+import {useAuth} from "../../contexts/useAuth.js";
 import PostForm from "../../components/board/PostForm.jsx";
-import {useNotifications} from "../../contexts/NotificationContext.jsx";
+import {useNotifications} from "../../contexts/useNotifications.js";
 
 export default function PostWritePage() {
     const {boardType} = useParams();

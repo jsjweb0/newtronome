@@ -1,7 +1,6 @@
-import { createContext, useContext, useCallback, useRef } from "react";
+import { useCallback, useRef } from "react";
 import Toast from "../components/ui/Toast.jsx";
-
-const ToastContext = createContext({ showToast: () => {} });
+import {ToastContext} from "./toastContextValue.js";
 
 export function ToastProvider({ children }) {
     const toastRef = useRef(null);
@@ -17,5 +16,3 @@ export function ToastProvider({ children }) {
         </ToastContext.Provider>
     );
 }
-
-export const useToast = () => useContext(ToastContext);

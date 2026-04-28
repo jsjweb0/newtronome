@@ -1,7 +1,7 @@
 import {useState, useRef, useEffect} from 'react';
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import useSoundCloudApi from "../hooks/useSoundCloudApi.js";
-import {useAudioPlayerContext} from "../contexts/AudioPlayerContext.jsx";
+import {useAudioPlayerContext} from "../contexts/useAudioPlayerContext.js";
 import TrackItem from "../components/track/TrackItem.jsx";
 import {Search, CirclePlus} from "lucide-react";
 import TrackItemSkeleton from "../components/track/TrackItemSkeleton.jsx";

@@ -21,7 +21,7 @@ import {Trash2, Play, ListCheck, ListPlus, X as EditX} from "lucide-react";
 import noImage from "../../assets/no-image.png";
 import clsx from "clsx";
 import SortableItem from "./SortableItem.jsx";
-import {useToast} from "../../contexts/ToastContext.jsx";
+import {useToast} from "../../contexts/useToast.js";
 import ConfirmDialog from "../ui/ConfirmDialog.jsx";
 
 export default function PlaylistPanel({tracks, currentIndex, onSelect, collapsed, isPlaying, onReorder}) {

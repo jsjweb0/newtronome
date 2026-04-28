@@ -5,7 +5,7 @@ import DarkModeToggle from "../DarkModeToggle.jsx";
 import {Menu, X, Music, Home, Dog, LogIn, LogOut, Activity, CassetteTape, Disc3, Search} from "lucide-react";
 import {LogoIcon, Browse, LogoMoIcon, Turntable, MusicLibrary, SynthIcon} from "../icons/index.js";
 import clsx from "clsx";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
 import Tooltip from "../ui/Tooltip.jsx";
 import NotificationDropdown from "../ui/NotificationDropdown.jsx";
 

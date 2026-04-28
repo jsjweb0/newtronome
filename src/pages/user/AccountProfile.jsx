@@ -1,14 +1,14 @@
 import {useState, useEffect, useMemo, useRef} from "react";
 import {getAuth, updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider} from "firebase/auth";
 import {getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp} from "firebase/firestore";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
 import {Link, useNavigate} from "react-router-dom";
-import {useToast} from "../../contexts/ToastContext.jsx";
+import {useToast} from "../../contexts/useToast.js";
 import {validateProfile, isProfileModified} from "../../utils/profile.js";
 import FormInput from "../../components/ui/FormInput.jsx";
 import {formatDate} from "../../utils/format.js";
 import {LogOut, Mail, Calendar} from "lucide-react";
-import {useNotifications} from "../../contexts/NotificationContext.jsx";
+import {useNotifications} from "../../contexts/useNotifications.js";
 
 export default function AccountProfile() {
     const {user, logout, loading, avatarUrl, nicknameUrl} = useAuth();

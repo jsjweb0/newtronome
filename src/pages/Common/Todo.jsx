@@ -413,8 +413,8 @@ UI/UX 문서화 - 화면 흐름도(Flowchart) 또는 와이어프레임 / 주요
 데모 & 스크린캐스트 - 실제 동작하는 화면 녹화(short GIF) / 모바일·데스크톱 반응형 데모
 
 알림 토스트 메세지 갯수, 이력, 더보기, 삭제
-import { useToast } from '../contexts/ToastContext.jsx';
-import { useNotifications } from '../contexts/NotificationContext.jsx';
+import { useToast } from '../contexts/useToast.js';
+import { useNotifications } from '../contexts/useNotifications.js';
 
 function SomeComponent() {
   const { showToast } = useToast();

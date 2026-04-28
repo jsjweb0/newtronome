@@ -1,8 +1,8 @@
 import {useLocation, useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Link} from "react-router-dom";
-import {useToast} from "../../contexts/ToastContext.jsx";
-import {useNotifications} from "../../contexts/NotificationContext.jsx";
-import {usePosts} from "../../contexts/postsContext.jsx";
+import {useToast} from "../../contexts/useToast.js";
+import {useNotifications} from "../../contexts/useNotifications.js";
+import {usePosts} from "../../contexts/usePosts.js";
 import {useEffect, useState} from "react";
 import {AuthAccess} from "../../components/auth/AuthAccess.jsx";
 import {BaseButton} from "../../components/ui/BaseButton.jsx";

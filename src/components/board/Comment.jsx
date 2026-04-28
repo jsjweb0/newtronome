@@ -1,10 +1,10 @@
 import dayjs from "dayjs";
 import {useEffect, useRef, useState} from "react";
-import {useToast} from "../../contexts/ToastContext.jsx";
-import {useNotifications} from "../../contexts/NotificationContext.jsx";
+import {useToast} from "../../contexts/useToast.js";
+import {useNotifications} from "../../contexts/useNotifications.js";
 import {doc, updateDoc, getDoc, arrayUnion, arrayRemove, increment, deleteDoc} from "firebase/firestore";
 import {db} from "../../firebase";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
 import {BaseButton} from "../ui/BaseButton.jsx";
 import {Ellipsis, PenLine, ThumbsUp, Trash2} from "lucide-react";
 import {AuthAccess} from "../auth/AuthAccess.jsx";

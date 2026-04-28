@@ -1,5 +1,5 @@
 import {BaseButton} from "../ui/BaseButton.jsx";
-import {useAuth} from "../../contexts/AuthContext.jsx";
+import {useAuth} from "../../contexts/useAuth.js";
 import {Pencil} from "lucide-react";
 
 export default function WriteButton({boardType}) {
