@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEWTRONOME</title>
+    <meta name="title" content="NEWTRONOME" />
+    <meta name="description" content="NEWTRONOME ! HELLO WORLD !" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://newtronome.netlify.app/" />
+    <meta property="og:title" content="NEWTRONOME" />
+    <meta property="og:description" content="NEWTRONOME ! HELLO WORLD !" />
+    <meta property="og:image" content="/src/assets/or_image.jpg" />
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://newtronome.netlify.app/" />
+    <meta property="twitter:title" content="NEWTRONOME" />
+    <meta property="twitter:description" content="NEWTRONOME ! HELLO WORLD !" />
+    <meta property="twitter:image" content="/src/assets/or_image.jpg" />
+    <link rel="icon" type="image/svg+xml" href="./src/assets/logo_n.png" />
+
+    <script>
+      (function () {
+        const saved = localStorage.getItem('theme');
+        // 사용자가 'light'를 저장하지 않았다면 무조건 dark
+        if (saved !== 'light') {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        }
+      })();
+    </script>
+    <script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
+    <script src="https://w.soundcloud.com/player/api.js"></script>
+  </head>
+  <body class="bg-white text-black dark:bg-black dark:text-white transition-colors duration-300">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

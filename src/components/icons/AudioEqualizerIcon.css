@@ -1,0 +1,24 @@
+@keyframes audio-pulse {
+    0%, 100% {
+        transform: scaleY(1);
+    }
+    50% {
+        transform: scaleY(2.2);
+    }
+}
+
+.lucide-audio-lines .bar {
+    transform-origin: center;
+    animation: audio-pulse 1s infinite ease-in-out;
+}
+
+.lucide-audio-lines.paused .bar {
+    animation: none;
+}
+
+.lucide-audio-lines.animate .bar1 { animation-delay: 0s; }
+.lucide-audio-lines.animate .bar2 { animation-delay: 0.1s; }
+.lucide-audio-lines.animate .bar3 { animation-delay: 0.2s; }
+.lucide-audio-lines.animate .bar4 { animation-delay: 0.3s; }
+.lucide-audio-lines.animate .bar5 { animation-delay: 0.4s; }
+.lucide-audio-lines.animate .bar6 { animation-delay: 0.5s; }
