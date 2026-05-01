@@ -1,6 +1,6 @@
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     const url = event.queryStringParameters?.url;
     const clientId = process.env.SOUND_CLOUD_CLIENT_ID;
 

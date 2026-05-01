@@ -82,7 +82,7 @@ export default function PlayerBar({onPanelToggle, collapsed}) {
         <div
             className="flex gap-x-3 xl:gap-x-20 items-center max-xl:justify-between relative w-full h-full text-textBase p-3 xl:p-4">
             {/* 좌측: 커버 + 곡 정보 */}
-            <div className="xl:shrink-0 flex items-center gap-2 xl:gap-4 xl:w-[426px] min-w-0">
+            <div className="xl:shrink-0 flex items-center gap-2 xl:gap-4 xl:w-[29%] min-w-0">
                 <span className="shrink-0 w-11 h-11 xl:w-21 xl:h-21">
                     <img src={currentTrack?.artwork} alt={currentTrack?.title}
                          className="rounded-xl xl:rounded-2xl object-cover"/>

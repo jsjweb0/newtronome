@@ -14,13 +14,13 @@ export default function Sidebar({collapsed = false}) {
     const [isMobile, setIsMobile] = useState(false);
 
     const navItems = [
-        {label: "Home", path: "/", icon: Home},
-        {label: "Browse", path: "/todo", icon: Music},
+        //{label: "Home", path: "/", icon: Home},
+        {label: "Browse", path: "/", icon: Music},
         {label: "Search", path: "/search", icon: Search},
         {label: "Notice", path: "/board/notice", icon: Disc3},
         {label: "Free Board", path: "/board/free", icon: Activity},
-        {label: "Pet Board", path: "/board/pet", icon: Dog},
-        {label: "About", path: "/about", icon: LogoMoIcon},
+        {label: "Archive", path: "/board/pet", icon: Dog},
+        //{label: "About", path: "/about", icon: LogoMoIcon},
         {label: "My Account", path: "/account", icon: Turntable, requiresAuth: true,},
         {label: "My Activity", path: "/mypage", icon: MusicLibrary, requiresAuth: true,},
         {label: "Login", path: "/login", icon: LogIn, requiresGuest: true, hideOnLg: true},
