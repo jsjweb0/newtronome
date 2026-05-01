@@ -27,7 +27,6 @@ function App() {
 
                     {/* layout 적용될 라우트 그룹 */}
                     <Route index element={<HomePage />} />
-                    <Route path="/todo" element={<Todo />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
                     <Route path="/search" element={<SearchPage />} />
