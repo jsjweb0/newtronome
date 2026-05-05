@@ -16,7 +16,7 @@ import clsx from "clsx";
 import DarkModeToggle from "../components/DarkModeToggle.jsx";
 
 export default function MainLayout() {
-    const { loading, error, getPlaylistsByUrls } = useSoundCloudApi();
+    const { loading, getPlaylistsByUrls } = useSoundCloudApi();
     const {
         audioRef,
         tracks,
@@ -69,7 +69,7 @@ export default function MainLayout() {
             /* 추가 URL들… */
         ];
 
-        const randomSubset = urls.sort(() => Math.random() - 0.5).slice(0, 5);
+        const randomSubset = urls.sort(() => Math.random() - 0.5).slice(0, 2);
         getPlaylistsByUrls(randomSubset)
             .then(tracks => {
                 // 셔플하고 싶다면 여기서 셔플
@@ -80,7 +80,7 @@ export default function MainLayout() {
 
         // 예2) (원하면) 검색으로 불러오기
         // searchTracks("house music").then(trs => setPlaylist(trs));
-    }, []);
+    }, [getPlaylistsByUrls, setPlaylist]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;

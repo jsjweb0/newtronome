@@ -1,5 +1,7 @@
 import fetch from "node-fetch";
 
+/* global process */
+
 export const handler = async (event) => {
     const query = event.queryStringParameters?.q;
     const clientId = process.env.SOUND_CLOUD_CLIENT_ID;
@@ -20,7 +22,11 @@ export const handler = async (event) => {
 
         return {
             statusCode: res.status,
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "public, max-age=3600, s-maxage=86400",
+            },
             body: JSON.stringify(data),
         };
     } catch (err) {

@@ -31,7 +31,7 @@ export default function SearchPage() {
             return;
         }
         (async () => {
-            const list = await searchTracksWithDetails(qParam, 50);
+            const list = await searchTracksWithDetails(qParam);
             setResults(list);
         })();
     }, [qParam, searchTracksWithDetails]);
