@@ -15,7 +15,6 @@ import PetPostView from "./pages/board/PetPostView.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import AccountProfile from "./pages/user/AccountProfile.jsx";
 import ScrollToTopSmooth from "./components/ui/ScrollToTopSmooth.jsx";
-import AboutPage from "./pages/AboutPage.jsx";
 
 function App() {
 
@@ -62,7 +61,6 @@ function App() {
                     <Route path="/board/pet/:id" element={<PetPostView />} />
                     <Route path="*" element={<NotFoundPage />} />
                 </Route>
-                <Route path="/about" element={<AboutPage />} />
             </Routes>
         </>
     )

@@ -8,10 +8,14 @@ import {AudioPlayerProvider} from "./contexts/AudioPlayerContext.jsx";
 import {DarkModeProvider} from "./contexts/DarkModeContext.jsx";
 import {NotificationProvider} from "./contexts/NotificationContext.jsx";
 
+const routerBasename = import.meta.env.BASE_URL === '/'
+    ? undefined
+    : import.meta.env.BASE_URL.replace(/\/$/, '');
+
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <DarkModeProvider>
-            <BrowserRouter>
+            <BrowserRouter basename={routerBasename}>
                 <NotificationProvider>
                     <ToastProvider>
                         <AudioPlayerProvider>

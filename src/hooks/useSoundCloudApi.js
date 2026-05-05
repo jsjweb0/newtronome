@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-const API_BASE = "/api"; // redirect maps /api/* to Netlify Functions → Environment variables
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
 export default function useSoundCloudApi() {
     const [loading, setLoading] = useState(false);
