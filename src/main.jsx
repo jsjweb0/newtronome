@@ -18,11 +18,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <BrowserRouter basename={routerBasename}>
                 <NotificationProvider>
                     <ToastProvider>
-                        <AudioPlayerProvider>
-                            <AuthProvider>
+                        <AuthProvider>
+                            <AudioPlayerProvider>
                                 <App/>
-                            </AuthProvider>
-                        </AudioPlayerProvider>
+                            </AudioPlayerProvider>
+                        </AuthProvider>
                     </ToastProvider>
                 </NotificationProvider>
             </BrowserRouter>
