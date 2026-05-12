@@ -4,8 +4,8 @@ const CLOUDFLARE_API_BASE = "https://newtronome-soundcloud-api.jsjweb0.workers.d
 const API_BASE =
     import.meta.env.VITE_API_BASE_URL ||
     (import.meta.env.DEV ? "/api" : CLOUDFLARE_API_BASE);
-const CACHE_PREFIX = "newtronome:soundcloud:";
-const CACHE_TTL = 1000 * 60 * 60 * 24;
+const CACHE_PREFIX = "newtronome:soundcloud:v2:";
+const CACHE_TTL = 1000 * 60 * 30;
 const SEARCH_LIMIT = 20;
 const PLAYLIST_TRACK_LIMIT = 12;
 
@@ -44,15 +44,18 @@ const setCachedJson = (key, data) => {
     }
 };
 
-const getStreamPath = (track) => {
+const getStreamRequest = (track) => {
     const progressive = track.media?.transcodings?.find(
         (transcoding) => transcoding.format.protocol === "progressive"
     );
 
-    if (progressive?.url) return new URL(progressive.url).pathname;
-    if (track.stream_url) return new URL(track.stream_url).pathname;
+    const streamUrl = progressive?.url || track.stream_url;
+    if (!streamUrl) return null;
 
-    return "";
+    return {
+        path: new URL(streamUrl).pathname,
+        trackAuthorization: track.track_authorization || "",
+    };
 };
 
 const mapTrack = (track, mp3Url) => ({
@@ -90,16 +93,14 @@ export default function useSoundCloudApi() {
     }, []);
 
     // 2) Fetch audio stream JSON and return direct MP3 URL
-    const getStreamUrl = useCallback(async (path) => {
-        const cacheKey = `stream:${path}`;
-        const cached = getCachedJson(cacheKey);
-        if (cached) return cached;
+    const getStreamUrl = useCallback(async ({ path, trackAuthorization = "" }) => {
+        const params = new URLSearchParams({ path });
+        if (trackAuthorization) params.set("track_authorization", trackAuthorization);
 
-        const res = await fetch(`${API_BASE}/stream?path=${encodeURIComponent(path)}`);
+        const res = await fetch(`${API_BASE}/stream?${params.toString()}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { url } = await res.json();
         if (!url) throw new Error("Invalid stream response");
-        setCachedJson(cacheKey, url);
         return url;
     }, []);
 
@@ -116,11 +117,16 @@ export default function useSoundCloudApi() {
 
                 const mapped = await Promise.all(
                     tracksList.map(async (track) => {
-                        const streamPath = getStreamPath(track);
-                        const mp3Url = streamPath ? await getStreamUrl(streamPath) : "";
-                        if (!mp3Url) return null;
+                        try {
+                            const streamRequest = getStreamRequest(track);
+                            const mp3Url = streamRequest ? await getStreamUrl(streamRequest) : "";
+                            if (!mp3Url) return null;
 
-                        return mapTrack(track, mp3Url);
+                            return mapTrack(track, mp3Url);
+                        } catch (err) {
+                            console.warn(`Skipping unavailable track: ${track.title || track.id}`, err);
+                            return null;
+                        }
                     })
                 );
                 return mapped.filter(Boolean);
@@ -189,11 +195,16 @@ export default function useSoundCloudApi() {
                 const raw = await searchTracks(query);
                 const detailed = await Promise.all(
                     raw.map(async (track) => {
-                        const streamPath = getStreamPath(track);
-                        const mp3Url = streamPath ? await getStreamUrl(streamPath) : "";
-                        if (!mp3Url) return null;
+                        try {
+                            const streamRequest = getStreamRequest(track);
+                            const mp3Url = streamRequest ? await getStreamUrl(streamRequest) : "";
+                            if (!mp3Url) return null;
 
-                        return mapTrack(track, mp3Url);
+                            return mapTrack(track, mp3Url);
+                        } catch (err) {
+                            console.warn(`Skipping unavailable track: ${track.title || track.id}`, err);
+                            return null;
+                        }
                     })
                 );
                 return detailed.filter(Boolean);

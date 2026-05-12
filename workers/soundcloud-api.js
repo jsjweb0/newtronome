@@ -65,6 +65,7 @@ const handleResolve = async (request, clientId) => {
 const handleStream = async (request, clientId) => {
     const { searchParams } = new URL(request.url);
     const streamPath = searchParams.get("path");
+    const trackAuthorization = searchParams.get("track_authorization");
 
     if (!streamPath) {
         return createJsonResponse({ error: "Missing `path` query parameter" }, 400);
@@ -74,7 +75,9 @@ const handleStream = async (request, clientId) => {
         return createJsonResponse({ error: "Invalid `path` query parameter" }, 400);
     }
 
-    const url = createSoundCloudUrl(streamPath, clientId);
+    const url = createSoundCloudUrl(streamPath, clientId, {
+        track_authorization: trackAuthorization,
+    });
     return fetchJson(url);
 };
 
