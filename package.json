@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "frontend:deploy": "npx wrangler deploy --config wrangler.frontend.toml",
     "worker:dev": "npx wrangler dev",
     "worker:deploy": "npx wrangler deploy"
   },
