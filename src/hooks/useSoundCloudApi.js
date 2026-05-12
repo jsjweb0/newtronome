@@ -1,6 +1,9 @@
 import { useState, useCallback } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+const CLOUDFLARE_API_BASE = "https://newtronome-soundcloud-api.jsjweb0.workers.dev/api";
+const API_BASE =
+    import.meta.env.VITE_API_BASE_URL ||
+    (import.meta.env.DEV ? "/api" : CLOUDFLARE_API_BASE);
 const CACHE_PREFIX = "newtronome:soundcloud:";
 const CACHE_TTL = 1000 * 60 * 60 * 24;
 const SEARCH_LIMIT = 20;
@@ -73,7 +76,7 @@ export default function useSoundCloudApi() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // 1) Resolve any SoundCloud URL via Netlify function
+    // 1) Resolve any SoundCloud URL via Cloudflare Worker
     const resolveUrl = useCallback(async (url) => {
         const cacheKey = `resolve:${url}`;
         const cached = getCachedJson(cacheKey);
@@ -151,7 +154,7 @@ export default function useSoundCloudApi() {
         [getPlaylistByUrl]
     );
 
-    // 5) Search tracks by query via Netlify function
+    // 5) Search tracks by query via Cloudflare Worker
     const searchTracks = useCallback(async (query) => {
         setLoading(true);
         setError(null);

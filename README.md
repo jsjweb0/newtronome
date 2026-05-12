@@ -1,7 +1,7 @@
 ### Newtronome
 
-Demo: https://newtronome.netlify.app/  
-Cloudflare Worker API: replace with deployed Worker URL
+Demo: https://newtronome.jsjweb0.workers.dev/  
+Cloudflare Worker API: https://newtronome-soundcloud-api.jsjweb0.workers.dev/api
 
 SoundCloud API를 연동해 트랙 검색, 랜덤 재생, 플레이리스트 재생, 로그인 후 좋아요 기능을 제공하는 React 음악 플레이어입니다. 프론트엔드는 Vite로 빌드하고, SoundCloud Client ID는 Cloudflare Worker에 secret으로 보관해 브라우저 번들에 노출되지 않도록 분리했습니다.
 
@@ -80,7 +80,7 @@ npm run worker:deploy
 6. In the frontend hosting dashboard, set the production API URL.
 
 ```bash
-VITE_API_BASE_URL=https://newtronome-soundcloud-api.<your-subdomain>.workers.dev/api
+VITE_API_BASE_URL=https://newtronome-soundcloud-api.jsjweb0.workers.dev/api
 ```
 
 ## Build Commands
@@ -98,6 +98,6 @@ npm run build
 
 ## Future Improvements
 
-- Move the frontend deployment from Netlify to Cloudflare Pages.
+- Add a custom domain for the Cloudflare frontend deployment.
 - Add loading and empty states to every board/search view consistently.
 - Add end-to-end checks for the player search and playback flow.

@@ -1,6 +1,8 @@
 import {useState, useRef, useEffect, useCallback} from "react";
 import {flushSync} from 'react-dom';
 
+const CLOUDFLARE_API_BASE = "https://newtronome-soundcloud-api.jsjweb0.workers.dev/api";
+
 export default function useAudioPlayer(initialTracks = [], initialIndex = 0) {
     const audioRef = useRef(null);
     const [tracks, setTracks] = useState(initialTracks);
@@ -80,9 +82,10 @@ export default function useAudioPlayer(initialTracks = [], initialIndex = 0) {
 
             if (currentTrack.streamJsonPath) {
                 try {
-                    const proxyUrl = `https://newtronome.netlify.app/api/stream?path=${encodeURIComponent(
+                    const apiBase = import.meta.env.VITE_API_BASE_URL || CLOUDFLARE_API_BASE;
+                    const proxyUrl = `${apiBase}/stream?path=${encodeURIComponent(
                         new URL(currentTrack.streamJsonPath).pathname
-                    )}&client_id=${import.meta.env.VITE_SOUNDCLOUD_CLIENT_ID}`;
+                    )}`;
 
                     const res = await fetch(proxyUrl);
                     const {url: newUrl} = await res.json();
