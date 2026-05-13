@@ -1,4 +1,4 @@
-name = "newtronome-soundcloud-api"
+name = "newtronome"
 main = "workers/soundcloud-api.js"
 compatibility_date = "2026-05-09"
 
