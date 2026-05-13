@@ -37,7 +37,7 @@ jobs:
           fi
 
           changed_files="$(git diff --name-only HEAD^ HEAD)"
-          if echo "$changed_files" | grep -Eq '^(workers/|wrangler\.toml$)'; then
+          if echo "$changed_files" | grep -Eq '^(workers/soundcloud-api\.js$|wrangler\.toml$)'; then
             echo "api=true" >> "$GITHUB_OUTPUT"
           else
             echo "api=false" >> "$GITHUB_OUTPUT"
