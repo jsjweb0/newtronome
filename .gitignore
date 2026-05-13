@@ -22,6 +22,7 @@ pnpm-debug.log*
 .firebase/
 .vercel/
 .vite/
+.wrangler/
 
 # OS/editor files
 .DS_Store
