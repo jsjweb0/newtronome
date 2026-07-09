@@ -1,9 +1,11 @@
-### Newtronome
+# Newtronome
 
 Demo: https://newtronome.jsjweb0.workers.dev/  
 Cloudflare Worker API: https://newtronome-soundcloud-api.jsjweb0.workers.dev/api
 
-SoundCloud API를 연동해 트랙 검색, 랜덤 재생, 플레이리스트 재생, 로그인 후 좋아요 기능을 제공하는 React 음악 플레이어입니다. 프론트엔드는 Vite로 빌드하고, SoundCloud Client ID는 Cloudflare Worker에 secret으로 보관해 브라우저 번들에 노출되지 않도록 분리했습니다.
+Newtronome은 React 학습 과정에서 시작해 음악 검색 및 재생, 사용자 인증, 커뮤니티 기능까지 확장한 개인 프로젝트입니다. SoundCloud API 기반 트랙 검색과 개인 플레이리스트 랜덤 추천을 제공하고, 로그인 후 좋아요, 프로필 수정, 내가 쓴 글과 댓글 모아보기 등 사용자 활동 흐름을 구현했습니다.
+
+SoundCloud Client ID는 Cloudflare Worker secret으로 관리해 브라우저 번들에 노출되지 않도록 분리했습니다. 초기 React 학습 프로젝트라 라우팅, 인증, 게시판, 전역 상태 관리 등 여러 기능을 함께 실험한 흔적이 있으며, 이후 기능 단위 리팩토링을 계획하고 있습니다.
 
 ## Tech Stack
 
@@ -15,18 +17,23 @@ SoundCloud API를 연동해 트랙 검색, 랜덤 재생, 플레이리스트 재
 
 ## Main Features
 
-- SoundCloud 트랙 검색과 스트리밍 URL 변환
-- 플레이리스트 기반 트랙 로딩
-- 오디오 플레이어, 재생목록, 좋아요 상태 관리
-- Firebase 로그인 기반 사용자 기능
-- 모바일과 데스크톱을 고려한 반응형 레이아웃
-- Cloudflare Worker API 프록시로 비밀키 보호
+- SoundCloud 트랙 검색과 재생 가능한 스트리밍 URL 변환
+- 개인 SoundCloud 플레이리스트 기반 랜덤 트랙 추천
+- 검색 결과 미리듣기와 전역 오디오 플레이어 연결
+- 재생목록 추가, 정렬, 재생 상태 관리
+- Firebase Authentication 기반 회원가입, 로그인, 로그아웃
+- 로그인 사용자 기준 좋아요 기능
+- 프로필 정보 수정
+- 게시글 작성, 수정, 상세 보기
+- 내가 쓴 글과 댓글을 모아보는 마이페이지
+- Cloudflare Worker API 프록시를 통한 Client ID 보호
+- 모바일과 데스크톱을 고려한 반응형 UI
 
 ## Folder Structure
 
 ```txt
 src/
-  components/     Reusable UI, player, board, auth components
+  components/     Reusable UI, player, track, board, auth components
   contexts/       Auth, audio player, toast, notification providers
   hooks/          SoundCloud API and UI state hooks
   layouts/        Shared page layout
@@ -94,10 +101,13 @@ npm run build
 
 - API keys used by React must not be stored in `VITE_` variables when they need to remain private.
 - A small Worker can keep the frontend static while protecting external API credentials.
-- Keeping the existing `/api/search`, `/api/resolve`, and `/api/stream` shape made the migration smaller and easier to verify.
+- Separating `/api/search`, `/api/resolve`, and `/api/stream` made the SoundCloud request flow easier to test and explain.
+- Loading, empty, and unavailable-track states need to be handled carefully when relying on an external music API.
+- Building auth, profile, board, and mypage flows helped me understand route-based React app structure and user-specific UI state.
 
 ## Future Improvements
 
 - Add a custom domain for the Cloudflare frontend deployment.
-- Add loading and empty states to every board/search view consistently.
+- Refactor the learning-project structure into clearer feature-based modules.
+- Improve loading, empty, and error states across music, board, and mypage views.
 - Add end-to-end checks for the player search and playback flow.
