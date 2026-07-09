@@ -108,15 +108,6 @@ export default function NotificationDropdown({collapsed}) {
     };
 
 
-    const toggleDropdown = (id) => {
-        setOpenDropdownId(prev => prev === id ? null : id);
-    };
-
-    const handleCloseClick = () => {
-        markAllRead();
-        setOpen(false);
-    };
-
     return (
         <div className="relative">
             <div className="flex items-center">

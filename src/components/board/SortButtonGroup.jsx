@@ -1,7 +1,7 @@
 import {BaseButton} from "../ui/BaseButton.jsx";
-import { ArrowUpDown, RotateCcw } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 
-export default function SortButtonGroup({ posts, toastRef, setPosts, initialNotice, dateSort, setDateSort }) {
+export default function SortButtonGroup({ posts, dateSort, setDateSort }) {
     const postCount = posts?.length ?? 0;
     /*const resetPosts = () => {
         if(window.confirm("초기화 하시겠습니까?")) {

@@ -12,8 +12,7 @@ export default function PostForm({
                                      boardType,
                                      onSubmit,
                                      initialData = {},
-                                     nextId,
-                                     nextUid
+                                     nextId
                                  }) {
     const navigate = useNavigate();
     const {showToast} = useToast();

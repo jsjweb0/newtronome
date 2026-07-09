@@ -5,7 +5,6 @@ import {useToast} from "../../contexts/useToast.js"
 import FormInput from "../ui/FormInput.jsx";
 import useForm from "../../hooks/useForm.js";
 import clsx from "clsx";
-import {isProfileModified} from "../../utils/profile.js";
 import {useNotifications} from "../../contexts/useNotifications.js";
 
 export default function LoginForm() {
@@ -60,7 +59,7 @@ export default function LoginForm() {
             showToast({ message: notification.message });
             addNotification(notification);
 
-        } catch (err) {
+        } catch {
             setLoginError("이메일 또는 비밀번호가 틀렸습니다.");
         }
     };
@@ -114,7 +113,7 @@ export default function LoginForm() {
                                 <div className="flex">
                                     <input id="rememberMe" name="rememberMe" type="checkbox"
                                            checked={rememberMe}
-                                           onChange={(e) => setRememberMe(prev => !prev)}
+                                           onChange={() => setRememberMe(prev => !prev)}
                                            className="shrink-0 mt-0.5 size-5 border border-textThr rounded-sm focus:ring-primary dark:bg-black checked:bg-primary"/>
                                 </div>
                                 <div className="ms-3">

@@ -1,10 +1,10 @@
-import {useState, useEffect, useMemo, useRef} from "react";
+import {useState, useEffect, useRef} from "react";
 import {getAuth, updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider} from "firebase/auth";
-import {getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp} from "firebase/firestore";
+import {getFirestore, doc, getDoc, setDoc, serverTimestamp} from "firebase/firestore";
 import {useAuth} from "../../contexts/useAuth.js";
 import {Link, useNavigate} from "react-router-dom";
 import {useToast} from "../../contexts/useToast.js";
-import {validateProfile, isProfileModified} from "../../utils/profile.js";
+import {validateProfile} from "../../utils/profile.js";
 import FormInput from "../../components/ui/FormInput.jsx";
 import {formatDate} from "../../utils/format.js";
 import {LogOut, Mail, Calendar} from "lucide-react";
@@ -28,12 +28,6 @@ export default function AccountProfile() {
 
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState({});
-
-    const previewUrl = useMemo(() => {
-        if (photoURL) return photoURL;
-        if (nickname) return nicknameUrl;
-        return avatarUrl;
-    }, [photoURL, nickname, nicknameUrl, avatarUrl]);
 
     const initialPreviewRef = useRef();
 

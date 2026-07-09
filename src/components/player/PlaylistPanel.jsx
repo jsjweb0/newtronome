@@ -4,7 +4,6 @@ import {DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOve
 import {
     SortableContext,
     arrayMove,
-    useSortable,
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {
