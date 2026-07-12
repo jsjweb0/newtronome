@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getCommentCountFromDB } from "../../utils/comment.js";
-import { BaseButton } from "../ui/BaseButton.jsx";
+import { BaseButton } from "../ui/BaseButton";
 import {formatDate} from "../../utils/format.js";
 
 function MyPostItem({ post, idx, onDelete }) {

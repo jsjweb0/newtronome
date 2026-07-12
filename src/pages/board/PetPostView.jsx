@@ -3,7 +3,7 @@ import {useLocation, useNavigate, useParams, useSearchParams} from "react-router
 import {Link} from "react-router-dom";
 import {useToast} from "../../contexts/useToast.js";
 import {useEffect, useState} from "react";
-import {BaseButton} from "../../components/ui/BaseButton.jsx";
+import {BaseButton} from "../../components/ui/BaseButton";
 import {
     AlignJustify,
     Info,

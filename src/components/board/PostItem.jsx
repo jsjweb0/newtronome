@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { AuthAccess } from '../auth/AuthAccess.jsx';
 import { useToast } from '../../contexts/useToast.js';
 import { getCommentCountFromDB } from '../../utils/comment';
-import { BaseButton } from '../ui/BaseButton.jsx';
+import { BaseButton } from '../ui/BaseButton';
 import { useEffect, useState } from 'react';
 import { formatDate } from '../../utils/format.js';
 import { useNotifications } from '../../contexts/useNotifications.js';

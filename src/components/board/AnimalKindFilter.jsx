@@ -1,4 +1,4 @@
-import {BaseButton} from "../ui/BaseButton.jsx";
+import {BaseButton} from "../ui/BaseButton";
 import {Dog} from "lucide-react";
 
 export default function AnimalKindFilter({filter, setFilter}) {

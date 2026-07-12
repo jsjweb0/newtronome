@@ -5,7 +5,7 @@ import {useAuth} from "../../contexts/useAuth.js";
 import {Link, useNavigate} from "react-router-dom";
 import {useToast} from "../../contexts/useToast.js";
 import {validateProfile} from "../../utils/profile.js";
-import FormInput from "../../components/ui/FormInput.jsx";
+import FormInput from "../../components/ui/FormInput";
 import {formatDate} from "../../utils/format.js";
 import {LogOut, Mail, Calendar} from "lucide-react";
 import {useNotifications} from "../../contexts/useNotifications.js";

@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/useAuth.js';
 import { getMyCommentsFromDB } from '../../utils/comment.js';
 import { Link } from 'react-router-dom';
 import { ThumbsUp } from 'lucide-react';
-import { BaseButton } from '../ui/BaseButton.jsx';
+import { BaseButton } from '../ui/BaseButton';
 import { useToast } from '../../contexts/useToast.js';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase.js';

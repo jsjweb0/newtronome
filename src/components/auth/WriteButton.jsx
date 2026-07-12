@@ -1,4 +1,4 @@
-import {BaseButton} from "../ui/BaseButton.jsx";
+import {BaseButton} from "../ui/BaseButton";
 import {useAuth} from "../../contexts/useAuth.js";
 import {Pencil} from "lucide-react";
 

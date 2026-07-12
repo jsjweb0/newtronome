@@ -1,4 +1,4 @@
-import {BaseButton} from "../ui/BaseButton.jsx";
+import {BaseButton} from "../ui/BaseButton";
 import { ArrowUpDown } from "lucide-react";
 
 export default function SortButtonGroup({ posts, dateSort, setDateSort }) {

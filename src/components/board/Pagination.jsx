@@ -1,4 +1,4 @@
-import {BaseButton} from "../ui/BaseButton.jsx";
+import {BaseButton} from "../ui/BaseButton";
 import {ChevronsLeft, ChevronsRight, ChevronLeft, ChevronRight} from "lucide-react";
 import {useEffect, useState} from "react";
 

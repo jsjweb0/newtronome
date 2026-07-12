@@ -1,4 +1,4 @@
-import { BaseButton } from "../ui/BaseButton.jsx";
+import { BaseButton } from "../ui/BaseButton";
 import { Search } from "lucide-react";
 
 export default function SearchBar({ searchKeyword, setSearchKeyword}) {

@@ -1,4 +1,4 @@
-import {BaseButton} from "../ui/BaseButton.jsx";
+import {BaseButton} from "../ui/BaseButton";
 import {VenusAndMars} from "lucide-react";
 
 export default function SexFilter({ sexFilter, setSexFilter }) {
