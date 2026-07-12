@@ -2,7 +2,7 @@ import {Link, useNavigate} from "react-router-dom";
 import {useAuth} from "../../contexts/useAuth.js";
 import {useEffect, useRef, useState} from "react";
 import {useToast} from "../../contexts/useToast.js"
-import FormInput from "../ui/FormInput.jsx";
+import FormInput from "../ui/FormInput";
 import useForm from "../../hooks/useForm.js";
 import clsx from "clsx";
 import {useNotifications} from "../../contexts/useNotifications.js";

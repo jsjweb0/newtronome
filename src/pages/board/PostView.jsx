@@ -5,7 +5,7 @@ import {useNotifications} from "../../contexts/useNotifications.js";
 import {usePosts} from "../../contexts/usePosts.js";
 import {useEffect, useState} from "react";
 import {AuthAccess} from "../../components/auth/AuthAccess.jsx";
-import {BaseButton} from "../../components/ui/BaseButton.jsx";
+import {BaseButton} from "../../components/ui/BaseButton";
 import {
     AlignJustify,
     ArrowLeft,

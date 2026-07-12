@@ -7,7 +7,7 @@ import {useEffect, useRef, useState} from "react";
 import {collection, addDoc, Timestamp} from "firebase/firestore";
 import {db} from "../../firebase";
 import {getCommentsFromDB} from "../../utils/comment.js";
-import {BaseButton} from "../ui/BaseButton.jsx";
+import {BaseButton} from "../ui/BaseButton";
 import Comment from "./Comment.jsx"
 import {useNotifications} from "../../contexts/useNotifications.js";
 

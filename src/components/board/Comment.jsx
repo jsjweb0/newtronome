@@ -4,7 +4,7 @@ import { useToast } from '../../contexts/useToast.js';
 import { useNotifications } from '../../contexts/useNotifications.js';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { BaseButton } from '../ui/BaseButton.jsx';
+import { BaseButton } from '../ui/BaseButton';
 import { Ellipsis, PenLine, Trash2 } from 'lucide-react';
 import { AuthAccess } from '../auth/AuthAccess.jsx';
 import LikeButton from '../ui/LikeButton.jsx';

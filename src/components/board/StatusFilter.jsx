@@ -1,4 +1,4 @@
-import {BaseButton} from "../ui/BaseButton.jsx";
+import {BaseButton} from "../ui/BaseButton";
 import {HeartHandshake} from "lucide-react";
 
 export default function StatusFilter({ statusFilter, setStatusFilter }) {
