@@ -1,10 +1,9 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {Heart, ThumbsUp} from 'lucide-react';
 import {
     doc,
     onSnapshot,
     setDoc,
-    updateDoc,
     arrayUnion,
     arrayRemove,
     increment

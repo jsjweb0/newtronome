@@ -1,4 +1,4 @@
-import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
+import {forwardRef, useImperativeHandle, useState} from "react";
 import {Info, CircleCheck, CircleX, TriangleAlert, X} from "lucide-react";
 
 const Toast = forwardRef((_, ref) => {

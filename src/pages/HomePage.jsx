@@ -20,9 +20,7 @@ export default function HomePage() {
     const {
         tracks,
         currentTrack,
-        currentIndex,
         isPlaying,
-        duration,
         totalDurationMinutes,
         select,
         handleTrackClick

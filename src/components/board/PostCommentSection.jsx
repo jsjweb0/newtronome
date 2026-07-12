@@ -4,7 +4,7 @@ import "dayjs/locale/ko";
 import {useToast} from "../../contexts/useToast.js";
 import {useAuth} from "../../contexts/useAuth.js";
 import {useEffect, useRef, useState} from "react";
-import {doc, setDoc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp} from "firebase/firestore";
+import {collection, addDoc, Timestamp} from "firebase/firestore";
 import {db} from "../../firebase";
 import {getCommentsFromDB} from "../../utils/comment.js";
 import {BaseButton} from "../ui/BaseButton.jsx";

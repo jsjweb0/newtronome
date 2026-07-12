@@ -7,7 +7,7 @@ export function toHighResArtwork(url) {
 }
 
 // 기본 이미지 주소 반환 (artwork 없을 때 대비) `/images/placeholder-${idx % 5}.png`;
-export const fallbackArtwork = (idx = 0) =>
+export const fallbackArtwork = () =>
     "../assets/no-image.webp";
 
 

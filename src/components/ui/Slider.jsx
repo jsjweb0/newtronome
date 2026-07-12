@@ -1,11 +1,8 @@
-import {useState} from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 export default function ImageSlider({images = [], alt = '', className}) {
-    const [currentSlide, setCurrentSlide] = useState(1);
-
     const settings = {
         fade: true,
         dots: true,
@@ -16,7 +13,6 @@ export default function ImageSlider({images = [], alt = '', className}) {
         arrows: false,
         autoplay: true,
         autoplaySpeed: 4000,
-        afterChange: (index) => setCurrentSlide(index + 1),
         appendDots: dots => (
             <ul>{dots}</ul>
         ),

@@ -12,8 +12,7 @@ export default function TrackItem({
                                       isPlaying,
                                       handleTrackClick,
                                       select,
-                                      isPlayingPreview,
-                                      searchKeyword
+                                      isPlayingPreview
                                   }) {
     const onSelect = () => {
         if (typeof select === "function") {

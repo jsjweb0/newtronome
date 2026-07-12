@@ -36,7 +36,7 @@ export default function ShareButton({url, className = "", post}) {
             await navigator.clipboard.writeText(copyUrl);
             showToast({message: "링크가 복사되었습니다!", type: "success"});
             toggleCopyBox();
-        } catch (err) {
+        } catch {
             showToast({message: "복사에 실패했습니다.", type: "error"});
         }
     }

@@ -1,11 +1,10 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo} from 'react';
 import {useToast} from "../../contexts/useToast.js";
 import Pagination from '../../components/board/Pagination.jsx';
 import MyPostItem from './MyPostItem.jsx';
 import {getCurrentPageItems, getTotalPages, DEFAULT_ITEMS_PER_PAGE} from "../../utils/pagination.js";
 
 export default function MyPostsList({
-                                        loadingPosts,
                                         handlePageChange,
                                         currentPage,
                                         setCurrentPage,

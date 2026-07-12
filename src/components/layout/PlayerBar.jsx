@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef} from "react";
 import {useAudioPlayerContext} from "../../contexts/useAudioPlayerContext.js";
 import {
     SkipBack,
@@ -6,7 +6,6 @@ import {
     Play,
     Pause,
     ListMusic,
-    Heart,
     Volume2,
     RotateCcw,
     Shuffle,
@@ -23,8 +22,6 @@ export default function PlayerBar({onPanelToggle, collapsed}) {
         currentTrack,
         isPlaying,
         toggle,
-        onTimeUpdate,
-        onLoadedMetadata,
         currentTime,
         setCurrentTime,
         duration,
@@ -33,17 +30,11 @@ export default function PlayerBar({onPanelToggle, collapsed}) {
         mute,
         isMuted,
         rewindToStart,
-        shuffle,
-        setDuration,
-        toggleMute
+        shuffle
     } = useAudioPlayerContext();
-
-    if (!tracks) return null;
 
     const {isDarkMode} = useDarkMode();
     const rangeRef = useRef(null);
-    const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-    const progress = duration ? currentTime / duration : 0;
 
     const min = 0;
     const max = duration || 0;
@@ -65,18 +56,20 @@ export default function PlayerBar({onPanelToggle, collapsed}) {
     };
 
     // (2) 슬라이더 배경(채워진 부분) 업데이트
-    const handleInput = e => {
+    const handleInput = useCallback(e => {
         const {min, max, value} = e.target;
         const pct = ((value - min) / (max - min)) * 100;
         const darkStyle = `linear-gradient(to right, #00FFB2 0%, #00FFB2 ${pct}%, #333 ${pct}%, #333 100%)`;
         const lightStyle = `linear-gradient(to right, #fd81a0 0%, #fd81a0 ${pct}%, #ebebeb ${pct}%, #ebebeb 100%)`;
         e.target.style.background = isDarkMode ? darkStyle : lightStyle;
-    };
+    }, [isDarkMode]);
 
     // (3) 재생 중에도 슬라이더 백그라운드 갱신
     useEffect(() => {
         if (rangeRef.current) handleInput({ target: rangeRef.current });
-    }, [isDarkMode, currentTime, duration]);
+    }, [currentTime, duration, handleInput]);
+
+    if (!tracks) return null;
 
     return (
         <div

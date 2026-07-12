@@ -14,13 +14,11 @@ export default function PostWritePage() {
     const {user} = useAuth();
     const navigate = useNavigate();
 
-    const [posts, setLocalPosts] = useState([]);
     const [nextId, setNextId] = useState(1);
 
     useEffect(() => {
         const fetchPosts = async () => {
             const data = await getPosts(boardType);
-            setLocalPosts(data);
             const maxId = data.length ? Math.max(...data.map(p => p.id)) : 0;
             setNextId(maxId + 1);
         };
