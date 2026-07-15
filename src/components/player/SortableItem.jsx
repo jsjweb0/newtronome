@@ -39,7 +39,7 @@ export default function SortableItem({id, track, hideListeners, isSelected, onTo
             <div className="overflow-hidden grow flex items-center gap-x-3">
                 <span
                     className="shrink-0 overflow-hidden flex relative w-12 h-12 rounded-lg">
-                    <img src={getArtworkOrFallback(track.artwork)} alt={track.title} className="object-cover"/>
+                    <img src={getArtworkOrFallback(track.artworkUrl)} alt={track.title} className="object-cover"/>
                 </span>
                 <div className="max-w-full min-w-0">
                     <span className="overflow-hidden block w-full col-start-2 text-sm text-textBase truncate">

@@ -35,9 +35,7 @@ export default function PlaylistPanel({
   const [showConfirm, setShowConfirm] = useState(false);
   const [saveConfirm, setSaveConfirm] = useState(false);
   const track = tracks[currentIndex];
-  const raw = track?.tag_list || '';
-  const tokens = raw.match(/"[^"]+"|\S+/g) || [];
-  const tags = tokens.map((tag) => tag.replace(/^"|"$/g, ''));
+  const tags = track?.tags || [];
 
   // 로컬 복사본
   const [items, setItems] = useState(tracks);
@@ -158,7 +156,7 @@ export default function PlaylistPanel({
             <div ref={panelRef} className="flex flex-col gap-y-2 p-4">
               <div>
                 <img
-                  src={getArtworkOrFallback(track?.artwork)}
+                  src={getArtworkOrFallback(track?.artworkUrl)}
                   alt={track?.title}
                   className="w-full rounded-2xl object-cover"
                   onError={(e) => {
@@ -179,7 +177,7 @@ export default function PlaylistPanel({
                 Likes
                 <i className="inline-block w-1 h-1 rounded-full bg-textSub"></i>
                 <Play className="size-3 fill-textBase stroke-none" />
-                {formatCount(track?.playback_count)} Plays
+                {formatCount(track?.playbackCount)} Plays
               </div>
               <ul className="flex flex-wrap gap-2 mt-2">
                 {tags.slice(0, 5).map((tag) => (
@@ -309,7 +307,7 @@ export default function PlaylistPanel({
                                         `}
                       >
                         <span className="row-span-3 overflow-hidden flex relative w-12 h-12 rounded-lg">
-                          <img src={track.artwork} alt={track.title} className="object-cover" />
+                          <img src={track.artworkUrl} alt={track.title} className="object-cover" />
                           <i className="hidden group-[.isActive]:flex justify-center items-center absolute w-full h-full bg-primary/45">
                             {isPlaying && (
                               <AudioEqualizerIcon isPlaying={true} className="text-white" />
@@ -324,9 +322,9 @@ export default function PlaylistPanel({
                         </span>
                         <span className="col-start-2 row-start-3 flex items-center gap-1 w-full text-[11px] text-left text-textSub">
                           <Play className="size-2.5 fill-textBase stroke-none group-hover:fill-primary font-inter" />
-                          {formatCount(track?.playback_count)}
+                          {formatCount(track?.playbackCount)}
                           <i className="inline-block w-[2px] h-[2px] mx-1 rounded-full bg-textSub font-inter"></i>
-                          {formatTime(track.duration)}
+                          {formatTime(track.durationMs)}
                         </span>
                       </button>
                     </li>

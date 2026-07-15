@@ -60,7 +60,7 @@ export default function TrackItem({
                         list: "row-span-2 size-12 md:size-20"
                     })
                 )}>
-                    <img src={toHighResArtwork(track.artwork)} alt={track.title}
+                    <img src={toHighResArtwork(track.artworkUrl)} alt={track.title}
                          className={clsx(
                              "block object-cover w-full h-full transition-transform",
                              viewModeClass(viewMode, "absolute top-0 left-0"),
@@ -108,7 +108,7 @@ export default function TrackItem({
                     {track.artist}
                 </span>
                 {viewMode === "list" && (
-                    <span className="row-span-2 block text-textSub text-xs lg:text-sm font-inter">{formatTime(track.duration)}</span>
+                    <span className="row-span-2 block text-textSub text-xs lg:text-sm font-inter">{formatTime(track.durationMs)}</span>
                 )}
             </button>
         </div>
