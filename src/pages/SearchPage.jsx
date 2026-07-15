@@ -1,6 +1,6 @@
 import {useState, useRef, useEffect} from 'react';
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
-import useSoundCloudApi from "../hooks/useSoundCloudApi.js";
+import useSoundCloudApi from "../hooks/useSoundCloudApi";
 import {useAudioPlayerContext} from "../contexts/useAudioPlayerContext.js";
 import TrackItem from "../components/track/TrackItem.jsx";
 import {Search, CirclePlus} from "lucide-react";
@@ -42,9 +42,9 @@ export default function SearchPage() {
 
     // 재생·일시정지 함수들
     const startPreview = (track) => {
-        if (!audioPreviewRef.current || audioPreviewRef.current.src !== track.mp3Url) {
+        if (!audioPreviewRef.current || audioPreviewRef.current.src !== track.audioUrl) {
             audioPreviewRef.current?.pause();
-            audioPreviewRef.current = new Audio(track.mp3Url);
+            audioPreviewRef.current = new Audio(track.audioUrl);
             audioPreviewRef.current.onended = () => {
                 setPreviewPlaying(false);
                 setCurrentPreviewId(null);

@@ -42,9 +42,9 @@ export default function PlayerBar({onPanelToggle, collapsed}) {
     const value = currentTime;
 
     useEffect(() => {
-        if (!currentTrack?.mp3Url) return;
+        if (!currentTrack?.audioUrl) return;
         const audio = audioRef.current;
-        audio.src = currentTrack.mp3Url;
+        audio.src = currentTrack.audioUrl;
         audio.load();
     }, [currentTrack, audioRef]);
 
@@ -77,7 +77,7 @@ export default function PlayerBar({onPanelToggle, collapsed}) {
             {/* 좌측: 커버 + 곡 정보 */}
             <div className="xl:shrink-0 flex items-center gap-2 xl:gap-4 xl:w-[29%] min-w-0">
                 <span className="shrink-0 w-11 h-11 xl:w-21 xl:h-21">
-                    <img src={currentTrack?.artwork} alt={currentTrack?.title}
+                    <img src={currentTrack?.artworkUrl} alt={currentTrack?.title}
                          className="rounded-xl xl:rounded-2xl object-cover"/>
                 </span>
                 <div className="overflow-hidden lg:grow max-xl:mb-2">

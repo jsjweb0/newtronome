@@ -28,8 +28,8 @@ export default function HomePage() {
     } = useAudioPlayerContext();
 
     const images = tracks
-        .filter(track => !!track?.artwork)
-        .map(track => toHighResArtwork(track.artwork));
+        .filter(track => !!track?.artworkUrl)
+        .map(track => toHighResArtwork(track.artworkUrl));
 
     const filteredTracks = useMemo(() => {
         return tracks
@@ -57,7 +57,7 @@ export default function HomePage() {
     return (
         <div className="px-3">
             <div className="flex max-lg:flex-col gap-x-10 items-center z-[0] relative py-14">
-                <img src={currentTrack?.artwork}
+                <img src={currentTrack?.artworkUrl}
                      className="z-[-1] absolute inset-0 w-full h-full object-cover opacity-30 blur-md scale-110"
                      alt=""/>
                 <div className="shrink-0 w-80 max-w-full">

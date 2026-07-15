@@ -18,7 +18,7 @@ export default function useAudioPlayer(initialTracks = [], initialIndex = 0) {
     const currentTrack = oneOffTrack || tracks[currentIndex] || null;
 
     const totalDurationMinutes = Math.floor(
-        tracks.reduce((acc, track) => acc + (track.duration || 0), 0) / 1000 / 60
+        tracks.reduce((acc, track) => acc + (track.durationMs || 0), 0) / 1000 / 60
     );
 
     // 1. Initialize Audio element
@@ -33,9 +33,9 @@ export default function useAudioPlayer(initialTracks = [], initialIndex = 0) {
     // 2. Update source when track changes
     useEffect(() => {
         const audio = audioRef.current;
-        if (!audio || !currentTrack?.mp3Url) return;
+        if (!audio || !currentTrack?.audioUrl) return;
 
-        audio.src = currentTrack.mp3Url;
+        audio.src = currentTrack.audioUrl;
         audio.load();
         if (isPlaying) {
             audio.play().catch(() => setIsPlaying(false));
@@ -87,7 +87,7 @@ export default function useAudioPlayer(initialTracks = [], initialIndex = 0) {
     // 6. Controls
     const play = useCallback(() => {
         const audio = audioRef.current;
-        if (!audio || !currentTrack?.mp3Url) return;
+        if (!audio || !currentTrack?.audioUrl) return;
         audio.play()
             .then(() => setIsPlaying(true))
             .catch(err => {
