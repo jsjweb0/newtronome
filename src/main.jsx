@@ -1,31 +1,27 @@
-import React from 'react'
+import React from 'react';
 import ReactDOM from 'react-dom/client';
-import {BrowserRouter} from "react-router-dom";
-import App from './App.jsx'
-import {ToastProvider} from "./contexts/ToastContext.jsx";
-import {AuthProvider} from "./contexts/AuthContext.jsx";
-import {AudioPlayerProvider} from "./contexts/AudioPlayerContext.jsx";
-import {DarkModeProvider} from "./contexts/DarkModeContext.jsx";
-import {NotificationProvider} from "./contexts/NotificationContext.jsx";
+import { BrowserRouter } from 'react-router-dom';
+import App from './App.jsx';
+import { ToastProvider } from './contexts/ToastContext.jsx';
+import { AuthProvider } from './contexts/AuthContext.jsx';
+import { DarkModeProvider } from './contexts/DarkModeContext.jsx';
+import { NotificationProvider } from './contexts/NotificationContext.jsx';
 
-const routerBasename = import.meta.env.BASE_URL === '/'
-    ? undefined
-    : import.meta.env.BASE_URL.replace(/\/$/, '');
+const routerBasename =
+  import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '');
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-    <React.StrictMode>
-        <DarkModeProvider>
-            <BrowserRouter basename={routerBasename}>
-                <NotificationProvider>
-                    <ToastProvider>
-                        <AuthProvider>
-                            <AudioPlayerProvider>
-                                <App/>
-                            </AudioPlayerProvider>
-                        </AuthProvider>
-                    </ToastProvider>
-                </NotificationProvider>
-            </BrowserRouter>
-        </DarkModeProvider>
-    </React.StrictMode>,
-)
+  <React.StrictMode>
+    <DarkModeProvider>
+      <BrowserRouter basename={routerBasename}>
+        <NotificationProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </ToastProvider>
+        </NotificationProvider>
+      </BrowserRouter>
+    </DarkModeProvider>
+  </React.StrictMode>
+);
