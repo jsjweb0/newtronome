@@ -12,7 +12,7 @@ const API_BASE =
 const CACHE_PREFIX = 'newtronome:soundcloud:v2:';
 const CACHE_TTL = 1000 * 60 * 30;
 const SEARCH_LIMIT = 20;
-const PLAYLIST_TRACK_LIMIT = 12;
+const PLAYLIST_TRACK_LIMIT = 15;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

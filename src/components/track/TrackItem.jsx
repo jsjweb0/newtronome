@@ -9,17 +9,10 @@ export default function TrackItem({
                                       track,
                                       currentTrack,
                                       viewMode = "grid",
-                                      isPlaying,
-                                      handleTrackClick,
-                                      select,
-                                      isPlayingPreview
+                                      isPlaying = false,
+                                      onTrackClick,
+                                      isPlayingPreview = false
                                   }) {
-    const onSelect = () => {
-        if (typeof select === "function") {
-            select(idx);
-        }
-    };
-
     const isThisTrack = currentTrack?.id === track.id;
     const isPlayingTrack = isThisTrack && isPlaying;
     const isPaused = isThisTrack && !isPlaying;
@@ -37,10 +30,7 @@ export default function TrackItem({
         })}>
             <button type="button"
                     onClick={() => {
-                        // 여기에 곡 선택 로직 넣을 수 있음 (ex: setCurrentTrack(track))
-                        onSelect();
-                        handleTrackClick(track);
-                        console.log(`Play: ${track.title}`);
+                        onTrackClick?.(track);
                     }}
                     className={clsx(
                         "group w-full",
