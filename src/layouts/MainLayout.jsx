@@ -66,14 +66,11 @@ export default function MainLayout() {
         setPlaylist(shuffled, 0);
       })
       .catch(console.error);
-
-    // 예2) (원하면) 검색으로 불러오기
     // searchTracks("house music").then(trs => setPlaylist(trs));
   }, [getPlaylistsByUrls, setPlaylist]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // Tailwind xl breakpoint is 1280px
     const mql = window.matchMedia('(max-width: 1280px)');
     const onChange = (e) => {
       if (e.matches) {
@@ -84,7 +81,6 @@ export default function MainLayout() {
       }
     };
 
-    // 초기 로직: 마운트 시 화면 크기에 따라
     if (mql.matches) setIsPanelCollapsed(false);
 
     mql.addEventListener('change', onChange);
