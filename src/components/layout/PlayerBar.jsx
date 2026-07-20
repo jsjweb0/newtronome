@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { selectCurrentTrack, usePlayerStore } from '../../features/player/stores/usePlayerStore';
-import { useAudioElement } from '../../features/player/hooks/useAudioElement';
 import {
   SkipBack,
   SkipForward,
@@ -15,31 +14,16 @@ import {
 import Tooltip from '../ui/Tooltip.jsx';
 import LikeButton from '../ui/LikeButton.jsx';
 import { useDarkMode } from '../../contexts/useDarkMode.js';
-import { useToast } from '../../contexts/useToast';
 
-export default function PlayerBar({ onPanelToggle, collapsed }) {
+export default function PlayerBar({ onPanelToggle, collapsed, soundCloudWidget }) {
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const currentTime = usePlayerStore((state) => state.currentTime);
   const duration = usePlayerStore((state) => state.duration);
   const isMuted = usePlayerStore((state) => state.isMuted);
 
-  const previousTrack = usePlayerStore((state) => state.previousTrack);
-  const nextTrack = usePlayerStore((state) => state.nextTrack);
-  const shuffleTracks = usePlayerStore((state) => state.shuffleTracks);
-
-  const { showToast } = useToast();
-
-  const handlePlaybackError = useCallback(() => {
-    showToast({
-      message: '오디오 재생에 실패했습니다.',
-      type: 'error',
-    });
-  }, [showToast]);
-
-  const { toggle, seek, toggleMute, rewindToStart } = useAudioElement({
-    onPlaybackError: handlePlaybackError,
-  });
+  const { toggle, seek, toggleMute, rewindToStart, previousTrack, nextTrack, playRandomTrack } =
+    soundCloudWidget;
 
   const { isDarkMode } = useDarkMode();
   const rangeRef = useRef(null);
@@ -149,7 +133,7 @@ export default function PlayerBar({ onPanelToggle, collapsed }) {
             </button>
           </Tooltip>
           <Tooltip content="Shuffle" className="max-xl:hidden">
-            <button type="button" onClick={shuffleTracks} aria-label="재생목록 랜덤">
+            <button type="button" onClick={playRandomTrack} aria-label="임의의 트랙 재생">
               <Shuffle aria-hidden="true" />
             </button>
           </Tooltip>

@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import {
   DndContext,
@@ -22,20 +21,21 @@ import clsx from 'clsx';
 import SortableItem from './SortableItem.jsx';
 import { useToast } from '../../contexts/useToast.js';
 import ConfirmDialog from '../ui/ConfirmDialog.jsx';
+import SoundCloudWidget from '../../features/player/components/SoundCloudWidget.jsx';
 
 export default function PlaylistPanel({
   tracks,
-  currentIndex,
   onSelect,
   collapsed,
   isPlaying,
   onReorder,
+  soundCloudWidget,
 }) {
+  const playlistTrack = soundCloudWidget.widgetTrack;
+
   const { showToast } = useToast();
   const [showConfirm, setShowConfirm] = useState(false);
   const [saveConfirm, setSaveConfirm] = useState(false);
-  const track = tracks[currentIndex];
-  const tags = track?.tags || [];
 
   // 로컬 복사본
   const [items, setItems] = useState(tracks);
@@ -156,8 +156,8 @@ export default function PlaylistPanel({
             <div ref={panelRef} className="flex flex-col gap-y-2 p-4">
               <div>
                 <img
-                  src={getArtworkOrFallback(track?.artworkUrl)}
-                  alt={track?.title}
+                  src={getArtworkOrFallback(playlistTrack?.artworkUrl)}
+                  alt={playlistTrack?.title || '플레이리스트 트랙'}
                   className="w-full rounded-2xl object-cover"
                   onError={(e) => {
                     e.target.src = noImage;
@@ -165,34 +165,24 @@ export default function PlaylistPanel({
                   }}
                 />
               </div>
-              <div className="mt-2 text-xs text-textSub">{track?.genre}</div>
-              <div className="text-lg font-black">{track?.title}</div>
-              <div>{track?.artist}</div>
+              <div className="text-lg font-black">{playlistTrack?.title}</div>
+              <div>{playlistTrack?.artist}</div>
               <div className="flex items-center gap-x-2 mt-4 text-xs text-textSub">
                 <LikeButton
-                  docId={String(track?.id)}
+                  docId={String(playlistTrack?.id)}
                   collection="tracks"
-                  className="size-8 rounded-lg border border-textThr dark:border-none dark:bg-textThr mr-2 text-textBase"
+                  className="size-4 rounded-lg border border-textThr dark:border-none dark:bg-textThr mr-2 text-textBase"
                 />
-                Likes
-                <i className="inline-block w-1 h-1 rounded-full bg-textSub"></i>
-                <Play className="size-3 fill-textBase stroke-none" />
-                {formatCount(track?.playbackCount)} Plays
               </div>
-              <ul className="flex flex-wrap gap-2 mt-2">
-                {tags.slice(0, 5).map((tag) => (
-                  <li key={tag}>
-                    <Link
-                      to={`/search?q=${encodeURIComponent(tag)}`}
-                      className="inline-block px-2 py-1 text-xs rounded-full bg-textThr text-textSub hover:text-primary hover:bg-primary/6"
-                    >
-                      # {tag}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
             </div>
           )}
+
+          <div>
+            <SoundCloudWidget
+              playlistUrl="https://soundcloud.com/ssu-1/sets/2025-summer"
+              controller={soundCloudWidget}
+            />
+          </div>
 
           <div className="mt-6 p-4">
             <div className="flex items-center justify-between mb-2 pb-2.5 border-b border-b-textThr">
@@ -292,7 +282,7 @@ export default function PlaylistPanel({
                   tracks.map((track, idx) => (
                     <li
                       key={`${track.id}-${idx}`}
-                      className={`max-w-full ${idx === currentIndex ? 'text-primary' : ''}`}
+                      className={`max-w-full ${track.id === playlistTrack?.id ? 'text-primary' : ''}`}
                       onClick={() => {
                         // 여기에 곡 선택 로직 넣을 수 있음 (ex: setCurrentTrack(track))
                         onSelect(idx);
@@ -302,7 +292,7 @@ export default function PlaylistPanel({
                       <button
                         type="button"
                         className={`group grid grid-cols-[3rem_auto] grid-rows-3 gap-x-3 justify-items-center items-center w-full max-w-full text-left hover:text-primary ${
-                          idx === currentIndex ? 'isActive' : ''
+                          track.id === playlistTrack?.id ? 'isActive' : ''
                         }
                                         `}
                       >

@@ -1,7 +1,17 @@
 import type { Track } from '../../../types/track';
 
+export interface PlayerTrack {
+  id: number | string;
+  title: string;
+  artist: string;
+  artworkUrl: string | null;
+  permalinkUrl: string | null;
+  durationMs: number;
+}
+
 export interface PlayerState {
   tracks: Track[];
+  currentTrack: PlayerTrack | null;
   currentIndex: number;
   isPlaying: boolean;
   currentTime: number;
@@ -14,6 +24,7 @@ export interface PlayerActions {
   addTrack: (track: Track) => void;
   selectTrack: (index: number) => void;
 
+  setCurrentTrack: (track: PlayerTrack | null) => void;
   setPlaying: (isPlaying: boolean) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;

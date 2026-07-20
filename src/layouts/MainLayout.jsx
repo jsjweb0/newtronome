@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import useSoundCloudApi from '../hooks/useSoundCloudApi';
+import { useSoundCloudWidget } from '../features/player/hooks/useSoundCloudWidget';
 import { usePlayerStore } from '../features/player/stores/usePlayerStore';
 import '../assets/css/index.css';
 import 'preline';
@@ -16,6 +17,8 @@ import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle.jsx';
 
 export default function MainLayout() {
+  const soundCloudWidget = useSoundCloudWidget();
+
   const { loading, getPlaylistsByUrls } = useSoundCloudApi();
 
   const setPlaylist = usePlayerStore((state) => state.setPlaylist);
@@ -150,10 +153,10 @@ export default function MainLayout() {
           <PlaylistPanel
             collapsed={isPanelCollapsed}
             tracks={tracks}
-            currentIndex={currentIndex}
             onSelect={selectTrack}
             onReorder={handleReorder}
             isPlaying={isPlaying}
+            soundCloudWidget={soundCloudWidget}
           />
         )}
       </div>
@@ -174,6 +177,7 @@ export default function MainLayout() {
           <PlayerBar
             onPanelToggle={() => setIsPanelCollapsed((c) => !c)}
             collapsed={isPanelCollapsed}
+            soundCloudWidget={soundCloudWidget}
           />
         )}
       </footer>
