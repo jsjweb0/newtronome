@@ -100,4 +100,4 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 }));
 
 export const selectCurrentTrack = (state: PlayerStore) =>
-  state.currentTrack ?? state.tracks[state.currentIndex] ?? null;
+  state.currentTrack;

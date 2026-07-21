@@ -102,6 +102,7 @@ npm run build
 - API keys used by React must not be stored in `VITE_` variables when they need to remain private.
 - A small Worker can keep the frontend static while protecting external API credentials.
 - Separating `/api/search`, `/api/resolve`, and `/api/stream` made the SoundCloud request flow easier to test and explain.
+- Playlist resolve responses can contain partial track objects, so the Worker hydrates missing track metadata in one batch before returning the playlist.
 - Loading, empty, and unavailable-track states need to be handled carefully when relying on an external music API.
 - Building auth, profile, board, and mypage flows helped me understand route-based React app structure and user-specific UI state.
 

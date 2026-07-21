@@ -1,4 +1,4 @@
-import { LoaderCircle } from 'lucide-react';
+import { AudioEqualizerIcon } from '../../../components/icons';
 
 export default function SoundCloudWidget({ playlistUrl, controller }) {
   const { iframeRef, isReady } = controller;
@@ -14,8 +14,8 @@ export default function SoundCloudWidget({ playlistUrl, controller }) {
   return (
     <>
       {!isReady && (
-        <p className="flex gap-1 text-sm text-textSub mb-1">
-          <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+        <p className="flex gap-1 items-center text-sm text-textSub mb-1">
+          <AudioEqualizerIcon isPlaying={true} aria-hidden="true" className="text-white size-4" />
           플레이리스트 불러오는 중...
         </p>
       )}
@@ -30,6 +30,7 @@ export default function SoundCloudWidget({ playlistUrl, controller }) {
         frameBorder="0"
         allow="autoplay"
         className="block w-full"
+        tabIndex={-1}
       />
     </>
   );

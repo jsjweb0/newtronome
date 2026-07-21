@@ -4,6 +4,8 @@ export interface SoundCloudWidgetTrack {
   permalink_url?: string;
   artwork_url?: string | null;
   duration?: number;
+  genre?: string;
+  tag_list?: string;
   user?: {
     username?: string;
   };

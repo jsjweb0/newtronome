@@ -1,5 +1,6 @@
 import type { PlayerTrack } from '../types/player.types';
 import type { SoundCloudWidgetTrack } from '../types/soundcloud-widget.types';
+import { parseSoundCloudTags } from '../../../utils/soundCloudTrackMapper';
 
 export function mapSoundCloudWidgetTrack(
   track: SoundCloudWidgetTrack | null | undefined
@@ -18,5 +19,8 @@ export function mapSoundCloudWidgetTrack(
     permalinkUrl: typeof track.permalink_url === 'string' ? track.permalink_url : null,
     durationMs:
       typeof track.duration === 'number' && Number.isFinite(track.duration) ? track.duration : 0,
+    genre: typeof track.genre === 'string' ? track.genre.trim() : '',
+    tags:
+      typeof track.tag_list === 'string' ? parseSoundCloudTags(track.tag_list) : [],
   };
 }

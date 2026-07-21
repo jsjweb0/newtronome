@@ -38,6 +38,36 @@ const fetchJson = async (url) => {
     return createJsonResponse(data, response.status, cachedHeaders);
 };
 
+const getTrackCollection = (value) => {
+    if (Array.isArray(value)) return value;
+    if (value && Array.isArray(value.collection)) return value.collection;
+    return [];
+};
+
+const hydratePlaylistTracks = async (playlist, clientId) => {
+    if (!playlist || !Array.isArray(playlist.tracks)) return playlist;
+
+    const partialTrackIds = playlist.tracks
+        .filter((track) => track?.id && !track.title)
+        .map((track) => track.id);
+
+    if (partialTrackIds.length === 0) return playlist;
+
+    const tracksUrl = createSoundCloudUrl("/tracks", clientId, {
+        ids: partialTrackIds.join(","),
+    });
+    const response = await fetch(tracksUrl);
+    if (!response.ok) return playlist;
+
+    const trackDetails = getTrackCollection(await response.json());
+    const detailsById = new Map(trackDetails.map((track) => [String(track.id), track]));
+
+    return {
+        ...playlist,
+        tracks: playlist.tracks.map((track) => detailsById.get(String(track.id)) ?? track),
+    };
+};
+
 const handleSearch = async (request, clientId) => {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
@@ -59,7 +89,15 @@ const handleResolve = async (request, clientId) => {
     }
 
     const url = createSoundCloudUrl("/resolve", clientId, { url: soundCloudUrl });
-    return fetchJson(url);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+        return createJsonResponse(data, response.status, cachedHeaders);
+    }
+
+    const hydratedData = await hydratePlaylistTracks(data, clientId);
+    return createJsonResponse(hydratedData, response.status, cachedHeaders);
 };
 
 const handleStream = async (request, clientId) => {

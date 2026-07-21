@@ -1,5 +1,3 @@
-import type { Track } from '../../../types/track';
-
 export interface PlayerTrack {
   id: number | string;
   title: string;
@@ -7,10 +5,21 @@ export interface PlayerTrack {
   artworkUrl: string | null;
   permalinkUrl: string | null;
   durationMs: number;
+  genre: string;
+  tags: string[];
+}
+
+export interface PlaylistMetadata {
+  title: string;
+  genre: string;
+  genres: string[];
+  artworkUrl: string | null;
+  permalinkUrl: string | null;
+  tracks: PlayerTrack[];
 }
 
 export interface PlayerState {
-  tracks: Track[];
+  tracks: PlayerTrack[];
   currentTrack: PlayerTrack | null;
   currentIndex: number;
   isPlaying: boolean;
@@ -20,8 +29,8 @@ export interface PlayerState {
 }
 
 export interface PlayerActions {
-  setPlaylist: (tracks: Track[], startIndex?: number) => void;
-  addTrack: (track: Track) => void;
+  setPlaylist: (tracks: PlayerTrack[], startIndex?: number) => void;
+  addTrack: (track: PlayerTrack) => void;
   selectTrack: (index: number) => void;
 
   setCurrentTrack: (track: PlayerTrack | null) => void;

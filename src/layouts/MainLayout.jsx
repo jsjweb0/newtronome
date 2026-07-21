@@ -11,21 +11,42 @@ import PlaylistPanel from '../components/player/PlaylistPanel.jsx';
 import Tooltip from '../components/ui/Tooltip.jsx';
 import { PanelLeft } from 'lucide-react';
 import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton.jsx';
-import PlaylistPanelSkeleton from '../components/player/PlaylistPanelSkeleton.jsx';
 import SearchPanel from '../components/player/SearchPanel.jsx';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle.jsx';
 
-export default function MainLayout() {
-  const soundCloudWidget = useSoundCloudWidget();
+const PLAYLIST_URLS = [
+  'https://soundcloud.com/ssu-1/sets/2025-summer',
+  'https://soundcloud.com/ssu-1/sets/2024-spring',
+  'https://soundcloud.com/ssu-1/sets/2023-spring',
+  'https://soundcloud.com/ssu-1/sets/2022-summer',
+  'https://soundcloud.com/ssu-1/sets/2020-spring',
+  'https://soundcloud.com/ssu-1/sets/2019-spring',
+  'https://soundcloud.com/ssu-1/sets/2018-disco',
+  'https://soundcloud.com/ssu-1/sets/2017-summer',
+  'https://soundcloud.com/ssu-1/sets/2017-spring',
+  'https://soundcloud.com/ssu-1/sets/2017spring',
+  'https://soundcloud.com/ssu-1/sets/m3stc8ixvqcw',
+  'https://soundcloud.com/ssu-1/sets/lkuriahk4u4p',
+  'https://soundcloud.com/ssu-1/sets/1j886wtueuzr',
+  'https://soundcloud.com/ssu-1/sets/spring-disco',
+  'https://soundcloud.com/ssu-1/sets/autumn-disco',
+  'https://soundcloud.com/ssu-1/sets/summer-disco2',
+];
 
-  const { loading, getPlaylistsByUrls } = useSoundCloudApi();
+export default function MainLayout() {
+  const [playlistUrl] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * PLAYLIST_URLS.length);
+    return PLAYLIST_URLS[randomIndex];
+  });
+  const [playlistMetadata, setPlaylistMetadata] = useState(null);
+
+  const soundCloudWidget = useSoundCloudWidget();
+  const { getPlaylistMetadataByUrl } = useSoundCloudApi();
 
   const setPlaylist = usePlayerStore((state) => state.setPlaylist);
   const tracks = usePlayerStore((state) => state.tracks);
-  const currentIndex = usePlayerStore((state) => state.currentIndex);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
-  const selectTrack = usePlayerStore((state) => state.selectTrack);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,43 +55,20 @@ export default function MainLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
 
-  const handleReorder = (newOrder) => {
-    const currentTrackId = tracks[currentIndex]?.id;
-    const newIndex = newOrder.findIndex((t) => t.id === currentTrackId);
-    setPlaylist(newOrder, newIndex);
-  };
-
   useEffect(() => {
-    const urls = [
-      'https://soundcloud.com/ssu-1/sets/2025-summer',
-      'https://soundcloud.com/ssu-1/sets/2024-spring',
-      'https://soundcloud.com/ssu-1/sets/2023-spring',
-      'https://soundcloud.com/ssu-1/sets/2022-summer',
-      'https://soundcloud.com/ssu-1/sets/2020-spring',
-      'https://soundcloud.com/ssu-1/sets/2019-spring',
-      'https://soundcloud.com/ssu-1/sets/2018-disco',
-      'https://soundcloud.com/ssu-1/sets/2017-summer',
-      'https://soundcloud.com/ssu-1/sets/2017-spring',
-      'https://soundcloud.com/ssu-1/sets/2017spring',
-      'https://soundcloud.com/ssu-1/sets/m3stc8ixvqcw',
-      'https://soundcloud.com/ssu-1/sets/lkuriahk4u4p',
-      'https://soundcloud.com/ssu-1/sets/1j886wtueuzr',
-      'https://soundcloud.com/ssu-1/sets/spring-disco',
-      'https://soundcloud.com/ssu-1/sets/autumn-disco',
-      'https://soundcloud.com/ssu-1/sets/summer-disco2',
-      /* 추가 URL들… */
-    ];
+    let isCancelled = false;
 
-    const randomSubset = urls.sort(() => Math.random() - 0.5).slice(0, 2);
-    getPlaylistsByUrls(randomSubset)
-      .then((tracks) => {
-        // 셔플하고 싶다면 여기서 셔플
-        const shuffled = tracks.sort(() => Math.random() - 0.5).slice(0, 50);
-        setPlaylist(shuffled, 0);
-      })
-      .catch(console.error);
-    // searchTracks("house music").then(trs => setPlaylist(trs));
-  }, [getPlaylistsByUrls, setPlaylist]);
+    getPlaylistMetadataByUrl(playlistUrl).then((metadata) => {
+      if (isCancelled) return;
+
+      setPlaylistMetadata(metadata);
+      setPlaylist(metadata?.tracks ?? [], 0);
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [getPlaylistMetadataByUrl, playlistUrl, setPlaylist]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -91,14 +89,14 @@ export default function MainLayout() {
   }, []);
 
   return (
-    <div className="relative lg:pt-3 px-3 pb-[110px] xl:pb-[140px] text-textBase dark:bg-black">
+    <div className="relative lg:pt-3 px-3 pb-27.5 xl:pb-35 text-textBase dark:bg-black">
       {/* 왼쪽 사이드바 */}
       <header
         className={clsx(
           'z-50 lg:z-100 sticky lg:fixed top-0 lg:top-3 lg:left-3 lg:h-full lg:max-h-[calc(100%-1.5rem)] bg-background p-2 lg:p-3.5 rounded-xl transition-width duration-300',
           'border border-textThr dark:border-none',
           'has-[.open]:z-999',
-          isSidebarCollapsed ? 'lg:w-19 lg:rounded-3xl' : 'lg:w-[240px] lg:rounded-2xl'
+          isSidebarCollapsed ? 'lg:w-19 lg:rounded-3xl' : 'lg:w-60 lg:rounded-2xl'
         )}
       >
         <Sidebar collapsed={isSidebarCollapsed} />
@@ -142,23 +140,19 @@ export default function MainLayout() {
             showSuggestions={isSearchPage}
           />
           <article className="min-h-[calc(100vh-162px)] xl:min-h-[calc(100vh-232px)] max-lg:mt-2">
-            <Outlet />
+            <Outlet context={{ playlistMetadata }} />
           </article>
         </main>
 
         {/* 오른쪽 고정 플레이리스트 패널 */}
-        {loading ? (
-          <PlaylistPanelSkeleton />
-        ) : (
-          <PlaylistPanel
-            collapsed={isPanelCollapsed}
-            tracks={tracks}
-            onSelect={selectTrack}
-            onReorder={handleReorder}
-            isPlaying={isPlaying}
-            soundCloudWidget={soundCloudWidget}
-          />
-        )}
+        <PlaylistPanel
+          playlistUrl={playlistUrl}
+          collapsed={isPanelCollapsed}
+          tracks={tracks}
+          onSelect={soundCloudWidget.selectTrack}
+          isPlaying={isPlaying}
+          soundCloudWidget={soundCloudWidget}
+        />
       </div>
       {/* 하단 고정 플레이어 */}
       <footer
@@ -171,7 +165,7 @@ export default function MainLayout() {
         )}
       >
         {/* setCurrentTrackUrl(track.url) */}
-        {loading ? (
+        {!soundCloudWidget.isReady ? (
           <PlayerBarSkeleton />
         ) : (
           <PlayerBar

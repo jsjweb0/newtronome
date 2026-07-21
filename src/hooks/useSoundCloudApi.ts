@@ -1,15 +1,21 @@
 import { useCallback, useState } from 'react';
 import type { SoundCloudStreamRequest, Track } from '../types/track';
+import type {
+  PlayerTrack,
+  PlaylistMetadata,
+} from '../features/player/types/player.types';
 import {
   getSoundCloudStreamRequest,
   getSoundCloudTrackList,
   mapSoundCloudTrack,
+  mapSoundCloudTrackMetadata,
+  parseSoundCloudTrackResponse,
 } from '../utils/soundCloudTrackMapper';
 
 const CLOUDFLARE_API_BASE = 'https://newtronome-soundcloud-api.jsjweb0.workers.dev/api';
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : CLOUDFLARE_API_BASE);
-const CACHE_PREFIX = 'newtronome:soundcloud:v2:';
+const CACHE_PREFIX = 'newtronome:soundcloud:v3:';
 const CACHE_TTL = 1000 * 60 * 30;
 const SEARCH_LIMIT = 20;
 const PLAYLIST_TRACK_LIMIT = 15;
@@ -65,6 +71,7 @@ const getTrackLabel = (value: unknown) => {
 };
 
 const isTrack = (track: Track | null): track is Track => track !== null;
+const isPlayerTrack = (track: PlayerTrack | null): track is PlayerTrack => track !== null;
 
 export default function useSoundCloudApi() {
   const [loading, setLoading] = useState(false);
@@ -134,6 +141,47 @@ export default function useSoundCloudApi() {
       }
     },
     [hydrateTrack, resolveUrl]
+  );
+
+  const getPlaylistMetadataByUrl = useCallback(
+    async (playlistUrl: string): Promise<PlaylistMetadata | null> => {
+      setError(null);
+
+      try {
+        const playlist = await resolveUrl(playlistUrl);
+        if (!isRecord(playlist)) throw new Error('Invalid playlist response');
+
+        const rawTracks = getSoundCloudTrackList(playlist, 'tracks');
+        const tracks = rawTracks
+          .map(mapSoundCloudTrackMetadata)
+          .filter(isPlayerTrack);
+
+        const genre = typeof playlist.genre === 'string' ? playlist.genre.trim() : '';
+        const genres = [
+          genre,
+          ...rawTracks.map((track) => parseSoundCloudTrackResponse(track)?.genre.trim() ?? ''),
+        ].filter((value, index, values) => value && values.indexOf(value) === index);
+
+        return {
+          title:
+            typeof playlist.title === 'string' && playlist.title.trim()
+              ? playlist.title.trim()
+              : 'Now Playlist',
+          genre,
+          genres,
+          artworkUrl:
+            typeof playlist.artwork_url === 'string' ? playlist.artwork_url : null,
+          permalinkUrl:
+            typeof playlist.permalink_url === 'string' ? playlist.permalink_url : null,
+          tracks,
+        };
+      } catch (caughtError) {
+        console.error(`getPlaylistMetadataByUrl failed: ${playlistUrl}`, caughtError);
+        setError(toError(caughtError));
+        return null;
+      }
+    },
+    [resolveUrl]
   );
 
   const getPlaylistsByUrls = useCallback(
@@ -207,6 +255,7 @@ export default function useSoundCloudApi() {
     loading,
     error,
     getPlaylistByUrl,
+    getPlaylistMetadataByUrl,
     getPlaylistsByUrls,
     searchTracks,
     searchTracksWithDetails,

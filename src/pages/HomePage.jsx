@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import ImageSlider from '../components/ui/Slider.jsx';
 import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore.js';
 import { toHighResArtwork } from '../utils/image.js';
@@ -14,6 +15,7 @@ const formatDuration = (min) => {
 };
 
 export default function HomePage() {
+  const { playlistMetadata = null } = useOutletContext() ?? {};
   const [searchKeyword, setSearchKeyword] = useState('');
   const [viewMode, setViewMode] = useState('grid');
 
@@ -38,26 +40,13 @@ export default function HomePage() {
 
   const images = tracks
     .filter((track) => !!track?.artworkUrl)
-    .map((track) => toHighResArtwork(track.artworkUrl));
+    .map((track) => toHighResArtwork(track.artworkUrl, 't1080x1080'));
 
   const filteredTracks = useMemo(() => {
     return tracks
       .slice()
       .filter((track) => (track.title || '').toLowerCase().includes(searchKeyword.toLowerCase()));
   }, [tracks, searchKeyword]);
-
-  const playListTags = [
-    'Electronic',
-    'Disco',
-    'Nudisco',
-    'House',
-    'Deep House',
-    'Electro Funk',
-    'Synth Pop',
-    'French Touch',
-    'Electro Pop',
-    'Synthwave',
-  ];
 
   if (!tracks || tracks.length === 0) return <HomePageSkeleton />;
 
@@ -83,20 +72,22 @@ export default function HomePage() {
             <p>{formatDuration(totalDurationMinutes)}</p>
           </div>
           <h2 className="font-black font-inter text-3xl lg:text-[5vw] leading-none">
-            Now Playlist
+            {playlistMetadata?.title || 'Now Playlist'}
           </h2>
-          <div className="flex mt-5 lg:mt-8">
-            <ul className="flex flex-wrap gap-[3px] lg:gap-2">
-              {playListTags.map((tag) => (
+          {playlistMetadata?.genres.length > 0 && (
+            <div className="flex mt-5 lg:mt-8">
+              <ul className="flex flex-wrap gap-[3px] lg:gap-2">
+                {playlistMetadata.genres.slice(0, 6).map((genre) => (
                 <li
-                  key={tag}
+                  key={genre}
                   className="inline-block px-2 py-1 rounded-full bg-textThr text-textSub text-xs lg:text-sm font-inter"
                 >
-                  # {tag}
+                  # {genre}
                 </li>
-              ))}
-            </ul>
-          </div>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 

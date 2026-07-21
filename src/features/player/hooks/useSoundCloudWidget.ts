@@ -28,6 +28,10 @@ export function useSoundCloudWidget() {
   const setMuted = usePlayerStore((state) => state.setMuted);
   const setCurrentTrack = usePlayerStore((state) => state.setCurrentTrack);
 
+  const selectTrack = useCallback((index: number) => {
+    widgetRef.current?.skip(index);
+  }, []);
+
   useEffect(() => {
     setIsReady(false);
 
@@ -64,7 +68,7 @@ export function useSoundCloudWidget() {
     const handleReady = () => {
       setIsReady(true);
       setWidgetIsPlaying(false);
-      updateCurrentTrack(false);
+      updateCurrentTrack(true);
       updateDuration();
     };
 
@@ -180,6 +184,7 @@ export function useSoundCloudWidget() {
     rewindToStart,
     playRandomTrack,
     toggleMute,
+    selectTrack,
     widgetTrack,
     widgetIsPlaying,
   };

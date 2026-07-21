@@ -3,6 +3,7 @@ import type {
   SoundCloudTrackResponse,
   Track,
 } from '../types/track';
+import type { PlayerTrack } from '../features/player/types/player.types';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -70,6 +71,22 @@ export const mapSoundCloudTrack = (value: unknown, audioUrl: string): Track | nu
     playbackCount: source.playback_count,
     favoriteCount: source.favoritings_count,
     genre: source.genre,
+    tags: parseSoundCloudTags(source.tag_list),
+  };
+};
+
+export const mapSoundCloudTrackMetadata = (value: unknown): PlayerTrack | null => {
+  const source = parseSoundCloudTrackResponse(value);
+  if (!source || !isRecord(value)) return null;
+
+  return {
+    id: source.id,
+    title: source.title,
+    artist: source.user.username || '알 수 없는 아티스트',
+    artworkUrl: source.artwork_url,
+    permalinkUrl: typeof value.permalink_url === 'string' ? value.permalink_url : null,
+    durationMs: source.duration,
+    genre: source.genre.trim(),
     tags: parseSoundCloudTags(source.tag_list),
   };
 };
