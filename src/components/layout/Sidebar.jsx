@@ -2,7 +2,7 @@ import {Link} from "react-router-dom";
 import {NavLink} from "react-router-dom";
 import {useEffect, useState} from "react";
 import DarkModeToggle from "../DarkModeToggle.jsx";
-import {Menu, X, Music, Home, Dog, LogIn, LogOut, Activity, CassetteTape, Disc3, Search} from "lucide-react";
+import {Menu, X, Music, Home, Dog, LogIn, LogOut, Activity, CassetteTape, Disc3} from "lucide-react";
 import {LogoIcon, LogoMoIcon, Turntable, MusicLibrary} from "../icons/index.js";
 import clsx from "clsx";
 import {useAuth} from "../../contexts/useAuth.js";
@@ -16,7 +16,6 @@ export default function Sidebar({collapsed = false}) {
     const navItems = [
         //{label: "Home", path: "/", icon: Home},
         {label: "Browse", path: "/", icon: Music},
-        {label: "Search", path: "/search", icon: Search},
         {label: "Notice", path: "/board/notice", icon: Disc3},
         {label: "Free Board", path: "/board/free", icon: Activity},
         {label: "Archive", path: "/board/pet", icon: Dog},
@@ -193,10 +192,6 @@ export default function Sidebar({collapsed = false}) {
             </nav>
             <div className="flex lg:hidden gap-1 items-center absolute top-0 right-11 h-full">
                 {user && <NotificationDropdown />}
-                <Link to="/search" className="flex items-center h-full p-1">
-                    <Search className="shrink-0 size-5 text-base"/><span
-                    className="sr-only">검색</span>
-                </Link>
             </div>
         </div>
     );

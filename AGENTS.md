@@ -2,18 +2,18 @@
 
 ## Project overview
 
-Newtronome은 React 기반의 SoundCloud 음악 검색·재생 및 커뮤니티 서비스다.
+Newtronome은 React 기반의 SoundCloud 플레이리스트 재생 및 커뮤니티 서비스다.
 
 주요 기능:
 
-- SoundCloud 트랙 검색 및 재생
+- SoundCloud Widget 기반 플레이리스트 재생
 - 플레이리스트와 재생목록 관리
 - 랜덤 재생
 - Firebase 로그인
 - 좋아요와 사용자 활동
 - 게시판
 - 반응형 UI
-- Cloudflare Worker 기반 SoundCloud API 프록시
+- Cloudflare Workers Static Assets 기반 프론트엔드 배포
 
 기술 스택:
 
@@ -22,8 +22,8 @@ Newtronome은 React 기반의 SoundCloud 음악 검색·재생 및 커뮤니티 
 - Vite
 - Tailwind CSS
 - Firebase Authentication / Firestore
-- Cloudflare Workers
-- SoundCloud API
+- Cloudflare Workers Static Assets
+- SoundCloud Widget API
 
 ## Development rules
 
@@ -54,13 +54,8 @@ Newtronome은 React 기반의 SoundCloud 음악 검색·재생 및 커뮤니티 
 ## API and security rules
 
 - 비밀로 유지해야 하는 값을 `VITE_` 환경 변수에 저장하지 않는다.
-- SoundCloud Client ID는 Cloudflare Worker에서만 관리한다.
 - API 키, 토큰, `.env` 파일을 커밋하지 않는다.
 - 외부 API 응답 구조를 신뢰하지 않고 필요한 값을 검증한다.
-- 다음 API 인터페이스는 명시적인 요청 없이 변경하지 않는다.
-  - `/api/search`
-  - `/api/resolve`
-  - `/api/stream`
 
 ## Validation commands
 
@@ -92,7 +87,7 @@ Pull Request에서는 해당 PR이 추가한 변경만 검토한다.
 - 누락되거나 오래된 Hook 의존성
 - 상태 중복과 상태 동기화 문제
 - TypeScript 타입 안정성
-- SoundCloud API 응답 처리
+- SoundCloud Widget 이벤트와 트랙 데이터 처리
 - Firebase 인증과 Firestore 데이터 처리
 - 로딩, 빈 상태, 오류 상태
 - 오디오 재생과 재생목록 상태
@@ -142,6 +137,6 @@ README에는 실제 코드로 확인되는 내용만 작성한다.
 - 폴더 구조
 - 설치 및 실행 명령
 - 환경 변수
-- Cloudflare Worker 설정
+- Cloudflare 프론트엔드 배포 설정
 - 배포 방법
 - 향후 개선 사항

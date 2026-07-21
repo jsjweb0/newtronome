@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import ImageSlider from '../components/ui/Slider.jsx';
 import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore.js';
 import { toHighResArtwork } from '../utils/image.js';
@@ -6,6 +7,8 @@ import { GridIcon } from '../components/icons/index.js';
 import { CircleX, List, ListMusic } from 'lucide-react';
 import TrackItem from '../components/track/TrackItem.jsx';
 import HomePageSkeleton from './HomePageSkeleton.jsx';
+import soundCloudLogoBlack from '../assets/brands/soundcloud-logo-black.webp';
+import soundCloudLogoWhite from '../assets/brands/soundcloud-logo-white.webp';
 
 const formatDuration = (min) => {
   const h = Math.floor(min / 60);
@@ -14,13 +17,13 @@ const formatDuration = (min) => {
 };
 
 export default function HomePage() {
+  const { playlistUrl, onSelectTrack, onToggleTrack } = useOutletContext() ?? {};
   const [searchKeyword, setSearchKeyword] = useState('');
   const [viewMode, setViewMode] = useState('grid');
 
   const tracks = usePlayerStore((state) => state.tracks);
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
-  const selectTrack = usePlayerStore((state) => state.selectTrack);
 
   const totalDurationMinutes = useMemo(() => {
     const totalDurationMs = tracks.reduce((total, track) => total + track.durationMs, 0);
@@ -29,35 +32,29 @@ export default function HomePage() {
   }, [tracks]);
 
   const handleTrackClick = (track) => {
-    const trackIndex = tracks.findIndex((item) => item.id === track.id);
+    const isCurrentTrack = String(currentTrack?.id) === String(track.id);
+
+    if (isCurrentTrack) {
+      onToggleTrack?.();
+      return;
+    }
+
+    const trackIndex = tracks.findIndex((item) => String(item.id) === String(track.id));
 
     if (trackIndex === -1) return;
 
-    selectTrack(trackIndex);
+    onSelectTrack?.(trackIndex);
   };
 
   const images = tracks
     .filter((track) => !!track?.artworkUrl)
-    .map((track) => toHighResArtwork(track.artworkUrl));
+    .map((track) => toHighResArtwork(track.artworkUrl, 't1080x1080'));
 
   const filteredTracks = useMemo(() => {
     return tracks
       .slice()
       .filter((track) => (track.title || '').toLowerCase().includes(searchKeyword.toLowerCase()));
   }, [tracks, searchKeyword]);
-
-  const playListTags = [
-    'Electronic',
-    'Disco',
-    'Nudisco',
-    'House',
-    'Deep House',
-    'Electro Funk',
-    'Synth Pop',
-    'French Touch',
-    'Electro Pop',
-    'Synthwave',
-  ];
 
   if (!tracks || tracks.length === 0) return <HomePageSkeleton />;
 
@@ -85,22 +82,32 @@ export default function HomePage() {
           <h2 className="font-black font-inter text-3xl lg:text-[5vw] leading-none">
             Now Playlist
           </h2>
-          <div className="flex mt-5 lg:mt-8">
-            <ul className="flex flex-wrap gap-[3px] lg:gap-2">
-              {playListTags.map((tag) => (
-                <li
-                  key={tag}
-                  className="inline-block px-2 py-1 rounded-full bg-textThr text-textSub text-xs lg:text-sm font-inter"
-                >
-                  # {tag}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {playlistUrl && (
+            <p className="flex items-center gap-1.5 mt-3 text-[11px] md:text-sm text-textSub">
+              Music provided by{' '}
+              <a
+                href={playlistUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex hover:text-primary"
+              >
+                <img
+                  src={soundCloudLogoBlack}
+                  alt="SoundCloud"
+                  className="w-20 md:w-24 dark:hidden"
+                />
+                <img
+                  src={soundCloudLogoWhite}
+                  alt="SoundCloud"
+                  className="hidden w-20 md:w-24 dark:block"
+                />
+              </a>
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="z-1 relative mt-1 md:mt-16">
+      <div className="z-1 relative mt-1 md:mt-8">
         <div className="flex flex-wrap items-center justify-between relative mb-5 md:mb-10 md:pr-64">
           <h4 className="flex items-center justify-between gap-x-2 text-lg lg:text-2xl font-bold">
             <ListMusic className="max-md:size-5" />

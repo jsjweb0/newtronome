@@ -3,6 +3,7 @@ import type { PlayerStore } from '../types/player.types';
 
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
   tracks: [],
+  currentTrack: null,
   currentIndex: 0,
   isPlaying: false,
   currentTime: 0,
@@ -38,6 +39,10 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       duration: 0,
       isPlaying: true,
     });
+  },
+
+  setCurrentTrack: (currentTrack) => {
+    set({ currentTrack });
   },
 
   setPlaying: (isPlaying) => set({ isPlaying }),
@@ -94,4 +99,5 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 }));
 
-export const selectCurrentTrack = (state: PlayerStore) => state.tracks[state.currentIndex] ?? null;
+export const selectCurrentTrack = (state: PlayerStore) =>
+  state.currentTrack;

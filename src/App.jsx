@@ -4,7 +4,6 @@ import {PostsProvider} from "./contexts/postsContext.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import SignupPage from "./pages/auth/SignupPage.jsx";
-import SearchPage from "./pages/SearchPage.jsx";
 import MyActivity from "./pages/user/MyActivity.jsx";
 import DynamicBoard from "./pages/board/DynamicBoard.jsx";
 import PostView from "./pages/board/PostView.jsx";
@@ -28,7 +27,6 @@ function App() {
                     <Route index element={<HomePage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
-                    <Route path="/search" element={<SearchPage />} />
                     <Route path="/account" element={<AccountProfile />} />
                     <Route path="/mypage" element={
                         <PostsProvider>
