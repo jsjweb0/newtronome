@@ -9,15 +9,6 @@ export interface PlayerTrack {
   tags: string[];
 }
 
-export interface PlaylistMetadata {
-  title: string;
-  genre: string;
-  genres: string[];
-  artworkUrl: string | null;
-  permalinkUrl: string | null;
-  tracks: PlayerTrack[];
-}
-
 export interface PlayerState {
   tracks: PlayerTrack[];
   currentTrack: PlayerTrack | null;

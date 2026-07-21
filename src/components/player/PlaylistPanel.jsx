@@ -7,6 +7,9 @@ import { Link as LinkIcon, ListMusic, Play } from 'lucide-react';
 import noImage from '../../assets/no-image.png';
 import clsx from 'clsx';
 import SoundCloudWidget from '../../features/player/components/SoundCloudWidget.jsx';
+import soundCloudFaviconBlack from '../../assets/brands/soundcloud-favicon-black.webp';
+import soundCloudFaviconWhite from '../../assets/brands/soundcloud-favicon-white.webp';
+import Tooltip from '../ui/Tooltip.jsx';
 
 export default function PlaylistPanel({
   playlistUrl,
@@ -59,7 +62,7 @@ export default function PlaylistPanel({
 
           {/* top cover*/}
           <div className="flex flex-col gap-y-1 p-4">
-            <div>
+            <div className="mb-2">
               <img
                 src={toHighResArtwork(playlistTrack?.artworkUrl)}
                 alt={playlistTrack?.title || '플레이리스트 트랙'}
@@ -70,21 +73,30 @@ export default function PlaylistPanel({
                 }}
               />
             </div>
-            {genre && <div className="mt-4 text-xs text-textSub">{genre}</div>}
-            {playlistTrack?.permalinkUrl ? (
+            <Tooltip content="SoundCloud에서 듣기" className="max-xl:hidden">
               <a
-                href={playlistTrack.permalinkUrl}
+                href={playlistTrack?.permalinkUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${playlistTrack.title} 원곡을 SoundCloud에서 열기 (새 창)`}
-                className="flex gap-1.5 items-center mt-4 text-lg font-black leading-6 hover:text-primary"
+                aria-label={`${playlistTrack?.title} 원곡을 SoundCloud에서 열기 (새 창)`}
+                className="relative inline-flex flex-col hover:text-primary"
               >
-                {playlistTrack.title}
-                <LinkIcon className="size-3.5 shrink-0" />
+                <span>
+                  <img
+                    src={soundCloudFaviconBlack}
+                    alt=""
+                    className="size-7 object-contain dark:hidden"
+                  />
+                  <img
+                    src={soundCloudFaviconWhite}
+                    alt=""
+                    className="hidden size-7 object-contain dark:block"
+                  />
+                </span>
+                <strong className="font-black">{playlistTrack?.title}</strong>
               </a>
-            ) : (
-              <div className="mt-4 text-lg font-black leading-6">{playlistTrack?.title}</div>
-            )}
+            </Tooltip>
+
             <div className="mt-1">{playlistTrack?.artist}</div>
             <div className="flex items-center gap-x-2 mt-4 text-xs text-textSub">
               <LikeButton

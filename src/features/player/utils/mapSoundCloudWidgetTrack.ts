@@ -1,6 +1,11 @@
 import type { PlayerTrack } from '../types/player.types';
 import type { SoundCloudWidgetTrack } from '../types/soundcloud-widget.types';
-import { parseSoundCloudTags } from '../../../utils/soundCloudTrackMapper';
+
+const parseSoundCloudTags = (tagList: string): string[] => {
+  const tokens = tagList.match(/"[^"]+"|\S+/g) ?? [];
+
+  return tokens.map((tag) => tag.replace(/^"|"$/g, '')).filter(Boolean);
+};
 
 export function mapSoundCloudWidgetTrack(
   track: SoundCloudWidgetTrack | null | undefined

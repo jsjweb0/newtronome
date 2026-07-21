@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import useSoundCloudApi from '../hooks/useSoundCloudApi';
+import { Outlet } from 'react-router-dom';
 import { useSoundCloudWidget } from '../features/player/hooks/useSoundCloudWidget';
 import { usePlayerStore } from '../features/player/stores/usePlayerStore';
 import '../assets/css/index.css';
@@ -11,7 +10,6 @@ import PlaylistPanel from '../components/player/PlaylistPanel.jsx';
 import Tooltip from '../components/ui/Tooltip.jsx';
 import { PanelLeft } from 'lucide-react';
 import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton.jsx';
-import SearchPanel from '../components/player/SearchPanel.jsx';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle.jsx';
 
@@ -39,36 +37,13 @@ export default function MainLayout() {
     const randomIndex = Math.floor(Math.random() * PLAYLIST_URLS.length);
     return PLAYLIST_URLS[randomIndex];
   });
-  const [playlistMetadata, setPlaylistMetadata] = useState(null);
-
   const soundCloudWidget = useSoundCloudWidget();
-  const { getPlaylistMetadataByUrl } = useSoundCloudApi();
 
-  const setPlaylist = usePlayerStore((state) => state.setPlaylist);
   const tracks = usePlayerStore((state) => state.tracks);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isSearchPage = location.pathname.startsWith('/search');
-
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    getPlaylistMetadataByUrl(playlistUrl).then((metadata) => {
-      if (isCancelled) return;
-
-      setPlaylistMetadata(metadata);
-      setPlaylist(metadata?.tracks ?? [], 0);
-    });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [getPlaylistMetadataByUrl, playlistUrl, setPlaylist]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -131,16 +106,14 @@ export default function MainLayout() {
             isPanelCollapsed ? 'xl:max-w-[calc(100%-300px-0.75rem)]' : 'xl:max-w-full'
           )}
         >
-          <SearchPanel
-            className="hidden lg:block"
-            onSearch={(q) => {
-              // 입력값 q 를 쿼리스트링에 담아 /search 로 이동
-              navigate(`/search?q=${encodeURIComponent(q)}`);
-            }}
-            showSuggestions={isSearchPage}
-          />
           <article className="min-h-[calc(100vh-162px)] xl:min-h-[calc(100vh-232px)] max-lg:mt-2">
-            <Outlet context={{ playlistMetadata }} />
+            <Outlet
+              context={{
+                playlistUrl,
+                onSelectTrack: soundCloudWidget.selectTrack,
+                onToggleTrack: soundCloudWidget.toggle,
+              }}
+            />
           </article>
         </main>
 

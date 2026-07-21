@@ -1,5 +1,7 @@
 import { AudioEqualizerIcon } from '../../../components/icons';
 
+const WIDGET_PRELOAD_HEIGHT = 3000;
+
 export default function SoundCloudWidget({ playlistUrl, controller }) {
   const { iframeRef, isReady } = controller;
 
@@ -25,12 +27,11 @@ export default function SoundCloudWidget({ playlistUrl, controller }) {
         title="SoundCloud 플레이리스트"
         src={widgetUrl}
         width="100%"
-        height="450"
+        height={WIDGET_PRELOAD_HEIGHT}
         scrolling="no"
         frameBorder="0"
         allow="autoplay"
         className="block w-full"
-        tabIndex={-1}
       />
     </>
   );

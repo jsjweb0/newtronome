@@ -1,6 +1,0 @@
-name = "newtronome-soundcloud-api"
-main = "workers/soundcloud-api.js"
-compatibility_date = "2026-05-09"
-
-[observability]
-enabled = true

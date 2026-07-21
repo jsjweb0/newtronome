@@ -7,6 +7,11 @@ import type {
 import { mapSoundCloudWidgetTrack } from '../utils/mapSoundCloudWidgetTrack';
 import type { PlayerTrack } from '../types/player.types';
 
+const PLAYLIST_LOAD_RETRY_DELAY_MS = 250;
+const PLAYLIST_LOAD_MAX_RETRIES = 12;
+
+const isPlayerTrack = (track: PlayerTrack | null): track is PlayerTrack => track !== null;
+
 export function useSoundCloudWidget() {
   const [iframeElement, setIframeElement] = useState<HTMLIFrameElement | null>(null);
 
@@ -27,6 +32,7 @@ export function useSoundCloudWidget() {
   const setDuration = usePlayerStore((state) => state.setDuration);
   const setMuted = usePlayerStore((state) => state.setMuted);
   const setCurrentTrack = usePlayerStore((state) => state.setCurrentTrack);
+  const setPlaylist = usePlayerStore((state) => state.setPlaylist);
 
   const selectTrack = useCallback((index: number) => {
     widgetRef.current?.skip(index);
@@ -44,6 +50,7 @@ export function useSoundCloudWidget() {
 
     const widget = soundCloud.Widget(iframeElement);
     const events = soundCloud.Widget.Events;
+    let playlistRetryTimer: number | undefined;
 
     widgetRef.current = widget;
 
@@ -65,10 +72,30 @@ export function useSoundCloudWidget() {
       });
     };
 
+    const updatePlaylistTracks = (retryCount = 0) => {
+      widget.getSounds((sounds) => {
+        if (widgetRef.current !== widget) return;
+
+        const tracks = sounds.map(mapSoundCloudWidgetTrack).filter(isPlayerTrack);
+        const hasPartialTracks = sounds.length === 0 || tracks.length < sounds.length;
+
+        if (hasPartialTracks && retryCount < PLAYLIST_LOAD_MAX_RETRIES) {
+          playlistRetryTimer = window.setTimeout(
+            () => updatePlaylistTracks(retryCount + 1),
+            PLAYLIST_LOAD_RETRY_DELAY_MS
+          );
+          return;
+        }
+
+        setPlaylist(tracks, 0);
+      });
+    };
+
     const handleReady = () => {
       setIsReady(true);
       setWidgetIsPlaying(false);
       updateCurrentTrack(true);
+      updatePlaylistTracks();
       updateDuration();
     };
 
@@ -107,6 +134,10 @@ export function useSoundCloudWidget() {
     };
 
     return () => {
+      if (playlistRetryTimer !== undefined) {
+        window.clearTimeout(playlistRetryTimer);
+      }
+
       safelyUnbind(events.READY);
       safelyUnbind(events.PLAY);
       safelyUnbind(events.PAUSE);
@@ -116,7 +147,7 @@ export function useSoundCloudWidget() {
         widgetRef.current = null;
       }
     };
-  }, [iframeElement, setCurrentTime, setCurrentTrack, setDuration, setPlaying]);
+  }, [iframeElement, setCurrentTime, setCurrentTrack, setDuration, setPlaying, setPlaylist]);
 
   const play = useCallback(() => {
     widgetRef.current?.play();
