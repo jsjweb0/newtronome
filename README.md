@@ -52,6 +52,7 @@ npm run dev
 ## Frontend Deployment
 
 Cloudflare 로그인 후 빌드 결과를 Workers Static Assets로 배포합니다.
+루트의 `wrangler.toml`은 로컬 배포와 Cloudflare Git 빌드가 함께 사용하는 프론트엔드 설정입니다.
 
 ```bash
 npx wrangler login
