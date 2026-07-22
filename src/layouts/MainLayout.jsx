@@ -64,7 +64,7 @@ export default function MainLayout() {
   }, []);
 
   return (
-    <div className="relative lg:pt-3 px-3 pb-27.5 xl:pb-35 text-textBase dark:bg-black">
+    <div className="overflow-x-clip relative lg:pt-3 px-3 pb-27.5 xl:pb-35 text-textBase dark:bg-black">
       {/* 왼쪽 사이드바 */}
       <header
         className={clsx(
