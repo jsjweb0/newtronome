@@ -1,3 +1,24 @@
-import {createContext} from "react";
+import { createContext } from 'react';
 
-export const ToastContext = createContext({ showToast: () => {} });
+/**
+ * @typedef {'success' | 'warning' | 'error' | 'info'} ToastType
+ */
+
+/**
+ * @typedef {{
+ *   message: string;
+ *   duration?: number;
+ *   type?: ToastType;
+ * }} ToastOptions
+ */
+
+/**
+ * @type {{
+ *   showToast: (options: ToastOptions) => void;
+ * }}
+ */
+const defaultToastContextValue = {
+  showToast: () => {},
+};
+
+export const ToastContext = createContext(defaultToastContextValue);
