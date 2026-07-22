@@ -114,22 +114,6 @@
   }
 }
 
-.slick-dots {
-  @apply flex justify-center absolute bottom-2 md:bottom-5 inset-s-0 inset-e-0 gap-x-2;
-}
-.slick-dots li {
-  @apply w-auto h-auto m-0;
-}
-.slick-dots li button {
-  @apply inline-block size-2.5 md:size-3 p-0 border border-primary rounded-full cursor-pointer text-base dark:border-neutral-600;
-}
-.slick-dots li button:before {
-  content: none;
-}
-.slick-dots li.slick-active button {
-  @apply bg-primary border-b-primary dark:bg-blue-500 dark:border-blue-500;
-}
-
 .fade-in {
   opacity: 1;
   transition: opacity 0.4s ease;

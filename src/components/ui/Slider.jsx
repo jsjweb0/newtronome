@@ -1,11 +1,20 @@
-import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+import { useState } from 'react';
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 
-export default function ImageSlider({images = [], alt = '', className}) {
+export default function ImageSlider({ images = [], alt = '', className }) {
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const counterLength = String(images.length).length;
+    const currentSlideNumber = String(Math.min(currentSlide + 1, images.length)).padStart(
+        counterLength,
+        '0'
+    );
+    const totalSlideNumber = String(images.length).padStart(counterLength, '0');
+
     const settings = {
         fade: true,
-        dots: true,
+        dots: false,
         infinite: true,
         speed: 400,
         slidesToShow: 1,
@@ -13,12 +22,7 @@ export default function ImageSlider({images = [], alt = '', className}) {
         arrows: false,
         autoplay: true,
         autoplaySpeed: 4000,
-        appendDots: dots => (
-            <ul>{dots}</ul>
-        ),
-        customPaging: i => (
-            <button title={`${i + 1}번째 슬라이드로 이동`}/>
-        )
+        afterChange: setCurrentSlide,
     };
 
     return (
@@ -37,6 +41,14 @@ export default function ImageSlider({images = [], alt = '', className}) {
                     </div>
                 ))}
             </Slider>
+            {images.length > 1 && (
+                <span
+                    className="absolute right-3 bottom-3 px-2 py-1 rounded-full bg-black/45 backdrop-blur-sm text-[10px] font-inter tabular-nums tracking-wide text-white/80"
+                    aria-hidden="true"
+                >
+                    {currentSlideNumber} / {totalSlideNumber}
+                </span>
+            )}
         </div>
     )
 }
