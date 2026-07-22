@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react';
 import { selectCurrentTrack, usePlayerStore } from '../../features/player/stores/usePlayerStore';
 import {
   SkipBack,
@@ -14,8 +14,19 @@ import {
 import Tooltip from '../ui/Tooltip.jsx';
 import LikeButton from '../ui/LikeButton.jsx';
 import { useDarkMode } from '../../contexts/useDarkMode.js';
+import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
 
-export default function PlayerBar({ onPanelToggle, collapsed, soundCloudWidget }) {
+interface PlayerBarProps {
+  onPanelToggle: () => void;
+  collapsed: boolean;
+  soundCloudWidget: ReturnType<typeof useSoundCloudWidget>;
+}
+
+export default function PlayerBar({
+  onPanelToggle,
+  collapsed,
+  soundCloudWidget,
+}: PlayerBarProps) {
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const currentTime = usePlayerStore((state) => state.currentTime);
@@ -26,33 +37,40 @@ export default function PlayerBar({ onPanelToggle, collapsed, soundCloudWidget }
     soundCloudWidget;
 
   const { isDarkMode } = useDarkMode();
-  const rangeRef = useRef(null);
+  const rangeRef = useRef<HTMLInputElement>(null);
 
   const min = 0;
   const max = duration || 0;
   const step = 0.01; // 0.01초 단위로 이동
   const value = currentTime;
 
-  const handleChange = (event) => {
-    const time = Number(event.target.value);
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const time = Number(event.currentTarget.value);
     seek(time);
   };
 
   // 슬라이더 배경 업데이트
-  const handleInput = useCallback(
-    (e) => {
-      const { min, max, value } = e.target;
-      const pct = ((value - min) / (max - min)) * 100;
+  const updateRangeBackground = useCallback(
+    (range: HTMLInputElement) => {
+      const minValue = Number(range.min);
+      const maxValue = Number(range.max);
+      const currentValue = Number(range.value);
+      const rangeSize = maxValue - minValue;
+      const pct = rangeSize > 0 ? ((currentValue - minValue) / rangeSize) * 100 : 0;
       const darkStyle = `linear-gradient(to right, #00FFB2 0%, #00FFB2 ${pct}%, #333 ${pct}%, #333 100%)`;
       const lightStyle = `linear-gradient(to right, #fd81a0 0%, #fd81a0 ${pct}%, #ebebeb ${pct}%, #ebebeb 100%)`;
-      e.target.style.background = isDarkMode ? darkStyle : lightStyle;
+      range.style.background = isDarkMode ? darkStyle : lightStyle;
     },
     [isDarkMode]
   );
 
+  const handleInput = (event: FormEvent<HTMLInputElement>) => {
+    updateRangeBackground(event.currentTarget);
+  };
+
   useEffect(() => {
-    if (rangeRef.current) handleInput({ target: rangeRef.current });
-  }, [currentTime, duration, handleInput]);
+    if (rangeRef.current) updateRangeBackground(rangeRef.current);
+  }, [currentTime, duration, updateRangeBackground]);
 
   if (!currentTrack) return null;
 
@@ -62,14 +80,14 @@ export default function PlayerBar({ onPanelToggle, collapsed, soundCloudWidget }
       <div className="xl:shrink-0 flex items-center gap-2 xl:gap-4 xl:w-[29%] min-w-0">
         <span className="shrink-0 w-11 h-11 xl:w-21 xl:h-21">
           <img
-            src={currentTrack?.artworkUrl}
-            alt={currentTrack?.title}
+            src={currentTrack.artworkUrl ?? undefined}
+            alt={currentTrack.title}
             className="rounded-xl xl:rounded-2xl object-cover"
           />
         </span>
         <div className="overflow-hidden lg:grow max-xl:mb-2">
-          <div className="text-xs xl:text-base font-medium truncate">{currentTrack?.title}</div>
-          <p className="text-[11px] xl:text-sm text-textSub">{currentTrack?.artist}</p>
+          <div className="text-xs xl:text-base font-medium truncate">{currentTrack.title}</div>
+          <p className="text-[11px] xl:text-sm text-textSub">{currentTrack.artist}</p>
         </div>
       </div>
 
@@ -87,7 +105,7 @@ export default function PlayerBar({ onPanelToggle, collapsed, soundCloudWidget }
             onInput={handleInput}
             className="w-full h-1 xl:h-1.5 rounded appearance-none"
             style={{ background: '#ddd' }}
-            aria-label={currentTrack?.title}
+            aria-label={currentTrack.title}
           />
         </div>
 
@@ -152,7 +170,7 @@ export default function PlayerBar({ onPanelToggle, collapsed, soundCloudWidget }
         </Tooltip>
         <Tooltip content="좋아요">
           <LikeButton
-            docId={String(currentTrack?.id)}
+            docId={String(currentTrack.id)}
             collection="tracks"
             showCount={false}
             svgClassName="size-4 xl:size-7 text-white fill-white"

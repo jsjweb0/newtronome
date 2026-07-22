@@ -18,11 +18,11 @@ export default function LikeButton({
                                        type = 'heart',
                                        collection,
                                        docId,           // 문서 ID (포스트ID 또는 댓글ID)
-                                       parentId,        // 댓글일 때만 필요
-                                       subCollection,   // 댓글일 때만 "comments"
+                                       parentId = undefined,        // 댓글일 때만 필요
+                                       subCollection = undefined,   // 댓글일 때만 "comments"
                                        showCount = true,
-                                       className,
-                                       svgClassName
+                                       className = '',
+                                       svgClassName = ''
                                    }) {
     const {user} = useAuth();
     const {addNotification} = useNotifications();
