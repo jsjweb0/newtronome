@@ -12,9 +12,9 @@ import {
   VolumeOff,
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip.jsx';
-import LikeButton from '../ui/LikeButton.jsx';
 import { useDarkMode } from '../../contexts/useDarkMode.js';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
+import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
 
 interface PlayerBarProps {
   onPanelToggle: () => void;
@@ -168,12 +168,10 @@ export default function PlayerBar({
             <ListMusic aria-hidden="true" className="size-4 xl:size-7" />
           </button>
         </Tooltip>
-        <Tooltip content="좋아요">
-          <LikeButton
-            docId={String(currentTrack.id)}
-            collection="tracks"
-            showCount={false}
-            svgClassName="size-4 xl:size-7 text-white fill-white"
+        <Tooltip content="북마크">
+          <TrackBookmarkButton
+            track={currentTrack}
+            className="size-4 xl:size-7"
           />
         </Tooltip>
         <div className="hidden xl:flex items-center gap-x-3 w-full">

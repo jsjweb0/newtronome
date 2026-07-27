@@ -1,4 +1,4 @@
-import { Bookmark } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import clsx from 'clsx';
 import type { PlayerTrack } from '../../player/types/player.types';
 import { useTrackBookmark } from '../hooks/useTrackBookmark';
@@ -6,11 +6,13 @@ import { useTrackBookmark } from '../hooks/useTrackBookmark';
 export type TrackBookmarkButtonProps = {
   track: PlayerTrack;
   className?: string;
+  iconClassName?: string;
 };
 
 export default function TrackBookmarkButton({
   track,
   className,
+  iconClassName,
 }: TrackBookmarkButtonProps) {
   const {
     isBookmarked,
@@ -31,11 +33,12 @@ export default function TrackBookmarkButton({
         className,
       )}
     >
-      <Bookmark
+      <Heart
         aria-hidden="true"
         className={clsx(
-          'size-5',
+          'size-6',
           isBookmarked && 'fill-primary text-primary',
+          iconClassName
         )}
       />
     </button>

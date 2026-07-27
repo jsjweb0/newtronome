@@ -1,7 +1,6 @@
 import { toHighResArtwork } from '../../utils/image.js';
 import { formatTime } from '../../utils/format.js';
 import HeaderButtons from '../layout/HeaderButtons.jsx';
-import LikeButton from '../ui/LikeButton.jsx';
 import { AudioEqualizerIcon } from '../icons/index.js';
 import { ListMusic, Play } from 'lucide-react';
 import noImage from '../../assets/no-image.png';
@@ -12,6 +11,7 @@ import soundCloudFaviconWhite from '../../assets/brands/soundcloud-favicon-white
 import Tooltip from '../ui/Tooltip.jsx';
 import type { PlayerTrack } from '../../features/player/types/player.types';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
+import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton.js';
 
 interface PlaylistPanelProps {
   playlistUrl: string;
@@ -115,15 +115,18 @@ export default function PlaylistPanel({
                 )}
 
                 <div className="mt-1">{playlistTrack.artist}</div>
-                <div className="flex items-center gap-x-2 mt-4 text-xs text-textSub">
-                  <LikeButton
-                    docId={String(playlistTrack.id)}
-                    collection="tracks"
-                    className="size-8 rounded-lg border border-textThr dark:border-none dark:bg-textThr mr-2 text-textBase"
+                <div className="flex items-center gap-x-2.5 mt-4 text-xs text-textSub">
+                  <TrackBookmarkButton
+                    track={playlistTrack}
+                    className="size-8 rounded-lg border border-textThr dark:border-none dark:bg-textThr text-textBase"
+                    iconClassName="size-4!"
                   />
                   Likes
-                  <Play className="size-3 fill-textBase stroke-none" />
-                  {formatTime(playlistTrack.durationMs)}
+                  <div className="w-px h-px rounded-full bg-textSub"></div>
+                  <div className="flex items-center gap-1.5">
+                    <Play className="size-3 fill-textBase stroke-none" />
+                    {formatTime(playlistTrack.durationMs)}
+                  </div>
                 </div>
               </>
             ) : (

@@ -14,6 +14,7 @@ import PetPostView from "./pages/board/PetPostView.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import AccountProfile from "./pages/user/AccountProfile.jsx";
 import ScrollToTopSmooth from "./components/ui/ScrollToTopSmooth.jsx";
+import LikedTracksPage from "./features/bookmarks/pages/LikedTracksPage";
 
 function App() {
 
@@ -28,6 +29,7 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
                     <Route path="/account" element={<AccountProfile />} />
+                    <Route path="/likes" element={<LikedTracksPage />} />
                     <Route path="/mypage" element={
                         <PostsProvider>
                             <MyActivity />
