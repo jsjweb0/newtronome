@@ -3,7 +3,22 @@ import {viewModeMultiClass, viewModeClass} from "../../utils/viewModeClass.js";
 import {formatTime} from "../../utils/format.js";
 import {toHighResArtwork} from "../../utils/image.js";
 import {PauseRound, PlayRound} from "../icons/index.js";
+import noImage from "../../assets/no-image.png";
 
+/**
+ * @param {{
+ *   idx: number;
+ *   track: import("../../features/player/types/player.types").PlayerTrack;
+ *   currentTrack?: import("../../features/player/types/player.types").PlayerTrack | null;
+ *   viewMode?: "grid" | "list";
+ *   isPlaying?: boolean;
+ *   onTrackClick?: (track: import("../../features/player/types/player.types").PlayerTrack) => void;
+ *   isPlayingPreview?: boolean;
+ *   interactive?: boolean;
+ *   showDuration?: boolean;
+ *   footerActions?: import("react").ReactNode;
+ * }} props
+ */
 export default function TrackItem({
                                       idx,
                                       track,
@@ -11,7 +26,10 @@ export default function TrackItem({
                                       viewMode = "grid",
                                       isPlaying = false,
                                       onTrackClick,
-                                      isPlayingPreview = false
+                                      isPlayingPreview = false,
+                                      interactive = true,
+                                      showDuration = false,
+                                      footerActions
                                   }) {
     const isThisTrack = currentTrack?.id === track.id;
     const isPlayingTrack = isThisTrack && isPlaying;
@@ -23,23 +41,22 @@ export default function TrackItem({
         isPaused && "isPaused"
     );
 
-    return (
-        <div className={viewModeMultiClass(viewMode, {
-            grid: "max-w-60",
-            list: "flex items-center gap-4 max-w-none py-2"
-        })}>
-            <button type="button"
-                    onClick={() => {
-                        onTrackClick?.(track);
-                    }}
-                    className={clsx(
-                        "group w-full",
-                        viewModeMultiClass(viewMode, {
-                            grid: "flex flex-1 flex-col",
-                            list: "grid grid-cols-[20px_58px_auto_28px] max-md:grid-rows-2 md:grid-cols-[24px_80px_2fr_1fr_60px] gap-x-1 md:gap-x-6 items-center text-left hover:bg-textSub/10"
-                        }),
-                        statusClass
-                    )}>
+    const contentClassName = clsx(
+        interactive && "group",
+        "w-full",
+        viewModeMultiClass(viewMode, {
+            grid: "flex flex-1 flex-col",
+            list: clsx(
+                "grid grid-cols-[20px_58px_auto_28px] max-md:grid-rows-2",
+                "md:grid-cols-[24px_80px_2fr_1fr_60px] gap-x-1 md:gap-x-6 items-center text-left",
+                interactive && "hover:bg-textSub/10"
+            )
+        }),
+        interactive && statusClass
+    );
+
+    const trackContent = (
+        <>
                 {viewMode === "list" && (
                     <span className="block text-textSub text-xs lg:text-sm font-inter row-span-2">{idx + 1}</span>
                 )}
@@ -54,30 +71,36 @@ export default function TrackItem({
                          className={clsx(
                              "block object-cover w-full h-full transition-transform",
                              viewModeClass(viewMode, "absolute top-0 left-0"),
-                             "group-hover:scale-110"
+                             interactive && "group-hover:scale-110"
                          )}
+                         onError={(event) => {
+                             event.currentTarget.src = noImage;
+                             event.currentTarget.onerror = null;
+                         }}
                     />
-                    <i className={clsx(
-                        "hidden items-center justify-center absolute inset-0 bg-white/30 ",
-                        "opacity-0 transition-all duration-300",
-                        "group-hover:flex group-[.isPlaying]:flex group-[.isPaused]:flex",
-                        "group-hover:opacity-100 group-[.isPlaying]:opacity-100 group-[.isPaused]:opacity-100"
+                    {interactive && (
+                        <i className={clsx(
+                            "hidden items-center justify-center absolute inset-0 bg-white/30 ",
+                            "opacity-0 transition-all duration-300",
+                            "group-hover:flex group-[.isPlaying]:flex group-[.isPaused]:flex",
+                            "group-hover:opacity-100 group-[.isPlaying]:opacity-100 group-[.isPaused]:opacity-100"
+                        )}
+                        >
+                           {isPlayingTrack || isPlayingPreview ? (
+                               <PauseRound
+                                   className={clsx(
+                                       "fade-in fill-white transition-all duration-300",
+                                       viewModeClass(viewMode, "size-12 lg:size-18", "size-6 lg:size-8"),
+                                   )}/>
+                           ) : (
+                               <PlayRound
+                                   className={clsx(
+                                       "fade-in fill-white transition-all duration-300",
+                                       viewModeClass(viewMode, "size-12 lg:size-18", "size-6 lg:size-8"),
+                                   )}/>
+                           )}
+                        </i>
                     )}
-                    >
-                       {isPlayingTrack || isPlayingPreview ? (
-                           <PauseRound
-                               className={clsx(
-                                   "fade-in fill-white transition-all duration-300",
-                                   viewModeClass(viewMode, "size-12 lg:size-18", "size-6 lg:size-8"),
-                               )}/>
-                       ) : (
-                           <PlayRound
-                               className={clsx(
-                                   "fade-in fill-white transition-all duration-300",
-                                   viewModeClass(viewMode, "size-12 lg:size-18", "size-6 lg:size-8"),
-                               )}/>
-                       )}
-                    </i>
                 </span>
                 <span className={clsx(
                     "block max-lg:text-sm",
@@ -97,10 +120,42 @@ export default function TrackItem({
                     )}>
                     {track.artist}
                 </span>
-                {viewMode === "list" && (
-                    <span className="row-span-2 block text-textSub text-xs lg:text-sm font-inter">{formatTime(track.durationMs)}</span>
+                {(viewMode === "list" || showDuration) && (
+                    <span className={clsx(
+                        "block text-textSub text-xs lg:text-sm font-inter",
+                        viewModeClass(viewMode, "mt-1", "row-span-2")
+                    )}>
+                        {formatTime(track.durationMs)}
+                    </span>
                 )}
-            </button>
+        </>
+    );
+
+    return (
+        <div className={viewModeMultiClass(viewMode, {
+            grid: "max-w-60",
+            list: "flex items-center gap-4 max-w-none py-2"
+        })}>
+            {interactive ? (
+                <button
+                    type="button"
+                    onClick={() => {
+                        onTrackClick?.(track);
+                    }}
+                    className={contentClassName}
+                >
+                    {trackContent}
+                </button>
+            ) : (
+                <article className={contentClassName}>
+                    {trackContent}
+                </article>
+            )}
+            {footerActions && (
+                <div className="mt-3">
+                    {footerActions}
+                </div>
+            )}
         </div>
     );
 }

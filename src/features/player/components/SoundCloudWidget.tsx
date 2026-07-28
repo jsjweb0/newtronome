@@ -1,8 +1,22 @@
+import type { RefCallback } from 'react';
 import { AudioEqualizerIcon } from '../../../components/icons';
 
 const WIDGET_PRELOAD_HEIGHT = 3000;
 
-export default function SoundCloudWidget({ playlistUrl, controller }) {
+interface SoundCloudWidgetController {
+  iframeRef: RefCallback<HTMLIFrameElement>;
+  isReady: boolean;
+}
+
+interface SoundCloudWidgetProps {
+  playlistUrl: string;
+  controller: SoundCloudWidgetController;
+}
+
+export default function SoundCloudWidget({
+  playlistUrl,
+  controller,
+}: SoundCloudWidgetProps) {
   const { iframeRef, isReady } = controller;
 
   const widgetUrl =
