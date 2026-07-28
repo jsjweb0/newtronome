@@ -64,7 +64,7 @@ export default function LoginForm() {
       setForm((prev) => ({ ...prev, email: savedEmail }));
       setRememberMe(true);
     }
-  }, []);
+  }, [setForm]);
 
   return (
     <div className="mt-7 px-4">

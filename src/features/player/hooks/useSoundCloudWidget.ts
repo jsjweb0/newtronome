@@ -21,6 +21,7 @@ export function useSoundCloudWidget() {
 
   const widgetRef = useRef<SoundCloudWidgetInstance | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [isPlaylistLoading, setIsPlaylistLoading] = useState(true);
 
   const [widgetTrack, setWidgetTrack] = useState<PlayerTrack | null>(null);
   const [widgetIsPlaying, setWidgetIsPlaying] = useState(false);
@@ -40,6 +41,7 @@ export function useSoundCloudWidget() {
 
   useEffect(() => {
     setIsReady(false);
+    setIsPlaylistLoading(true);
 
     const soundCloud = window.SC;
 
@@ -88,6 +90,7 @@ export function useSoundCloudWidget() {
         }
 
         setPlaylist(tracks, 0);
+        setIsPlaylistLoading(false);
       });
     };
 
@@ -206,6 +209,7 @@ export function useSoundCloudWidget() {
     iframeRef,
     widgetRef,
     isReady,
+    isPlaylistLoading,
     play,
     pause,
     toggle,

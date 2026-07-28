@@ -11,8 +11,7 @@ export default function PostForm({
                                      mode = "create",
                                      boardType,
                                      onSubmit,
-                                     initialData = {},
-                                     nextId
+                                     initialData = {}
                                  }) {
     const navigate = useNavigate();
     const {showToast} = useToast();
@@ -27,9 +26,6 @@ export default function PostForm({
         : user?.email || '';
     const [writer, setWriter] = useState(defaultWriter);
     const [errors, setError] = useState({category: '', title: '', content: ''});
-
-    const resolvedId = initialData?.id || nextId;
-    const resolvedUid = initialData?.uid || `${boardType}-${resolvedId}`;
 
     const titleRef = useRef(null);
     const contentRef = useRef(null);
@@ -81,8 +77,6 @@ export default function PostForm({
 
         const now = formattedDate; // 또는 new Date().toISOString()
         const payload = {
-            id: resolvedId,
-            uid: resolvedUid,
             boardType,
             isNotice,
             category: selectedCategory,

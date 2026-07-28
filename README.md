@@ -30,16 +30,22 @@ Newtronome은 React 학습 과정에서 시작해 음악 재생, 사용자 인�
 
 ```txt
 src/
-  components/     Reusable UI, player, track, board, auth components
-  contexts/       Auth, audio player, toast, notification providers
-  hooks/          Shared UI state hooks
-  layouts/        Shared page layout
-  pages/          Route-level pages
-  utils/          Formatting and data helper functions
-workers/
-  frontend.js     Cloudflare frontend Worker entry
+  assets/          이미지, 폰트, 전역 스타일
+  components/      공통 UI, 레이아웃, 게시판, 트랙 컴포넌트
+  contexts/        인증, 테마, 토스트, 알림 상태
+  features/
+    bookmarks/     저장 트랙 컴포넌트, 훅, 페이지, 서비스, 타입
+    player/        SoundCloud 플레이어 컴포넌트, 훅, 스토어, 타입
+  hooks/           공통 애플리케이션 훅
+  layouts/         공통 페이지 레이아웃
+  pages/           인증, 게시판, 사용자, 공통 라우트 페이지
+  utils/           포맷팅 및 데이터 유틸리티
 public/
-  _redirects      SPA fallback for static hosting
+  mock/            로컬 게시글 및 댓글 목업 데이터
+workers/
+  frontend.js      Cloudflare 프론트엔드 Worker 진입점
+firestore.rules    Firestore 접근 제어 규칙
+wrangler.toml      Cloudflare 프론트엔드 배포 설정
 ```
 
 ## Installation
@@ -51,8 +57,9 @@ npm run dev
 
 ## Frontend Deployment
 
-Cloudflare 로그인 후 빌드 결과를 Workers Static Assets로 배포합니다.
-루트의 `wrangler.toml`은 로컬 배포와 Cloudflare Git 빌드가 함께 사용하는 프론트엔드 설정입니다.
+프론트엔드는 루트의 `wrangler.toml`을 사용해 Cloudflare Workers Static Assets로 배포합니다.
+
+로컬에서 수동으로 배포하려면 Cloudflare 로그인 후 다음 명령을 실행합니다.
 
 ```bash
 npx wrangler login
@@ -60,9 +67,12 @@ npm run build
 npm run frontend:deploy
 ```
 
+`main` 브랜치에 변경 사항이 반영되면 GitHub Actions가 동일한 `wrangler.toml`로 빌드와 배포를 자동 실행합니다. 자동 배포에는 GitHub 저장소의 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` secret이 필요합니다.
+
 ## Build Commands
 
 ```bash
+npm run typecheck
 npm run lint
 npm run build
 ```
@@ -83,9 +93,9 @@ SoundCloud Widget은 iframe에 실제로 렌더링된 범위만큼 플레이리�
 - 외부 음악 API를 사용할 때 로딩, 빈 목록, 재생 불가능한 트랙 상태를 세심하게 처리해야 한다는 점을 배웠습니다.
 - 인증, 프로필, 게시판, 마이페이지 흐름을 구현하며 라우트 중심의 React 앱 구조와 사용자별 상태 관리 방식을 익혔습니다.
 
-## Future Improvements
+## 향후 개선 사항
 
-- Add a custom domain for the Cloudflare frontend deployment.
-- Refactor the learning-project structure into clearer feature-based modules.
-- Improve loading, empty, and error states across music, board, and mypage views.
-- Add end-to-end checks for playlist loading and playback flows.
+- Cloudflare 프론트엔드 배포에 커스텀 도메인 연결
+- 학습 프로젝트 구조를 더 명확한 기능 단위 모듈로 점진적으로 개선
+- 음악, 게시판, 마이페이지의 로딩·빈 상태·오류 상태 보완
+- 플레이리스트 로딩과 재생 흐름에 대한 E2E 테스트 추가

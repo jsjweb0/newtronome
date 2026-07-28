@@ -1,15 +1,26 @@
 import { toHighResArtwork } from '../../utils/image.js';
 import { formatTime } from '../../utils/format.js';
 import HeaderButtons from '../layout/HeaderButtons.jsx';
-import LikeButton from '../ui/LikeButton.jsx';
 import { AudioEqualizerIcon } from '../icons/index.js';
-import { Link as LinkIcon, ListMusic, Play } from 'lucide-react';
+import { ListMusic, Play } from 'lucide-react';
 import noImage from '../../assets/no-image.png';
 import clsx from 'clsx';
-import SoundCloudWidget from '../../features/player/components/SoundCloudWidget.jsx';
+import SoundCloudWidget from '../../features/player/components/SoundCloudWidget';
 import soundCloudFaviconBlack from '../../assets/brands/soundcloud-favicon-black.webp';
 import soundCloudFaviconWhite from '../../assets/brands/soundcloud-favicon-white.webp';
 import Tooltip from '../ui/Tooltip.jsx';
+import type { PlayerTrack } from '../../features/player/types/player.types';
+import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
+import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton.js';
+
+interface PlaylistPanelProps {
+  playlistUrl: string;
+  tracks: PlayerTrack[];
+  onSelect: (index: number) => void;
+  collapsed: boolean;
+  isPlaying: boolean;
+  soundCloudWidget: ReturnType<typeof useSoundCloudWidget>;
+}
 
 export default function PlaylistPanel({
   playlistUrl,
@@ -18,7 +29,7 @@ export default function PlaylistPanel({
   collapsed,
   isPlaying,
   soundCloudWidget,
-}) {
+}: PlaylistPanelProps) {
   const widgetTrack = soundCloudWidget.widgetTrack;
   const playlistTrack =
     tracks.find((track) => String(track.id) === String(widgetTrack?.id)) ?? widgetTrack;
@@ -40,6 +51,14 @@ export default function PlaylistPanel({
         collapsed ? 'translate-x-0' : 'translate-x-full'
       )}
     >
+      {/* widget */}
+      <div
+        className="absolute -left-[10000px] top-0 w-[300px] h-[3000px] overflow-hidden opacity-0 pointer-events-none"
+        aria-hidden="true"
+      >
+        <SoundCloudWidget playlistUrl={playlistUrl} controller={soundCloudWidget} />
+      </div>
+      {/* // widget */}
       <div className={`flex flex-col gap-3 h-full ${collapsed ? '' : 'hidden'}`}>
         <div
           className={clsx(
@@ -67,47 +86,69 @@ export default function PlaylistPanel({
                 src={toHighResArtwork(playlistTrack?.artworkUrl)}
                 alt={playlistTrack?.title || '플레이리스트 트랙'}
                 className="w-full rounded-2xl object-cover"
-                onError={(e) => {
-                  e.target.src = noImage;
-                  e.target.onerror = null;
+                onError={(event) => {
+                  event.currentTarget.src = noImage;
+                  event.currentTarget.onerror = null;
                 }}
               />
             </div>
-            <Tooltip content="SoundCloud에서 듣기" className="max-xl:hidden">
-              <a
-                href={playlistTrack?.permalinkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${playlistTrack?.title} 원곡을 SoundCloud에서 열기 (새 창)`}
-                className="relative inline-flex flex-col hover:text-primary"
-              >
-                <span>
-                  <img
-                    src={soundCloudFaviconBlack}
-                    alt=""
-                    className="size-7 object-contain dark:hidden"
-                  />
-                  <img
-                    src={soundCloudFaviconWhite}
-                    alt=""
-                    className="hidden size-7 object-contain dark:block"
-                  />
-                </span>
-                <strong className="font-black">{playlistTrack?.title}</strong>
-              </a>
-            </Tooltip>
+            {playlistTrack ? (
+              <>
+                {playlistTrack.permalinkUrl ? (
+                  <Tooltip content="SoundCloud에서 듣기" className="max-xl:hidden">
+                    <a
+                      href={playlistTrack.permalinkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${playlistTrack.title} 원곡을 SoundCloud에서 열기 (새 창)`}
+                      className="relative inline-flex flex-col hover:text-primary"
+                    >
+                      <span>
+                        <img
+                          src={soundCloudFaviconBlack}
+                          alt=""
+                          className="size-7 object-contain dark:hidden"
+                        />
+                        <img
+                          src={soundCloudFaviconWhite}
+                          alt=""
+                          className="hidden size-7 object-contain dark:block"
+                        />
+                      </span>
+                      <strong className="font-black">{playlistTrack.title}</strong>
+                    </a>
+                  </Tooltip>
+                ) : (
+                  <strong className="font-black">{playlistTrack.title}</strong>
+                )}
 
-            <div className="mt-1">{playlistTrack?.artist}</div>
-            <div className="flex items-center gap-x-2 mt-4 text-xs text-textSub">
-              <LikeButton
-                docId={String(playlistTrack?.id)}
-                collection="tracks"
-                className="size-8 rounded-lg border border-textThr dark:border-none dark:bg-textThr mr-2 text-textBase"
-              />
-              Likes
-              <Play className="size-3 fill-textBase stroke-none" />
-              {formatTime(playlistTrack?.durationMs)}
-            </div>
+                <div className="mt-1">{playlistTrack.artist}</div>
+                <div className="flex items-center gap-x-2.5 mt-4 text-xs text-textSub">
+                  <TrackBookmarkButton
+                    track={playlistTrack}
+                    className="size-8 rounded-lg border border-textThr dark:border-none dark:bg-textThr text-textBase"
+                    iconClassName="size-4!"
+                  />
+                  Likes
+                  <div className="w-px h-px rounded-full bg-textSub"></div>
+                  <div className="flex items-center gap-1.5">
+                    <Play className="size-3 fill-textBase stroke-none" />
+                    {formatTime(playlistTrack.durationMs)}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div
+                className="space-y-2 animate-pulse"
+                role="status"
+                aria-label="트랙 정보 불러오는 중"
+              >
+                <div className="size-7 rounded bg-gray-200 dark:bg-neutral-700" />
+                <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-neutral-700" />
+                <div className="h-3 w-1/3 rounded bg-gray-200 dark:bg-neutral-700" />
+                <div className="mt-4 h-8 w-1/2 rounded bg-gray-200 dark:bg-neutral-700" />
+              </div>
+            )}
             {tags.length > 0 && (
               <ul className="flex flex-wrap gap-2 mt-3" aria-label="현재 재생곡 태그">
                 {tags.slice(0, 5).map((tag) => (
@@ -126,21 +167,22 @@ export default function PlaylistPanel({
               </ul>
             )}
           </div>
-          {/* widget */}
-          <div
-            className="absolute size-px overflow-hidden opacity-0 pointer-events-none"
-            aria-hidden="true"
-          >
-            <SoundCloudWidget playlistUrl={playlistUrl} controller={soundCloudWidget} />
-          </div>
-          {/* // widget */}
           <div className="p-4">
             <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-b-textThr">
               <h4 className="font-semibold">All Playlists</h4>
               <ListMusic className="size-5.5" />
             </div>
             <ol className="space-y-4">
-              {tracks.length > 0 ? (
+              {soundCloudWidget.isPlaylistLoading ? (
+                <li
+                  className="flex items-center gap-2 text-sm text-gray-500"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <AudioEqualizerIcon isPlaying={true} className="size-4 text-gray-500" />
+                  플레이리스트 불러오는 중...
+                </li>
+              ) : tracks.length > 0 ? (
                 tracks.map((track, index) => {
                   const isActive = track.id === playlistTrack?.id;
 

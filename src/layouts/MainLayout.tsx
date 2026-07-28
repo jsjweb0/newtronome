@@ -5,8 +5,8 @@ import { usePlayerStore } from '../features/player/stores/usePlayerStore';
 import '../assets/css/index.css';
 import 'preline';
 import Sidebar from '../components/layout/Sidebar.jsx';
-import PlayerBar from '../components/layout/PlayerBar.jsx';
-import PlaylistPanel from '../components/player/PlaylistPanel.jsx';
+import PlayerBar from '../components/layout/PlayerBar';
+import PlaylistPanel from '../components/player/PlaylistPanel';
 import Tooltip from '../components/ui/Tooltip.jsx';
 import { PanelLeft } from 'lucide-react';
 import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton.jsx';
@@ -32,6 +32,12 @@ const PLAYLIST_URLS = [
   'https://soundcloud.com/ssu-1/sets/summer-disco2',
 ];
 
+export interface PlayerOutletContext {
+  playlistUrl: string;
+  onSelectTrack: (index: number) => void;
+  onToggleTrack: () => void;
+}
+
 export default function MainLayout() {
   const [playlistUrl] = useState(() => {
     const randomIndex = Math.floor(Math.random() * PLAYLIST_URLS.length);
@@ -48,8 +54,8 @@ export default function MainLayout() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const mql = window.matchMedia('(max-width: 1280px)');
-    const onChange = (e) => {
-      if (e.matches) {
+    const onChange = (event: MediaQueryListEvent) => {
+      if (event.matches) {
         // ≥xl → 항상 펼쳐두기
         setIsPanelCollapsed(false);
       } else {
@@ -62,6 +68,12 @@ export default function MainLayout() {
     mql.addEventListener('change', onChange);
     return () => mql.removeEventListener('change', onChange);
   }, []);
+
+  const outletContext: PlayerOutletContext = {
+    playlistUrl,
+    onSelectTrack: soundCloudWidget.selectTrack,
+    onToggleTrack: soundCloudWidget.toggle,
+  };
 
   return (
     <div className="overflow-x-clip relative lg:pt-3 px-3 pb-27.5 xl:pb-35 text-textBase dark:bg-black">
@@ -107,13 +119,7 @@ export default function MainLayout() {
           )}
         >
           <article className="min-h-[calc(100vh-162px)] xl:min-h-[calc(100vh-232px)] max-lg:mt-2">
-            <Outlet
-              context={{
-                playlistUrl,
-                onSelectTrack: soundCloudWidget.selectTrack,
-                onToggleTrack: soundCloudWidget.toggle,
-              }}
-            />
+            <Outlet context={outletContext} />
           </article>
         </main>
 
