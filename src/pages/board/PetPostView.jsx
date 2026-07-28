@@ -51,7 +51,7 @@ export default function PetPostView() {
         };
 
         fetchPost();
-    }, [id]);
+    }, [id, showToast]);
 
     if (loading) {
         return <PetPostViewSkeleton />;
