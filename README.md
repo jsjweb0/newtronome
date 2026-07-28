@@ -9,9 +9,12 @@ Newtronome은 React 학습 과정에서 시작해 음악 재생, 사용자 인�
 ## Tech Stack
 
 - React
+- TypeScript
 - Vite
+- Zustand
 - Tailwind CSS
 - Firebase Authentication / Firestore
+- SoundCloud Widget API
 - Cloudflare Workers Static Assets
 
 ## Main Features
@@ -20,7 +23,7 @@ Newtronome은 React 학습 과정에서 시작해 음악 재생, 사용자 인�
 - 개인 SoundCloud 플레이리스트 기반 랜덤 트랙 추천
 - 현재 곡, 전체 트랙 목록, 재생 상태 동기화
 - Firebase Authentication 기반 회원가입, 로그인, 로그아웃
-- 로그인 사용자 기준 좋아요 기능
+- 로그인 사용자별 트랙 저장 및 Likes 목록 관리
 - 프로필 정보 수정
 - 게시글 작성, 수정, 상세 보기
 - 내가 쓴 글과 댓글을 모아보는 마이페이지
@@ -81,7 +84,7 @@ npm run build
 
 PlaylistPanel은 기존 UI를 유지하면서 공식 SoundCloud Widget으로 재생을 제어합니다. Widget iframe은 화면에서 보이지 않게 배치하되 항상 마운트하며, `display: none`이나 조건부 렌더링으로 `READY` 이벤트가 막히지 않도록 했습니다.
 
-SoundCloud Widget은 iframe에 실제로 렌더링된 범위만큼 플레이리스트 트랙을 지연 로딩할 수 있습니다. 현재 사용하는 플레이리스트는 최대 35곡이며, iframe 높이를 `3000px`로 설정해 전체 목록이 미리 렌더링되도록 했습니다. 바깥 컨테이너는 `size-px`와 `overflow-hidden`을 사용하므로 페이지 레이아웃에는 영향을 주지 않습니다.
+SoundCloud Widget은 iframe에 실제로 렌더링된 범위만큼 플레이리스트 트랙을 지연 로딩할 수 있습니다. 현재 사용하는 플레이리스트는 최대 35곡이며, iframe 높이를 `3000px`로 설정해 전체 목록이 미리 렌더링되도록 했습니다. Widget 컨테이너는 화면 밖에 절대 위치로 배치하고 overflow-hidden과 포인터 이벤트 차단을 적용해 화면 레이아웃과 사용자 조작에 영향을 주지 않도록 했습니다.
 
 이 방식은 SoundCloud가 공식적으로 보장하는 전체 트랙 조회 API가 아니라 Widget 내부 렌더링 동작을 이용합니다. 플레이리스트 곡 수가 늘거나 Widget 구현이 변경되면 전체 트랙이 로딩되는지 다시 확인해야 합니다.
 
@@ -90,7 +93,7 @@ SoundCloud Widget은 iframe에 실제로 렌더링된 범위만큼 플레이리�
 - 공식 SoundCloud Widget의 이벤트와 트랙 데이터를 React 전역 상태에 연결해 재생 UI를 동기화하는 방법을 배웠습니다.
 - 별도의 Client ID나 비공식 API 요청 없이 Widget이 제공하는 범위 안에서 재생과 트랙 정보를 구성했습니다.
 - 숨겨진 Widget도 `READY` 상태에 도달하려면 항상 마운트되어 있어야 하며, 렌더링 높이가 플레이리스트 트랙의 지연 로딩에 영향을 줄 수 있다는 점을 확인했습니다.
-- 외부 음악 API를 사용할 때 로딩, 빈 목록, 재생 불가능한 트랙 상태를 세심하게 처리해야 한다는 점을 배웠습니다.
+- 외부 트랙 데이터가 항상 유효하다고 가정하지 않고, 필요한 필드를 검증한 뒤 애플리케이션 상태로 변환해야 한다는 점을 배웠습니다.
 - 인증, 프로필, 게시판, 마이페이지 흐름을 구현하며 라우트 중심의 React 앱 구조와 사용자별 상태 관리 방식을 익혔습니다.
 
 ## 향후 개선 사항
