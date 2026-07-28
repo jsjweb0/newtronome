@@ -51,6 +51,14 @@ export default function PlaylistPanel({
         collapsed ? 'translate-x-0' : 'translate-x-full'
       )}
     >
+      {/* widget */}
+      <div
+        className="absolute -left-[10000px] top-0 w-[300px] h-[3000px] overflow-hidden opacity-0 pointer-events-none"
+        aria-hidden="true"
+      >
+        <SoundCloudWidget playlistUrl={playlistUrl} controller={soundCloudWidget} />
+      </div>
+      {/* // widget */}
       <div className={`flex flex-col gap-3 h-full ${collapsed ? '' : 'hidden'}`}>
         <div
           className={clsx(
@@ -159,14 +167,6 @@ export default function PlaylistPanel({
               </ul>
             )}
           </div>
-          {/* widget */}
-          <div
-            className="absolute size-px overflow-hidden opacity-0 pointer-events-none"
-            aria-hidden="true"
-          >
-            <SoundCloudWidget playlistUrl={playlistUrl} controller={soundCloudWidget} />
-          </div>
-          {/* // widget */}
           <div className="p-4">
             <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-b-textThr">
               <h4 className="font-semibold">All Playlists</h4>

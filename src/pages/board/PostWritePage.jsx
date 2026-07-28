@@ -14,13 +14,16 @@ export default function PostWritePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [nextId, setNextId] = useState(1);
+  const [nextPostNo, setNextPostNo] = useState(1);
 
   useEffect(() => {
     const fetchPosts = async () => {
       const data = await getPosts(boardType);
-      const maxId = data.length ? Math.max(...data.map((p) => p.id)) : 0;
-      setNextId(maxId + 1);
+      const postNumbers = data
+        .map((post) => Number(post.postNo))
+        .filter((postNo) => Number.isFinite(postNo));
+      const maxPostNo = postNumbers.length ? Math.max(...postNumbers) : 0;
+      setNextPostNo(maxPostNo + 1);
     };
     fetchPosts();
   }, [boardType, getPosts]);
@@ -28,10 +31,9 @@ export default function PostWritePage() {
   const handleSubmit = (formData) => {
     const newPost = {
       ...formData,
-      id: nextId,
-      uid: `${boardType}-${nextId}`,
+      postNo: nextPostNo,
       content: formData.content.replace(/\n/g, '<br>'),
-      date: new Date().toISOString().split('T')[0],
+      date: new Date(),
       email: user.email,
       authorUid: user.uid,
       displayName: user.displayName || null,
@@ -57,5 +59,5 @@ export default function PostWritePage() {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  return <PostForm mode="create" boardType={boardType} onSubmit={handleSubmit} nextId={nextId} />;
+  return <PostForm mode="create" boardType={boardType} onSubmit={handleSubmit} />;
 }

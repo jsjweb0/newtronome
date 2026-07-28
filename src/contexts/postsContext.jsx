@@ -15,6 +15,11 @@ import {
 import { auth, db } from '../firebase';
 import { PostsContext } from './postsContextValue.js';
 
+const getPostNumber = (data, documentId) => {
+  const postNumber = Number(data.postNo ?? documentId);
+  return Number.isFinite(postNumber) ? postNumber : null;
+};
+
 const convertTimestamp = (value) => {
   if (value && typeof value.toDate === 'function') {
     return value.toDate();
@@ -44,7 +49,8 @@ export function PostsProvider({ children }) {
       const data = docSnap.data();
 
       return {
-        id: Number(docSnap.id),
+        id: docSnap.id,
+        postNo: getPostNumber(data, docSnap.id),
         category: data.category || null,
         ...data,
         date: convertTimestamp(data.date),
@@ -66,7 +72,8 @@ export function PostsProvider({ children }) {
     if (!snap.exists()) throw new Error('해당 문서가 없습니다.');
     const data = snap.data();
     return {
-      id: Number(snap.id),
+      id: snap.id,
+      postNo: getPostNumber(data, snap.id),
       category: data.category || null,
       ...data,
       date: convertTimestamp(data.date),
@@ -92,7 +99,8 @@ export function PostsProvider({ children }) {
       const data = docSnap.data();
 
       return {
-        id: Number(docSnap.id),
+        id: docSnap.id,
+        postNo: getPostNumber(data, docSnap.id),
         boardType,
         ...data,
         date: convertTimestamp(data.date),
@@ -102,29 +110,35 @@ export function PostsProvider({ children }) {
   }, []);
 
   const createPost = useCallback(async (type, post) => {
+    const postRef = doc(collection(db, type));
+
     const data = {
       title: post.title,
       content: post.content,
+      postNo: post.postNo,
       date: post.date instanceof Date ? post.date : new Date(post.date),
       category: post.category,
-      likeCount: post.likeCount ?? 0,
-      likedUsers: post.likedUsers ?? [],
-      authorUid: post.authorUid, // auth.currentUser.uid 또는 post.authorUid
-      email: post.email, // auth.currentUser.email 또는 post.email
+      likeCount: 0,
+      likedUsers: [],
+      authorUid: post.authorUid,
+      email: post.email,
       displayName: post.displayName || null,
       photoURL: post.photoURL || null,
-      ...(post.updatedAt && { updatedAt: new Date(post.updatedAt) }),
+    };
+
+    await setDoc(postRef, data);
+
+    const createdPost = {
+      id: postRef.id,
+      ...data,
     };
 
     postsByBoardRef.current = {
       ...postsByBoardRef.current,
-      [type]: [
-        ...(postsByBoardRef.current[type] || []),
-        { id: post.id, category: post.category, ...data },
-      ],
+      [type]: [...(postsByBoardRef.current[type] || []), createdPost],
     };
 
-    await setDoc(doc(db, type, post.id.toString()), data, { merge: true });
+    return createdPost;
   }, []);
 
   /**
@@ -166,7 +180,9 @@ export function PostsProvider({ children }) {
     const id = postId.toString();
     await deleteDoc(doc(db, type, id));
 
-    const updatedPosts = (postsByBoardRef.current[type] || []).filter((post) => post.id !== postId);
+    const updatedPosts = (postsByBoardRef.current[type] || []).filter(
+      (post) => post.id.toString() !== id
+    );
 
     postsByBoardRef.current = {
       ...postsByBoardRef.current,

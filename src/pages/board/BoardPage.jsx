@@ -40,7 +40,11 @@ export default function BoardPage() {
   const filteredPosts = useMemo(() => {
     return posts
       .slice()
-      .sort((a, b) => (dateSort ? a.id - b.id : b.id - a.id))
+      .sort((a, b) => {
+        const firstPostNo = Number.isFinite(Number(a.postNo)) ? Number(a.postNo) : 0;
+        const secondPostNo = Number.isFinite(Number(b.postNo)) ? Number(b.postNo) : 0;
+        return dateSort ? firstPostNo - secondPostNo : secondPostNo - firstPostNo;
+      })
       .filter((post) => (post.title || '').toLowerCase().includes(searchKeyword.toLowerCase()));
   }, [posts, searchKeyword, dateSort]);
 
@@ -99,7 +103,7 @@ export default function BoardPage() {
   }
 
   return (
-    <div className="max-w-[85rem] mx-auto mb-8 px-4">
+    <div className="max-w-[85rem] mx-auto px-4 py-10">
       <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
         {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
       </h2>

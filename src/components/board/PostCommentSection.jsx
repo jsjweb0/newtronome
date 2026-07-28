@@ -130,7 +130,7 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
                 ref={textareaRef}
               />
               <div className="absolute bottom-0 right-0 p-2">
-                <BaseButton type="submit" className="!py-2">
+                <BaseButton type="submit" className="py-2!">
                   작성
                 </BaseButton>
               </div>

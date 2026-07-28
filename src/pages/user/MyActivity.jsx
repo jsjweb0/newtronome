@@ -35,15 +35,24 @@ export default function MyActivity() {
 
   // 1) “내 글” 로드
   useEffect(() => {
-    (async () => {
+    if (loading || !user) return;
+
+    const fetchMyPosts = async () => {
       setLoadingPosts(true);
-      const arr = await Promise.all(BOARD_TYPES.map((type) => getMyPosts(type)));
-      const data = arr.flat();
-      //console.log("loaded posts:", data);
-      setPosts(data);
-      setLoadingPosts(false);
-    })();
-  }, [getMyPosts]);
+
+      try {
+        const result = await Promise.all(BOARD_TYPES.map((type) => getMyPosts(type)));
+
+        setPosts(result.flat());
+      } catch (error) {
+        console.error('내 게시글 조회 실패:', error);
+      } finally {
+        setLoadingPosts(false);
+      }
+    };
+
+    fetchMyPosts();
+  }, [loading, user, getMyPosts]);
 
   // 2) URL → state 동기화
   useEffect(() => {

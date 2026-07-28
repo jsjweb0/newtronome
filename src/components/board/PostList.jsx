@@ -2,7 +2,9 @@ import PostItem from "./PostItem.jsx";
 
 export default function PostList({ posts, filteredPosts, setPosts, searchKeyword, boardType, currentPage, dateSort, deletePost }) {
     const fixedPosts = currentPage === 1
-        ? posts.filter(p => p.isNotice).sort((a, b) => b.id - a.id)
+        ? posts
+            .filter(p => p.isNotice)
+            .sort((a, b) => (Number(b.postNo) || 0) - (Number(a.postNo) || 0))
         : [];
 
     const normalPosts = filteredPosts.filter(p => !p.isNotice);
