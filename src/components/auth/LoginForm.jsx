@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEffect, useRef, useState } from 'react';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
 import useForm from '../../hooks/useForm.js';
 import clsx from 'clsx';

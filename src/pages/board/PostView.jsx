@@ -1,6 +1,6 @@
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { usePosts } from '../../contexts/usePosts.js';
 import { useEffect, useState } from 'react';

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import { Link as LinkIcon, Share } from 'lucide-react';
 import noImage from '../../assets/no-image.webp';
 

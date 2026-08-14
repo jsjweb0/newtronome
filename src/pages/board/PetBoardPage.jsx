@@ -1,7 +1,7 @@
 import { getDocs, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useSearchParams } from 'react-router-dom';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import PetSearchBar from '../../components/board/PetSearchBar.jsx';

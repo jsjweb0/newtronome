@@ -4,7 +4,7 @@ import { getMyCommentsFromDB } from '../../utils/comment.js';
 import { Link } from 'react-router-dom';
 import { ThumbsUp } from 'lucide-react';
 import { BaseButton } from '../ui/BaseButton';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import Pagination from './Pagination.jsx';

@@ -1,7 +1,7 @@
 import { BaseButton } from '../ui/BaseButton';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthAccess } from '../auth/AuthAccess.jsx';

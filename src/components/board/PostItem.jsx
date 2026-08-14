@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AuthAccess } from '../auth/AuthAccess.jsx';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import { getCommentCountFromDB } from '../../utils/comment';
 import { BaseButton } from '../ui/BaseButton';
 import { useEffect, useState } from 'react';

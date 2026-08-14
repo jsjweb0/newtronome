@@ -9,7 +9,7 @@ import {
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import { validateProfile } from '../../utils/profile.js';
 import FormInput from '../../components/ui/FormInput';
 import { formatDate } from '../../utils/format.js';

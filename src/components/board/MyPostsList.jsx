@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import Pagination from '../../components/board/Pagination.jsx';
 import MyPostItem from './MyPostItem.jsx';
 import {

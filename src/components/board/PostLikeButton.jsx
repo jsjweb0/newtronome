@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function PostLikeButton({ postId, boardType = 'free', showCount = true }) {
   const { user } = useAuth();

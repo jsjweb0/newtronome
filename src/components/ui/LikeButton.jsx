@@ -3,7 +3,7 @@ import { Heart, ThumbsUp } from 'lucide-react';
 import { doc, onSnapshot, setDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/NotificationContext';
+import { useToast } from '../../contexts/ToastContext';
 import clsx from 'clsx';
 import { useNotifications } from '../../contexts/NotificationContext';
 
