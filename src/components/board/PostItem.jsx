@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { AuthAccess } from '../auth/AuthAccess.jsx';
-import { useToast } from '../../contexts/useToast.js';
+import { useToast } from '../../contexts/NotificationContext';
 import { getCommentCountFromDB } from '../../utils/comment';
 import { BaseButton } from '../ui/BaseButton';
 import { useEffect, useState } from 'react';
 import { formatDate } from '../../utils/format.js';
-import { useNotifications } from '../../contexts/useNotifications.js';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateSort, deletePost }) {
   const { showToast } = useToast();

@@ -1,15 +1,15 @@
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
-import { useToast } from '../../contexts/useToast.js';
-import { useAuth } from '../../contexts/useAuth.js';
+import { useToast } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useEffect, useRef, useState } from 'react';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { getCommentsFromDB } from '../../utils/comment.js';
 import { BaseButton } from '../ui/BaseButton';
 import Comment from './Comment.jsx';
-import { useNotifications } from '../../contexts/useNotifications.js';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 dayjs.locale('ko');
 dayjs.extend(relativeTime);

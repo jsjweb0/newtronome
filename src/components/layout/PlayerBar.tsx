@@ -12,7 +12,7 @@ import {
   VolumeOff,
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip.jsx';
-import { useDarkMode } from '../../contexts/useDarkMode.js';
+import { useDarkMode } from '../../contexts/DarkModeContext';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
 

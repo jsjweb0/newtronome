@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/useAuth.js';
+import { useAuth } from '../../contexts/AuthContext';
 import MyPostsList from '../../components/board/MyPostsList.jsx';
 import MyCommentSection from '../../components/board/MyCommentSection.jsx';
 import { MessageSquareText, NotebookPen } from 'lucide-react';
