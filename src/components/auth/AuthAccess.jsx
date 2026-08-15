@@ -1,5 +1,5 @@
 import { useAuth } from '../../contexts/AuthContext';
-import { getUserRole } from '../../utils/role.js';
+import { getUserRole } from '../../utils/role';
 
 export function AuthAccess({ allow = [], children }) {
   const { user, loading } = useAuth();
