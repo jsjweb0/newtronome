@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { useEffect, useRef, useState } from 'react';
-import { useToast } from '../../contexts/useToast.js';
-import { useNotifications } from '../../contexts/useNotifications.js';
+import { useToast } from '../../contexts/ToastContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { BaseButton } from '../ui/BaseButton';

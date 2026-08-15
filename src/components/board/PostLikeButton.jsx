@@ -10,8 +10,8 @@ import {
   increment,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { useAuth } from '../../contexts/useAuth.js';
-import { useToast } from '../../contexts/useToast.js';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function PostLikeButton({ postId, boardType = 'free', showCount = true }) {
   const { user } = useAuth();

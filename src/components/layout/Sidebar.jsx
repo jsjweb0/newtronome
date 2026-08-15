@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { LogoIcon, LogoMoIcon, Turntable, MusicLibrary } from '../icons/index.js';
 import clsx from 'clsx';
-import { useAuth } from '../../contexts/useAuth.js';
+import { useAuth } from '../../contexts/AuthContext';
 import Tooltip from '../ui/Tooltip.jsx';
 import NotificationDropdown from '../ui/NotificationDropdown.jsx';
 

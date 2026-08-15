@@ -1,37 +1,72 @@
-import { auth, db } from "../firebase";
+import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged
-} from "firebase/auth";
-import {doc, setDoc, getDoc, serverTimestamp, onSnapshot} from "firebase/firestore";
-import {useEffect, useMemo, useState} from "react";
-import {useNavigate} from "react-router-dom";
-import {useToast} from "./useToast.js";
-import {AuthContext} from "./authContextValue.js";
+    doc,
+    getDoc,
+    onSnapshot,
+    serverTimestamp,
+    setDoc,
+} from 'firebase/firestore';
+import type { DocumentData, Timestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth, db } from '../firebase';
 
-export function AuthProvider({children}) {
+import { AuthContext } from './AuthContext';
+import type {
+    AuthContextValue,
+    AuthUser,
+} from './AuthContext';
+import { useToast } from './ToastContext';
+import { useNavigate } from 'react-router-dom';
+
+interface AuthProviderProps {
+    children: ReactNode;
+}
+
+interface UserProfile {
+    nickname?: string | null;
+    photoURL?: string | null;
+    createdAt?: Timestamp | Date | null;
+}
+
+function normalizeUserProfile(data: DocumentData): UserProfile {
+    return {
+        nickname:
+            typeof data.nickname === 'string' ? data.nickname : null,
+        photoURL:
+            typeof data.photoURL === 'string' ? data.photoURL : null,
+        createdAt:
+            data.createdAt instanceof Date ||
+                typeof data.createdAt?.toDate === 'function'
+                ? data.createdAt
+                : null,
+    };
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
     const navigate = useNavigate();
-    const {showToast} = useToast();
-    const [user, setUser] = useState(null);
+    const { showToast } = useToast();
+
+    const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const signup = async (email, password) => {
+    const signup: AuthContextValue['signup'] = async (email, password) => {
         // 1) 이메일/비밀번호 가입
-        const {user} = await createUserWithEmailAndPassword(auth, email, password);
+        const { user } = await createUserWithEmailAndPassword(auth, email, password);
+
         // 2) Firestore users/{uid} 문서 생성 (기본 정보)
         await setDoc(doc(db, "users", user.uid), {
             email: user.email,
             createdAt: serverTimestamp()
         });
+
         return user;
     };
 
-    const login = (email, password) =>
+    const login: AuthContextValue['login'] = (email, password) =>
         signInWithEmailAndPassword(auth, email, password);
 
-    const logout = async () => {
+    const logout: AuthContextValue['logout'] = async () => {
         try {
             await signOut(auth);
 
@@ -54,14 +89,15 @@ export function AuthProvider({children}) {
                 try {
                     // Firestore에서 유저 프로필 읽기
                     const snap = await getDoc(doc(db, "users", authUser.uid));
-                    const profile = snap.exists() ? snap.data() : {};
+                    const profile = snap.exists() ? normalizeUserProfile(snap.data()) : {};
                     // Auth + Firestore 프로필 병합
                     setUser({
                         uid: authUser.uid,
                         email: authUser.email,
                         displayName: authUser.displayName,
-                        photoURL: authUser.photoURL,
-                        ...profile
+                        photoURL: profile.photoURL ?? authUser.photoURL,
+                        nickname: profile.nickname,
+                        createdAt: profile.createdAt,
                     });
                 } catch (error) {
                     console.error("Failed to fetch user profile:", error);
@@ -95,7 +131,17 @@ export function AuthProvider({children}) {
             userRef,
             snap => {
                 if (snap.exists()) {
-                    setUser(prev => ({ ...prev, ...snap.data() }));
+                    setUser((previousUser) => {
+                        if (!previousUser) return null;
+
+                        const profile = normalizeUserProfile(snap.data());
+
+                        return {
+                            ...previousUser,
+                            ...profile,
+                            photoURL: profile.photoURL ?? previousUser.photoURL,
+                        };
+                    });
                 }
             },
             error => {
@@ -105,8 +151,18 @@ export function AuthProvider({children}) {
         return unsubscribeProfile;
     }, [user?.uid]);
 
+    const contextValue: AuthContextValue = {
+        user,
+        login,
+        signup,
+        logout,
+        loading,
+        avatarUrl,
+        nicknameUrl,
+    };
+
     return (
-        <AuthContext.Provider value={{user, login, signup, logout, loading, avatarUrl, nicknameUrl}}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );

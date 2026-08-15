@@ -2,10 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
-import { ToastProvider } from './contexts/ToastContext.jsx';
-import { AuthProvider } from './contexts/AuthContext.jsx';
-import { DarkModeProvider } from './contexts/DarkModeContext.jsx';
-import { NotificationProvider } from './contexts/NotificationContext.jsx';
+import { ToastProvider } from './contexts/ToastProvider';
+import { AuthProvider } from './contexts/AuthProvider';
+import { DarkModeProvider } from './contexts/DarkModeProvider';
+import { NotificationProvider } from './contexts/NotificationProvider';
 
 const routerBasename =
   import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '');

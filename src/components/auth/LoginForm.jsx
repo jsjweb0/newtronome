@@ -1,11 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/useAuth.js';
+import { useAuth } from '../../contexts/AuthContext';
 import { useEffect, useRef, useState } from 'react';
-import { useToast } from '../../contexts/useToast.js';
+import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
 import useForm from '../../hooks/useForm.js';
 import clsx from 'clsx';
-import { useNotifications } from '../../contexts/useNotifications.js';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 export default function LoginForm() {
   const { showToast } = useToast();

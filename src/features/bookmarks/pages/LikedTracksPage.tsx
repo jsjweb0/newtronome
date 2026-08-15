@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { ExternalLink, Heart } from 'lucide-react';
 import { Navigate, useLocation } from 'react-router-dom';
 import TrackItem from '../../../components/track/TrackItem';
-import { useAuth } from '../../../contexts/useAuth';
-import { useToast } from '../../../contexts/useToast';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext';
 import {
   removeSavedTrack,
   subscribeToSavedTracks,

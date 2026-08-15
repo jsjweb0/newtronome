@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { PlayerTrack } from '../../player/types/player.types';
-import { useAuth } from '../../../contexts/useAuth';
-import { useToast } from '../../../contexts/useToast';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext';
 import { removeSavedTrack, saveTrack, subscribeToSavedTrack } from '../services/savedTracks';
 
 export function useTrackBookmark(track: PlayerTrack) {

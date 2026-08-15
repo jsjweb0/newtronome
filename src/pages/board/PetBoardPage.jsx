@@ -1,9 +1,9 @@
 import { getDocs, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useSearchParams } from 'react-router-dom';
-import { useToast } from '../../contexts/useToast.js';
+import { useToast } from '../../contexts/ToastContext';
 import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../../contexts/useAuth.js';
+import { useAuth } from '../../contexts/AuthContext';
 import PetSearchBar from '../../components/board/PetSearchBar.jsx';
 import SortButtonGroup from '../../components/board/SortButtonGroup.jsx';
 import Pagination from '../../components/board/Pagination.jsx';
