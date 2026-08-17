@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import {viewModeMultiClass, viewModeClass} from "../../utils/viewModeClass.js";
+import {viewModeMultiClass, viewModeClass} from "../../utils/viewModeClass";
 import {formatTime} from "../../utils/format.js";
 import {toHighResArtwork} from "../../utils/image.js";
 import {PauseRound, PlayRound} from "../icons/index.js";

@@ -9,7 +9,7 @@ import SortButtonGroup from '../../components/board/SortButtonGroup.jsx';
 import Pagination from '../../components/board/Pagination.jsx';
 import PetPostList from '../../components/board/PetPostList.jsx';
 import PetPostListSkeleton from '../../components/board/PetPostListSkeleton.jsx';
-import { getCurrentPageItems, getTotalPages } from '../../utils/pagination.js';
+import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 
 export default function PetBoardPage() {
   const { showToast } = useToast();

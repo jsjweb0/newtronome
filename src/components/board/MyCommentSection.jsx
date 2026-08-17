@@ -9,7 +9,7 @@ import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import Pagination from './Pagination.jsx';
 import { formatDate } from '../../utils/format.js';
-import { getCurrentPageItems, getTotalPages } from '../../utils/pagination.js';
+import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 
 export default function MyCommentSection({
   searchKeyword,

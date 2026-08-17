@@ -3,9 +3,16 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEffect, useRef, useState } from 'react';
 import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
-import useForm from '../../hooks/useForm.js';
+import useForm from '../../hooks/useForm';
 import clsx from 'clsx';
 import { useNotifications } from '../../contexts/NotificationContext';
+
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
+type LoginFormErrors = Partial<Record<keyof LoginFormValues, string>>;
 
 export default function LoginForm() {
   const { showToast } = useToast();
@@ -14,31 +21,37 @@ export default function LoginForm() {
   const navigate = useNavigate();
   const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const emailRef = useRef(null);
-  const passwordRef = useRef();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const STORAGE_KEY = 'rememberedEmail';
 
-  const validateLogin = (form) => {
-    const errors = {};
+  const validateLogin = (
+    form: LoginFormValues,
+  ): LoginFormErrors => {
+    const errors: LoginFormErrors = {};
+
     if (!form.email) {
       errors.email = '이메일을 입력해주세요.';
-      emailRef.current.focus();
+      emailRef.current?.focus();
     }
     if (!form.password) {
       errors.password = '비밀번호를 입력해주세요.';
-      passwordRef.current.focus();
+      passwordRef.current?.focus();
     }
     return errors;
   };
 
-  const { form, errors, handleChange, handleSubmit, setForm } = useForm(
-    { email: '', password: '' },
-    validateLogin
-  );
+  const { form, errors, handleChange, handleSubmit, setForm } =
+    useForm<LoginFormValues>(
+      { email: '', password: '' },
+      validateLogin
+    );
 
   const isDirty = form.email !== '' || form.password !== '';
 
-  const handleLogin = async (formData) => {
+  const handleLogin = async (
+    formData: LoginFormValues,
+  ): Promise<void> => {
     const id = Date.now();
     const notification = { id, message: '로그인 성공!' };
 

@@ -2,9 +2,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
-import useForm from '../../hooks/useForm.js';
+import useForm from '../../hooks/useForm';
 import { useNotifications } from '../../contexts/NotificationContext';
 import clsx from 'clsx';
+
+interface SignupFormValues {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+type SignupFormErrors = Partial<Record<keyof SignupFormValues, string>>;
 
 export default function SignupForm() {
   const { showToast } = useToast();
@@ -12,8 +20,9 @@ export default function SignupForm() {
   const navigate = useNavigate();
   const { signup } = useAuth();
 
-  const validateSignup = (form) => {
-    const errors = {};
+  const validateSignup = (form: SignupFormValues): SignupFormErrors => {
+    const errors: SignupFormErrors = {};
+
     if (!form.email) {
       errors.email = '이메일을 입력해주세요.';
     } else if (!/\S+@\S+\.\S+/.test(form.email)) {
@@ -33,7 +42,7 @@ export default function SignupForm() {
     return errors;
   };
 
-  const { form, errors, handleChange, handleSubmit } = useForm(
+  const { form, errors, handleChange, handleSubmit } = useForm<SignupFormValues>(
     { email: '', password: '', confirmPassword: '' },
     validateSignup
   );
@@ -59,25 +68,30 @@ export default function SignupForm() {
         <div className="mt-10">
           <form
             noValidate
-            onSubmit={handleSubmit(async (formData) => {
+            onSubmit={handleSubmit(async (
+              formData: SignupFormValues,
+            ): Promise<void> => {
               const id = Date.now();
               const notification = { id, message: '회원가입 성공!' };
 
               try {
-                await signup(
-                  formData.email,
-                  formData.password,
-                  formData.nickname,
-                  formData.photoURL
-                );
+                await signup(formData.email, formData.password);
 
                 showToast({ message: notification.message });
                 addNotification(notification);
 
                 navigate('/');
-              } catch (err) {
-                console.error(err.message);
-                showToast({ message: '에러 발생: ' + err.message, type: 'error' });
+              } catch (error: unknown) {
+                const message =
+                  error instanceof Error
+                    ? error.message
+                    : '알 수 없는 오류가 발생했습니다.';
+
+                console.error(message);
+                showToast({
+                  message: `에러 발생: ${message}`,
+                  type: 'error',
+                });
               }
             })}
           >
