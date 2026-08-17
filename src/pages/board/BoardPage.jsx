@@ -1,5 +1,5 @@
 import { useSearchParams, useParams } from 'react-router-dom';
-import { usePosts } from '../../contexts/usePosts.js';
+import { usePosts } from '../../contexts/PostsContext';
 import { useEffect, useMemo, useState } from 'react';
 import SearchBar from '../../components/board/SearchBar.jsx';
 import SortButtonGroup from '../../components/board/SortButtonGroup.jsx';

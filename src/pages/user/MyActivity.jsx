@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import MyPostsList from '../../components/board/MyPostsList.jsx';
 import MyCommentSection from '../../components/board/MyCommentSection.jsx';
 import { MessageSquareText, NotebookPen } from 'lucide-react';
-import { usePosts } from '../../contexts/usePosts.js';
+import { usePosts } from '../../contexts/PostsContext';
 import SearchBar from '../../components/board/SearchBar.jsx';
 import PostListSkeleton from '../../components/board/PostListSkeleton.jsx';
 

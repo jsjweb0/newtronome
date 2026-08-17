@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { usePosts } from "../../contexts/usePosts.js";
+import { usePosts } from "../../contexts/PostsContext";
 import { useState } from "react";
 
 export default function PostAddForm ({ toastRef }) {

@@ -1,6 +1,6 @@
 import {Routes, Route} from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
-import {PostsProvider} from "./contexts/postsContext.jsx";
+import {PostsProvider} from "./contexts/PostsProvider";
 import HomePage from "./pages/HomePage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import SignupPage from "./pages/auth/SignupPage.jsx";
