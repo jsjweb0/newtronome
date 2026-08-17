@@ -2,7 +2,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { Link } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { usePosts } from '../../contexts/usePosts.js';
+import { usePosts } from '../../contexts/PostsContext';
 import { useEffect, useState } from 'react';
 import { AuthAccess } from '../../components/auth/AuthAccess.jsx';
 import { BaseButton } from '../../components/ui/BaseButton';

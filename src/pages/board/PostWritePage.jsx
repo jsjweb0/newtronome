@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { usePosts } from '../../contexts/usePosts.js';
+import { usePosts } from '../../contexts/PostsContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import PostForm from '../../components/board/PostForm.jsx';
