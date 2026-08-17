@@ -9,7 +9,7 @@ import { usePosts } from '../../contexts/PostsContext';
 import SearchBar from '../../components/board/SearchBar.jsx';
 import PostListSkeleton from '../../components/board/PostListSkeleton.jsx';
 
-const BOARD_TYPES = ['notice', 'free', 'pet'];
+const BOARD_TYPES = ['notice', 'free'];
 
 export default function MyActivity() {
   const navigate = useNavigate();

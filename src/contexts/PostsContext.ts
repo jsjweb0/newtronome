@@ -15,7 +15,7 @@ export interface Post {
   title: string;
   content: string;
 
-  authorUid: string;
+  authorUid: string | null;
   email: string | null;
   displayName: string | null;
   photoURL: string | null;

@@ -66,10 +66,21 @@ function convertPostDocument(
     boardType: CommunityBoardType,
     data: DocumentData,
 ): Post | null {
+    const authorUid =
+        typeof data.authorUid === 'string' &&
+            data.authorUid.length > 0
+            ? data.authorUid
+            : null;
+    const email =
+        typeof data.email === 'string' &&
+            data.email.length > 0
+            ? data.email
+            : null;
+
     if (
         typeof data.title !== 'string' ||
         typeof data.content !== 'string' ||
-        typeof data.authorUid !== 'string'
+        (!authorUid && !email)
     ) {
         return null;
     }
@@ -80,12 +91,8 @@ function convertPostDocument(
 
         title: data.title,
         content: data.content,
-        authorUid: data.authorUid,
-
-        email:
-            typeof data.email === 'string'
-                ? data.email
-                : null,
+        authorUid,
+        email,
         displayName:
             typeof data.displayName === 'string'
                 ? data.displayName
