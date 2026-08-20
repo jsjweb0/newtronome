@@ -6,7 +6,7 @@ import SortButtonGroup from '../../components/board/SortButtonGroup.jsx';
 import PostList from '../../components/board/PostList.jsx';
 import Pagination from '../../components/board/Pagination.jsx';
 import WriteButton from '../../components/auth/WriteButton.jsx';
-import PostListSkeleton from '../../components/board/PostListSkeleton.jsx';
+import PostListSkeleton from '../../components/board/PostListSkeleton';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 
 const VALID_BOARD_TYPES = ['notice', 'free', 'pet'];

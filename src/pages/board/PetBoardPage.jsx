@@ -8,7 +8,7 @@ import PetSearchBar from '../../components/board/PetSearchBar.jsx';
 import SortButtonGroup from '../../components/board/SortButtonGroup.jsx';
 import Pagination from '../../components/board/Pagination.jsx';
 import PetPostList from '../../components/board/PetPostList.jsx';
-import PetPostListSkeleton from '../../components/board/PetPostListSkeleton.jsx';
+import PetPostListSkeleton from '../../components/board/PetPostListSkeleton';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 
 export default function PetBoardPage() {
