@@ -1,27 +1,28 @@
-import { useNavigate } from 'react-router-dom';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import MyPostsList from '../../components/board/MyPostsList.jsx';
-import MyCommentSection from '../../components/board/MyCommentSection.jsx';
+import MyCommentSection from '../../components/board/MyCommentSection';
 import { MessageSquareText, NotebookPen } from 'lucide-react';
 import { usePosts } from '../../contexts/PostsContext';
+import type { CommunityBoardType, Post } from '../../contexts/PostsContext';
+import type { Comment as CommentData } from '../../utils/comment';
 import SearchBar from '../../components/board/SearchBar.jsx';
-import PostListSkeleton from '../../components/board/PostListSkeleton.jsx';
+import PostListSkeleton from '../../components/board/PostListSkeleton';
 
-const BOARD_TYPES = ['notice', 'free'];
+const BOARD_TYPES: CommunityBoardType[] = ['notice', 'free'];
 
 export default function MyActivity() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { getMyPosts, deletePost } = usePosts();
 
-  const [posts, setPosts] = useState([]);
-  const [comments, setComments] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [comments, setComments] = useState<CommentData[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   // URL 쿼리 & 로컬 상태
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageParam = parseInt(searchParams.get('page')) || 1;
+  const pageParam = Number.parseInt(searchParams.get('page') ?? '', 10) || 1;
   const keywordParam = searchParams.get('keyword') || '';
   const [postPage, setPostPage] = useState(pageParam);
   const [commentPage, setCommentPage] = useState(pageParam);
@@ -30,7 +31,9 @@ export default function MyActivity() {
   // 1. 각각의 페이지 번호를 관리할 state
   useEffect(() => {
     if (loading) return;
-    if (!user) return navigate('/login', { replace: true });
+    if (!user) {
+      void navigate('/login', { replace: true });
+    }
   }, [loading, user, navigate]);
 
   // 1) “내 글” 로드
@@ -56,7 +59,7 @@ export default function MyActivity() {
 
   // 2) URL → state 동기화
   useEffect(() => {
-    const p = parseInt(searchParams.get('page'));
+    const p = Number.parseInt(searchParams.get('page') ?? '', 10);
     const kw = searchParams.get('keyword') || '';
     setPostPage(isNaN(p) ? 1 : p);
     setCommentPage(isNaN(p) ? 1 : p);
@@ -71,12 +74,12 @@ export default function MyActivity() {
     setSearchParams(qp);
   }, [searchKeyword]);
 
-  const handlePostPageChange = (page) => {
+  const handlePostPageChange = (page: number) => {
     setPostPage(page);
     // URL 동기화도 따로 해주려면 searchParams.set('postPage', page)…
   };
 
-  const handleCommentPageChange = (page) => {
+  const handleCommentPageChange = (page: number) => {
     setCommentPage(page);
     // searchParams.set('commentPage', page)
   };
@@ -84,7 +87,7 @@ export default function MyActivity() {
   if (loadingPosts) return <PostListSkeleton />;
 
   return (
-    <div className="mb-8 px-4 lg:px-8">
+    <div className="mb-8 p-4 lg:p-8">
       {/* Card Section */}
       <div className="grid grid-cols-2 gap-4 sm:gap-6">
         {/* Card */}
@@ -135,7 +138,6 @@ export default function MyActivity() {
 
       <h3 className="mb-4">나의 게시물</h3>
       <MyPostsList
-        loadingPosts={loadingPosts}
         currentPage={postPage}
         setCurrentPage={setPostPage}
         searchKeyword={searchKeyword}

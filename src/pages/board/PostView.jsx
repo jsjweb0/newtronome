@@ -4,7 +4,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { usePosts } from '../../contexts/PostsContext';
 import { useEffect, useState } from 'react';
-import { AuthAccess } from '../../components/auth/AuthAccess.jsx';
+import { AuthAccess } from '../../components/auth/AuthAccess';
 import { BaseButton } from '../../components/ui/BaseButton';
 import {
   AlignJustify,
@@ -14,11 +14,11 @@ import {
   Trash2,
   MessageCircle,
 } from 'lucide-react';
-import LikeButton from '../../components/ui/LikeButton.jsx';
-import PostCommentSection from '../../components/board/PostCommentSection.jsx';
+import LikeButton from '../../components/ui/LikeButton';
+import PostCommentSection from '../../components/board/PostCommentSection';
 import { getCommentCountFromDB } from '../../utils/comment';
 import ShareButton from '../../components/board/ShareButton.jsx';
-import PostViewSkeleton from './PostViewSkeleton.jsx';
+import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip.jsx';
 import { formatDate } from '../../utils/format.js';
 

@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import {Link} from "react-router-dom";
 import noImage from "../../assets/no-image.webp";
 import ShareButton from "./ShareButton.jsx";
-import LikeButton from "../ui/LikeButton.jsx";
+import LikeButton from '../ui/LikeButton';
 
 function PetPostItem({post, searchKeyword, currentPage, dateSort}) {
     const highlightText = (text, keyword) => {

@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import ShareButton from '../../components/board/ShareButton.jsx';
 import ImageSlider from '../../components/ui/Slider.jsx';
-import PetPostViewSkeleton from '../../components/board/PetPostViewSkeleton.jsx';
-import LikeButton from '../../components/ui/LikeButton.jsx';
+import PetPostViewSkeleton from '../../components/board/PetPostViewSkeleton';
+import LikeButton from '../../components/ui/LikeButton';
 
 export default function PetPostView() {
   const { id } = useParams();

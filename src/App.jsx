@@ -4,7 +4,7 @@ import {PostsProvider} from "./contexts/PostsProvider";
 import HomePage from "./pages/HomePage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import SignupPage from "./pages/auth/SignupPage.jsx";
-import MyActivity from "./pages/user/MyActivity.jsx";
+import MyActivity from './pages/user/MyActivity';
 import DynamicBoard from "./pages/board/DynamicBoard.jsx";
 import PostView from "./pages/board/PostView.jsx";
 import PostWritePage from "./pages/board/PostWritePage.jsx";

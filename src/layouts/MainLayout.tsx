@@ -9,7 +9,7 @@ import PlayerBar from '../components/layout/PlayerBar';
 import PlaylistPanel from '../components/player/PlaylistPanel';
 import Tooltip from '../components/ui/Tooltip.jsx';
 import { PanelLeft } from 'lucide-react';
-import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton.jsx';
+import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle.jsx';
 

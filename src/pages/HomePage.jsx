@@ -6,7 +6,7 @@ import { toHighResArtwork } from '../utils/image.js';
 import { GridIcon } from '../components/icons/index.js';
 import { CircleX, List, ListMusic } from 'lucide-react';
 import TrackItem from '../components/track/TrackItem.jsx';
-import HomePageSkeleton from './HomePageSkeleton.jsx';
+import HomePageSkeleton from './HomePageSkeleton';
 import soundCloudLogoBlack from '../assets/brands/soundcloud-logo-black.webp';
 import soundCloudLogoWhite from '../assets/brands/soundcloud-logo-white.webp';
 
