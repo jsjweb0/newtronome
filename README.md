@@ -2,14 +2,14 @@
 
 Demo: https://newtronome.jsjweb0.workers.dev/
 
-Newtronome은 React 학습 과정에서 시작해 음악 재생, 사용자 인증, 커뮤니티 기능까지 확장한 개인 프로젝트입니다. SoundCloud Widget 기반 개인 플레이리스트 랜덤 추천을 제공하고, 로그인 후 좋아요, 프로필 수정, 내가 쓴 글과 댓글 모아보기 등 사용자 활동 흐름을 구현했습니다.
+Newtronome은 React 학습 과정에서 시작해 음악 재생, 사용자 인증, 커뮤니티 기능으로 확장한 개인 프로젝트입니다. SoundCloud 개인 플레이리스트를 기반으로 랜덤 재생을 제공하며, 로그인 사용자는 트랙 저장, 프로필 수정, 게시글·댓글 작성과 활동 내역 조회 기능을 이용할 수 있습니다.
 
-음악 재생과 트랙 정보는 공식 SoundCloud Widget을 통해 동기화하며 별도의 SoundCloud Client ID를 사용하지 않습니다. 초기 React 학습 프로젝트라 라우팅, 인증, 게시판, 전역 상태 관리 등 여러 기능을 함께 실험한 흔적이 있으며, 이후 기능 단위 리팩토링을 계획하고 있습니다.
+음악 재생과 트랙 정보는 공식 SoundCloud Widget 이벤트를 React와 Zustand 상태에 동기화하며, 별도의 SoundCloud Client ID나 비공식 API 프록시를 사용하지 않습니다. 기존 JavaScript 코드는 TypeScript로 점진적으로 전환하고 있으며, SoundCloud와 Firestore의 외부 데이터를 검증한 뒤 애플리케이션 상태로 변환하고 있습니다.
 
 ## Tech Stack
 
 - React
-- TypeScript
+- TypeScript (점진적 전환)
 - Vite
 - Zustand
 - Tailwind CSS
@@ -126,8 +126,7 @@ SoundCloud Widget은 iframe에 실제로 렌더링된 범위만큼 플레이리�
 
 ## 향후 개선 사항
 
-- Cloudflare 프론트엔드 배포에 커스텀 도메인 연결
-- 학습 프로젝트 구조를 더 명확한 기능 단위 모듈로 점진적으로 개선
+- 남아 있는 JavaScript 파일을 TypeScript로 점진적으로 전환해 타입 안정성 강화
 - 음악, 게시판, 마이페이지의 로딩·빈 상태·오류 상태 보완
 - 플레이리스트 로딩과 재생 흐름에 대한 E2E 테스트 추가
 - Likes 페이지에서 저장한 트랙을 단일 재생 모드로 실행하고, 재생 중에는 기존 플레이리스트 패널을 비활성화한 뒤 트랙 종료 시 정지하도록 플레이어 모드 분리
