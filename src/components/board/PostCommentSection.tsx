@@ -4,33 +4,42 @@ import 'dayjs/locale/ko';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEffect, useRef, useState } from 'react';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { db } from '../../firebase';
-import { getCommentsFromDB } from '../../utils/comment.js';
 import { BaseButton } from '../ui/BaseButton';
-import Comment from './Comment.jsx';
 import { useNotifications } from '../../contexts/NotificationContext';
+import Comment from './Comment';
+import {
+  createCommentInDB,
+  getCommentsFromDB,
+  type Comment as CommentData,
+} from '../../utils/comment';
+import type { SubmitEvent } from 'react';
 
 dayjs.locale('ko');
 dayjs.extend(relativeTime);
 
-export default function PostCommentSection({ boardType, postId, onCommentChange }) {
+interface PostCommentSectionProps {
+  boardType: string;
+  postId: string;
+  onCommentChange?: (count: number) => void;
+}
+
+export default function PostCommentSection({ boardType, postId, onCommentChange }: PostCommentSectionProps) {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const { user, avatarUrl, nicknameUrl } = useAuth();
   const [loading, setLoading] = useState(true);
 
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState([]);
-  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [comments, setComments] = useState<CommentData[]>([]);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  const textareaRef = useRef();
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const profileImage = () => {
-    if (user.photoURL) {
+  const profileImage = (): string => {
+    if (user?.photoURL) {
       return user.photoURL;
     }
-    if (user.displayName) {
+    if (user?.displayName) {
       return nicknameUrl;
     }
     return avatarUrl;
@@ -50,43 +59,30 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
     }
   }, [comments, onCommentChange]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!comment.trim()) {
-      textareaRef.current.focus();
+      textareaRef.current?.focus();
       showToast({ message: '내용을 입력해주세요!', type: 'error' });
       return;
     }
 
-    const newComment = {
+    if (!user) {
+      showToast({
+        message: '로그인 후 작성할 수 있습니다.',
+        type: 'error',
+      });
+      return;
+    }
+
+    const newCommentForLocal = await createCommentInDB(boardType, postId, {
       content: comment,
-      createdAt: Timestamp.now(),
-      likedUsers: [],
-      likeCount: 0,
       writerUid: user.uid,
       writerEmail: user.email,
       displayName: user.displayName || null,
       photoURL: user.photoURL || null,
-    };
-
-    console.log('[handleSubmit] path →', boardType, '/', postId.toString(), '/comments/ (auto-id)');
-
-    const docRef = await addDoc(
-      collection(db, boardType, postId.toString(), 'comments'),
-      newComment
-    );
-    const newCommentForLocal = {
-      id: docRef.id,
-      content: newComment.content,
-      createdAt: newComment.createdAt.toDate(),
-      likeCount: newComment.likeCount,
-      likedUsers: [],
-      liked: false,
-      writerEmail: newComment.writerEmail,
-      displayName: newComment.displayName,
-      photoURL: newComment.photoURL,
-    };
+    });
 
     const notificationId = Date.now();
     const notification = { notificationId, message: '댓글이 등록되었습니다.' };
@@ -118,7 +114,7 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
               <div className="flex gap-2 items-center absolute top-4 left-4.5 text-gray-900 font-medium">
                 <img
                   src={profileImage()}
-                  alt={user.displayName || user.email}
+                  alt={user.displayName ?? user.email ?? '사용자 프로필'}
                   className="size-12 rounded-full"
                 />
               </div>
@@ -145,23 +141,17 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
 
       {/* 댓글 목록 */}
       <div className="mt-4 mb-14">
-        {comments.map((c, idx) => (
+        {comments.map((commentData, idx) => (
           <Comment
-            key={c.id}
+            key={commentData.id}
             idx={idx}
-            data={c}
+            data={commentData}
             boardType={boardType}
             postId={postId}
             comments={comments}
             setComments={setComments}
             openDropdownId={openDropdownId}
             setOpenDropdownId={setOpenDropdownId}
-            onUpdate={(updateComment) => {
-              setComments((prev) => prev.map((com) => (com.id === c.id ? updateComment : com)));
-            }}
-            onDelete={() => {
-              setComments((prev) => prev.filter((com) => com.id !== c.id));
-            }}
           />
         ))}
       </div>

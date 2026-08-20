@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { AuthAccess } from '../auth/AuthAccess.jsx';
+import { AuthAccess } from '../auth/AuthAccess';
 import { useToast } from '../../contexts/ToastContext';
 import { getCommentCountFromDB } from '../../utils/comment';
 import { BaseButton } from '../ui/BaseButton';
