@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import ImageSlider from '../components/ui/Slider.jsx';
+import ImageSlider from '../components/ui/Slider';
 import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore.js';
 import { toHighResArtwork } from '../utils/image.js';
 import { GridIcon } from '../components/icons/index.js';

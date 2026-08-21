@@ -7,7 +7,7 @@ import { BaseButton } from '../ui/BaseButton';
 import { Ellipsis, PenLine, Trash2 } from 'lucide-react';
 import { AuthAccess } from '../auth/AuthAccess';
 import LikeButton from '../ui/LikeButton';
-import ConfirmDialog from '../ui/ConfirmDialog.jsx';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import {
   deleteCommentFromDB,
   updateCommentInDB,
@@ -231,9 +231,8 @@ export default function Comment({
       </div>
       <ConfirmDialog
         isOpen={showConfirm}
-        labelledby="deleteConfirm"
         title="삭제"
-        message={`댓글이 삭제되었습니다.`}
+        message="댓글을 삭제하시겠습니까?"
         onConfirm={() => handleDelete(data.id)}
         onDismiss={() => setShowConfirm(false)}
       />

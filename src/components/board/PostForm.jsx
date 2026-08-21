@@ -5,7 +5,7 @@ import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthAccess } from '../auth/AuthAccess';
-import FormTextarea from '../ui/FormTextarea.jsx';
+import FormTextarea from '../ui/FormTextarea';
 
 export default function PostForm({ mode = 'create', boardType, onSubmit, initialData = {} }) {
   const navigate = useNavigate();
