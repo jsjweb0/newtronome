@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import DarkModeToggle from '../DarkModeToggle.jsx';
+import DarkModeToggle from '../DarkModeToggle';
 import {
   Menu,
   X,

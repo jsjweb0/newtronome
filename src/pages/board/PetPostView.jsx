@@ -12,7 +12,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import ShareButton from '../../components/board/ShareButton.jsx';
-import ImageSlider from '../../components/ui/Slider.jsx';
+import ImageSlider from '../../components/ui/Slider';
 import PetPostViewSkeleton from '../../components/board/PetPostViewSkeleton';
 import LikeButton from '../../components/ui/LikeButton';
 

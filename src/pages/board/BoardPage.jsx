@@ -1,10 +1,10 @@
 import { useSearchParams, useParams } from 'react-router-dom';
 import { usePosts } from '../../contexts/PostsContext';
 import { useEffect, useMemo, useState } from 'react';
-import SearchBar from '../../components/board/SearchBar.jsx';
-import SortButtonGroup from '../../components/board/SortButtonGroup.jsx';
+import SearchBar from '../../components/board/SearchBar';
+import SortButtonGroup from '../../components/board/SortButtonGroup';
 import PostList from '../../components/board/PostList.jsx';
-import Pagination from '../../components/board/Pagination.jsx';
+import Pagination from '../../components/board/Pagination';
 import WriteButton from '../../components/auth/WriteButton.jsx';
 import PostListSkeleton from '../../components/board/PostListSkeleton';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
@@ -107,7 +107,7 @@ export default function BoardPage() {
       <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
         {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
       </h2>
-      <SearchBar posts={posts} searchKeyword={searchKeyword} setSearchKeyword={setSearchKeyword} />
+      <SearchBar searchKeyword={searchKeyword} setSearchKeyword={setSearchKeyword} />
       <SortButtonGroup
         posts={posts}
         setPosts={setLocalPosts}

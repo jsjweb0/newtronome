@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 import { ThumbsUp } from 'lucide-react';
 import { BaseButton } from '../ui/BaseButton';
 import { useToast } from '../../contexts/ToastContext';
-import Pagination from './Pagination.jsx';
+import Pagination from './Pagination';
 import { formatDate } from '../../utils/format.js';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 
