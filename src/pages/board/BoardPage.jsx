@@ -5,7 +5,7 @@ import SearchBar from '../../components/board/SearchBar';
 import SortButtonGroup from '../../components/board/SortButtonGroup';
 import PostList from '../../components/board/PostList.jsx';
 import Pagination from '../../components/board/Pagination';
-import WriteButton from '../../components/auth/WriteButton.jsx';
+import WriteButton from '../../components/auth/WriteButton';
 import PostListSkeleton from '../../components/board/PostListSkeleton';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 

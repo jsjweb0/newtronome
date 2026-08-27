@@ -1,9 +1,12 @@
-const BroIcon = ({ className = "w-5 h-5" }) => (
+import type { SVGProps } from 'react';
+
+const BroIcon = ({ className = 'w-5 h-5', ...svgProps }: SVGProps<SVGSVGElement>) => (
     <svg
         viewBox="0 0 24 24"
         fill="none"
         className={className}
         xmlns="http://www.w3.org/2000/svg"
+        {...svgProps}
     >
         <path
             d="M2 12C2 7.28595 2 4.92893 3.17157 3.46447C4.34315 2 6.22876 2 10 2H14C17.7712 2 19.6569 2 20.8284 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.8284 20.5355C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.5355C2 19.0711 2 16.714 2 12Z"

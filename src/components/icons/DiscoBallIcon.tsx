@@ -1,4 +1,9 @@
-const DiscoBallIcon = ({ className = "w-5 h-5" }) => (
+import type { SVGProps } from 'react';
+
+const DiscoBallIcon = ({
+    className = 'w-5 h-5',
+    ...svgProps
+}: SVGProps<SVGSVGElement>) => (
     <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -7,6 +12,7 @@ const DiscoBallIcon = ({ className = "w-5 h-5" }) => (
         strokeLinecap="round"
         strokeLinejoin="round"
         className={className}
+        {...svgProps}
     >
         {/* 외곽 원 */}
         <circle cx="12" cy="12" r="8" />

@@ -7,12 +7,14 @@ export type TrackBookmarkButtonProps = {
   track: PlayerTrack;
   className?: string;
   iconClassName?: string;
+  'aria-describedby'?: string;
 };
 
 export default function TrackBookmarkButton({
   track,
   className,
   iconClassName,
+  'aria-describedby': ariaDescribedBy,
 }: TrackBookmarkButtonProps) {
   const {
     isBookmarked,
@@ -28,6 +30,7 @@ export default function TrackBookmarkButton({
       disabled={isLoading || isSaving}
       aria-pressed={isBookmarked}
       aria-label={isBookmarked ? '북마크 삭제' : '북마크 추가'}
+      aria-describedby={ariaDescribedBy}
       className={clsx(
         'inline-flex items-center justify-center disabled:cursor-wait disabled:opacity-50',
         className,

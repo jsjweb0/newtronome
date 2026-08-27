@@ -1,9 +1,15 @@
-const PlayRound = ({className = "w-5 h-5"}) => (
+import type { SVGProps } from 'react';
+
+const PlayRound = ({
+    className = 'w-5 h-5',
+    ...svgProps
+}: SVGProps<SVGSVGElement>) => (
     <svg fill="currentColor"
          version="1.1"
          xmlns="http://www.w3.org/2000/svg"
          viewBox="0 0 300 300"
          className={className}
+         {...svgProps}
     >
 		<g>
 			<g>

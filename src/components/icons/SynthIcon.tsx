@@ -1,4 +1,6 @@
-const SynthIcon = ({ className = "w-5 h-5" }) => (
+import type { SVGProps } from 'react';
+
+const SynthIcon = ({ className = 'w-5 h-5', ...svgProps }: SVGProps<SVGSVGElement>) => (
     <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -7,6 +9,7 @@ const SynthIcon = ({ className = "w-5 h-5" }) => (
         strokeLinecap="round"
         strokeLinejoin="round"
         className={className}
+        {...svgProps}
     >
         {/* 본체 */}
         <rect x="3" y="6" width="18" height="12" rx="2" />

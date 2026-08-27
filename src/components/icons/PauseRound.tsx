@@ -1,9 +1,15 @@
-const PauseRound = ({className = "w-5 h-5"}) => (
+import type { SVGProps } from 'react';
+
+const PauseRound = ({
+    className = 'w-5 h-5',
+    ...svgProps
+}: SVGProps<SVGSVGElement>) => (
     <svg fill="currentColor"
          version="1.1" id="Capa_1"
          xmlns="http://www.w3.org/2000/svg"
 		 viewBox="0 0 45.812 45.812"
          className={className}
+         {...svgProps}
     >
 		<path d="M39.104,6.708c-8.946-8.943-23.449-8.946-32.395,0c-8.946,8.944-8.946,23.447,0,32.394
 				c8.944,8.946,23.449,8.946,32.395,0C48.047,30.156,48.047,15.653,39.104,6.708z M20.051,31.704c0,1.459-1.183,2.64-2.641,2.64

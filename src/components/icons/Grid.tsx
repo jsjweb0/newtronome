@@ -1,9 +1,12 @@
-const GridIcon = ({ className = "w-6 h-6" }) => (
+import type { SVGProps } from 'react';
+
+const GridIcon = ({ className = 'w-6 h-6', ...svgProps }: SVGProps<SVGSVGElement>) => (
     <svg
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className={className}
+        {...svgProps}
     >
         <rect x="4" y="4" width="7" height="7" rx="1" fill="currentColor"/>
         <rect x="4" y="13" width="7" height="7" rx="1" fill="currentColor"/>

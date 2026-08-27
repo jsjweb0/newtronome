@@ -1,7 +1,17 @@
-import React from "react";
-import "./AudioEqualizerIcon.css";
+import type { SVGProps } from 'react';
+import './AudioEqualizerIcon.css';
 
-export default function AudioEqualizerIcon({ isPlaying = false, size = 24, className }) {
+interface AudioEqualizerIconProps extends SVGProps<SVGSVGElement> {
+    isPlaying?: boolean;
+    size?: number | string;
+}
+
+export default function AudioEqualizerIcon({
+    isPlaying = false,
+    size = 24,
+    className = '',
+    ...svgProps
+}: AudioEqualizerIconProps) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -14,6 +24,7 @@ export default function AudioEqualizerIcon({ isPlaying = false, size = 24, class
             strokeLinecap="round"
             strokeLinejoin="round"
             className={`lucide lucide-audio-lines ${isPlaying ? "animate" : "paused"} ${className}`}
+            {...svgProps}
         >
             <path className="bar bar1" d="M2 10v3" />
             <path className="bar bar2" d="M6 6v11" />

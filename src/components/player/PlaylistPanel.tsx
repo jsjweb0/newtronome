@@ -1,14 +1,14 @@
 import { toHighResArtwork } from '../../utils/image.js';
 import { formatTime } from '../../utils/format.js';
-import HeaderButtons from '../layout/HeaderButtons.jsx';
-import { AudioEqualizerIcon } from '../icons/index.js';
+import HeaderButtons from '../layout/HeaderButtons';
+import { AudioEqualizerIcon } from '../icons';
 import { ListMusic, Play } from 'lucide-react';
 import noImage from '../../assets/no-image.png';
 import clsx from 'clsx';
 import SoundCloudWidget from '../../features/player/components/SoundCloudWidget';
 import soundCloudFaviconBlack from '../../assets/brands/soundcloud-favicon-black.webp';
 import soundCloudFaviconWhite from '../../assets/brands/soundcloud-favicon-white.webp';
-import Tooltip from '../ui/Tooltip.jsx';
+import Tooltip from '../ui/Tooltip';
 import type { PlayerTrack } from '../../features/player/types/player.types';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton.js';

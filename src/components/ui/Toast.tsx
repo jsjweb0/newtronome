@@ -1,11 +1,23 @@
-import { forwardRef, useImperativeHandle, useState } from 'react';
+import {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Info, CircleCheck, CircleX, TriangleAlert, X } from 'lucide-react';
+import { ToastContextValue, ToastOptions, ToastType } from '../../contexts/ToastContext';
 
-const Toast = forwardRef((_, ref) => {
-  const [toasts, setToasts] = useState([]);
+interface ToastItem {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+
+const Toast = forwardRef<ToastContextValue>(function Toast(_, ref) {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   useImperativeHandle(ref, () => ({
-    showToast: ({ message, duration = 3000, type = 'success' }) => {
+    showToast: ({ message, duration = 3000, type = 'success' }: ToastOptions) => {
       const id = Date.now(); // 유니크 ID
 
       setToasts((prev) => [...prev, { id, message, type }]);
@@ -17,34 +29,35 @@ const Toast = forwardRef((_, ref) => {
   }));
 
   const iconBaseStyles = 'shrink-0 size-6 stroke-white';
-  const typeStyles = {
+  const typeStyles: Record<ToastType, string> = {
     success: 'fill-teal-500 dark:fill-none dark:stroke-teal-500',
     warning: 'fill-yellow-500 dark:fill-none dark:stroke-yellow-500',
     error: 'fill-red-500 dark:fill-none dark:stroke-red-500',
     info: 'fill-blue-600 dark:fill-none dark:stroke-blue-600',
   };
-  const getIcon = (type) => {
-    const iconColor = typeStyles[type] || typeStyles.success;
-    const icons = {
+  const getIcon = (type: ToastType) => {
+    const iconColor = typeStyles[type];
+    const icons: Record<ToastType, ReactNode> = {
       success: <CircleCheck className={`${iconBaseStyles} ${iconColor}`} />,
       warning: <TriangleAlert className={`${iconBaseStyles} ${iconColor}`} />,
       error: <CircleX className={`${iconBaseStyles} ${iconColor}`} />,
       info: <Info className={`${iconBaseStyles} ${iconColor}`} />,
     };
-    return icons[type] || icons.success;
+
+    return icons[type];
   };
 
   return (
     <>
       {toasts.length > 0 && (
         <div className="space-y-3 fixed bottom-5 right-5 z-700 w-full max-w-xs group">
-          {toasts.map((toast) => (
+          {toasts.map((toast) =>
+          (
             <div
               key={toast.id}
               className="bg-white border border-gray-200 rounded-xl shadow-lg dark:bg-neutral-800 dark:border-neutral-700 transition-all duration-500 opacity-100 translate-y-0 [@starting-style]:opacity-0 [@starting-style]:translate-y-5"
               role="alert"
               tabIndex={-1}
-              aria-labelledby="toast-title"
             >
               <button
                 type="button"
@@ -58,15 +71,17 @@ const Toast = forwardRef((_, ref) => {
               <div className="flex gap-x-2 p-4">
                 <div className="shrink-0">{getIcon(toast.type)}</div>
                 <div className="grow mt-1">
-                  <p id="toast-title" className="text-gray-700 text-sm dark:text-white">
+                  <p className="text-gray-700 text-sm dark:text-white">
                     {toast?.message}
                   </p>
                 </div>
               </div>
             </div>
-          ))}
+          )
+          )}
         </div>
-      )}
+      )
+      }
     </>
   );
 });

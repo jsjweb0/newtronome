@@ -16,6 +16,7 @@ interface LikeButtonProps {
   showCount?: boolean;
   className?: string;
   svgClassName?: string;
+  'aria-describedby'?: string;
 }
 
 export default function LikeButton({
@@ -27,6 +28,7 @@ export default function LikeButton({
   showCount = true,
   className = '',
   svgClassName = '',
+  'aria-describedby': ariaDescribedBy,
 }: LikeButtonProps) {
   const { user } = useAuth();
   const { addNotification } = useNotifications();
@@ -122,6 +124,7 @@ export default function LikeButton({
             onClick={handleLike}
             className={clsx('group flex items-center px-2 hover:text-gray-800', className)}
             aria-label="좋아요"
+            aria-describedby={ariaDescribedBy}
           >
             <Heart
               className={clsx(
@@ -146,6 +149,7 @@ export default function LikeButton({
               liked ? 'text-blue-600 font-medium' : 'text-gray-500 dark:text-neutral-400'
             )}
             aria-label="좋아요"
+            aria-describedby={ariaDescribedBy}
           >
             <ThumbsUp
               className={clsx(

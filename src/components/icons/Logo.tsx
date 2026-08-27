@@ -1,8 +1,11 @@
-const LogoIcon = ({ className = "w-5 h-5" }) => (
+import type { SVGProps } from 'react';
+
+const LogoIcon = ({ className = 'w-5 h-5', ...svgProps }: SVGProps<SVGSVGElement>) => (
     <svg
         viewBox="0 0 384.66 45.22"
         fill="currentColor"
         className={className}
+        {...svgProps}
     >
         <polygon fill="none" points="325.31 26.19 325.54 25.85 324.84 25.85 324.84 26.19 325.31 26.19"/>
          <polygon points="24.07 44.61 32.33 44.61 33.66 40.52 23 40.52 24.07 44.61"/>

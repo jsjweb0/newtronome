@@ -1,6 +1,6 @@
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { SunMedium, Moon } from 'lucide-react';
-import Tooltip from './ui/Tooltip.jsx';
+import Tooltip from './ui/Tooltip';
 import clsx from 'clsx';
 
 type DarkModeToggleProps = {

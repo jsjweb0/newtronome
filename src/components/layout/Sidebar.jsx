@@ -15,11 +15,11 @@ import {
   Disc3,
   Heart,
 } from 'lucide-react';
-import { LogoIcon, LogoMoIcon, Turntable, MusicLibrary } from '../icons/index.js';
+import { LogoIcon, LogoMoIcon, Turntable, MusicLibrary } from '../icons';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
-import Tooltip from '../ui/Tooltip.jsx';
-import NotificationDropdown from '../ui/NotificationDropdown.jsx';
+import Tooltip from '../ui/Tooltip';
+import NotificationDropdown from '../ui/NotificationDropdown';
 
 export default function Sidebar({ collapsed = false }) {
   const { user, logout, avatarUrl, nicknameUrl } = useAuth();
