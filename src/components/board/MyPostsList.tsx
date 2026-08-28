@@ -1,8 +1,30 @@
 import { useEffect, useMemo } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import type {
+  CommunityBoardType,
+  Post,
+} from '../../contexts/PostsContext';
 import { useToast } from '../../contexts/ToastContext';
-import Pagination from '../../components/board/Pagination';
-import MyPostItem from './MyPostItem.jsx';
-import { getCurrentPageItems, getTotalPages, DEFAULT_ITEMS_PER_PAGE } from '../../utils/pagination';
+import Pagination from './Pagination';
+import MyPostItem from './MyPostItem';
+import {
+  DEFAULT_ITEMS_PER_PAGE,
+  getCurrentPageItems,
+  getTotalPages,
+} from '../../utils/pagination';
+
+type MyPostsListProps = {
+  handlePageChange: (page: number) => void;
+  currentPage: number;
+  setCurrentPage: Dispatch<SetStateAction<number>>;
+  searchKeyword: string;
+  posts: Post[];
+  setPosts: Dispatch<SetStateAction<Post[]>>;
+  deletePost: (
+    boardType: CommunityBoardType,
+    postId: Post['id']
+  ) => Promise<void>;
+}
 
 export default function MyPostsList({
   handlePageChange,
@@ -12,36 +34,55 @@ export default function MyPostsList({
   posts,
   setPosts,
   deletePost,
-}) {
+}: MyPostsListProps) {
   const { showToast } = useToast();
 
-  // 1) 검색어·페이징용 필터링
   const filteredPosts = useMemo(() => {
     return posts
-      .slice()
-      .filter((p) => p.title.toLowerCase().includes(searchKeyword.toLowerCase()))
-      .sort((a, b) => b.date.getTime() - a.date.getTime());
+      .filter((post) =>
+        post.title
+          .toLowerCase()
+          .includes(searchKeyword.toLowerCase())
+      )
+      .sort(
+        (firstPost, secondPost) =>
+          (secondPost.date?.getTime() ?? 0) -
+          (firstPost.date?.getTime() ?? 0)
+      );
   }, [posts, searchKeyword]);
 
-  // 2) 페이징 계산
   const totalItems = filteredPosts.length;
   const totalPages = getTotalPages(totalItems);
   const currentItems = getCurrentPageItems(filteredPosts, currentPage);
 
-  // 페이지 범위 벗어나면 1로 리셋
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages || 1);
     }
   }, [totalPages, currentPage, setCurrentPage]);
 
-  // 삭제 핸들러
-  const handleDelete = async (boardType, postId) => {
+  const handleDelete = async (
+    boardType: CommunityBoardType,
+    postId: Post['id']
+  ): Promise<void> => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
 
     await deletePost(boardType, postId);
-    setPosts((prev) => prev.filter((p) => !(p.id === postId && p.boardType === boardType)));
-    showToast({ message: '게시글이 삭제되었습니다.', type: 'success' });
+
+    setPosts((previousPosts) =>
+      previousPosts.filter(
+        (post) =>
+          !(
+            post.id === postId &&
+            post.boardType === boardType
+          )
+      )
+    );
+
+    showToast({
+      message: '게시글이 삭제되었습니다.',
+      type: 'success',
+    });
   };
 
   //if (loadingPosts) return <p>로딩 중…</p>;

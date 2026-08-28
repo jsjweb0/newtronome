@@ -17,7 +17,7 @@ import {
 import LikeButton from '../../components/ui/LikeButton';
 import PostCommentSection from '../../components/board/PostCommentSection';
 import { getCommentCountFromDB } from '../../utils/comment';
-import ShareButton from '../../components/board/ShareButton.jsx';
+import ShareButton from '../../components/board/ShareButton';
 import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip';
 import { formatDate } from '../../utils/format.js';

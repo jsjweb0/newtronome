@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import PetSearchBar from '../../components/board/PetSearchBar.jsx';
 import SortButtonGroup from '../../components/board/SortButtonGroup';
 import Pagination from '../../components/board/Pagination';
-import PetPostList from '../../components/board/PetPostList.jsx';
+import PetPostList from '../../components/board/PetPostList';
 import PetPostListSkeleton from '../../components/board/PetPostListSkeleton';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 
@@ -265,14 +265,10 @@ export default function PetBoardPage() {
         setDateSort={setDateSort}
       />
       <PetPostList
-        posts={posts}
         filteredPosts={currentItems}
-        setPosts={setPosts}
         searchKeyword={searchKeyword}
         currentPage={currentPage}
         dateSort={dateSort}
-        kindFilter={kindFilter}
-        setKindFilter={setKindFilter}
       />
       <Pagination
         currentPage={currentPage}

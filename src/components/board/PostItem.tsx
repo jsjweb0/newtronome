@@ -4,10 +4,26 @@ import { useToast } from '../../contexts/ToastContext';
 import { getCommentCountFromDB } from '../../utils/comment';
 import { BaseButton } from '../ui/BaseButton';
 import { useEffect, useState } from 'react';
-import { formatDate } from '../../utils/format.js';
+import { formatDate } from '../../utils/format';
 import { useNotifications } from '../../contexts/NotificationContext';
+import type { Dispatch, SetStateAction } from 'react';
+import type {
+  CommunityBoardType,
+  Post,
+} from '../../contexts/PostsContext';
 
-function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateSort, deletePost }) {
+type PostItemProps = {
+  post: Post;
+  searchKeyword: string;
+  setPosts: Dispatch<SetStateAction<Post[]>>;
+  boardType: CommunityBoardType;
+  currentPage: number;
+  dateSort: boolean;
+  deletePost: (postId: Post['id']) => Promise<void>;
+}
+
+function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateSort, deletePost
+}: PostItemProps) {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const [commentCount, setCommentCount] = useState(0);
@@ -26,43 +42,61 @@ function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateS
     };
   }, [boardType, post.id]);
 
-  const categoryColorMap = {
+  const categoryColorMap: Record<string, string> = {
     카테고리1: 'text-blue-500 font-normal',
     카테고리2: 'text-fuchsia-900 font-normal',
     카테고리3: 'text-gray-400 font-normal',
     카테고리4: 'text-neutral-500 font-normal',
   };
   const displayAuthor =
-    boardType === 'notice' ? '관리자' : boardType === 'free' ? post.displayName : post.email;
+    boardType === 'notice'
+      ? '관리자'
+      : post.displayName ?? post.email ?? '알 수 없음';
 
-  const highlightText = (text, keyword) => {
+  const highlightText = (text: string, keyword: string) => {
     if (!keyword) return text;
 
     const regex = new RegExp(`(${keyword})`, 'gi');
-    return text
-      .split(regex)
-      .map((part, i) =>
-        part.toLowerCase() === keyword.toLowerCase() ? (
-          <mark key={i}>{part}</mark>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      );
+
+    return text.split(regex).map((part, index) =>
+      part.toLowerCase() === keyword.toLowerCase() ? (
+        <mark key={index}>{part}</mark>
+      ) : (
+        <span key={index}>{part}</span>
+      )
+    );
   };
 
-  const deletePosts = async (targetId) => {
+  const deletePosts = async (
+    targetId: Post['id']
+  ): Promise<void> => {
     if (!window.confirm('삭제하시겠습니까?')) return;
 
-    const id = Date.now();
-    const notification = { id, message: '삭제에 실패했습니다.', type: 'error' };
+    const notification = {
+      id: Date.now(),
+      message: '삭제에 실패했습니다.',
+      type: 'error' as const
+    };
 
     try {
       await deletePost(targetId);
-      setPosts((prev) => prev.filter((p) => p.id !== targetId));
-      showToast({ message: '게시글이 삭제되었습니다.', type: 'success' });
+
+      setPosts((previousPosts) =>
+        previousPosts.filter((post) => post.id !== targetId)
+      );
+
+      showToast({
+        message: '게시글이 삭제되었습니다.',
+        type: 'success',
+      });
     } catch (err) {
       console.error(err);
-      showToast({ message: notification.message });
+
+      showToast({
+        message: notification.message,
+        type: 'error'
+      });
+
       addNotification(notification);
     }
   };
