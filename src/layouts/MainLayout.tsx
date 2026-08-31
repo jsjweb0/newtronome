@@ -7,11 +7,11 @@ import 'preline';
 import Sidebar from '../components/layout/Sidebar.jsx';
 import PlayerBar from '../components/layout/PlayerBar';
 import PlaylistPanel from '../components/player/PlaylistPanel';
-import Tooltip from '../components/ui/Tooltip.jsx';
+import Tooltip from '../components/ui/Tooltip';
 import { PanelLeft } from 'lucide-react';
 import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton';
 import clsx from 'clsx';
-import DarkModeToggle from '../components/DarkModeToggle.jsx';
+import DarkModeToggle from '../components/DarkModeToggle';
 
 const PLAYLIST_URLS = [
   'https://soundcloud.com/ssu-1/sets/2025-summer',

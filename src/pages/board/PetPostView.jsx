@@ -11,8 +11,8 @@ import {
   PhoneOutgoing,
   MessageCircle,
 } from 'lucide-react';
-import ShareButton from '../../components/board/ShareButton.jsx';
-import ImageSlider from '../../components/ui/Slider.jsx';
+import ShareButton from '../../components/board/ShareButton';
+import ImageSlider from '../../components/ui/Slider';
 import PetPostViewSkeleton from '../../components/board/PetPostViewSkeleton';
 import LikeButton from '../../components/ui/LikeButton';
 

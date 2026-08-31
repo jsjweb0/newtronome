@@ -11,7 +11,7 @@ import {
   Shuffle,
   VolumeOff,
 } from 'lucide-react';
-import Tooltip from '../ui/Tooltip.jsx';
+import Tooltip from '../ui/Tooltip';
 import { useDarkMode } from '../../contexts/DarkModeContext';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
