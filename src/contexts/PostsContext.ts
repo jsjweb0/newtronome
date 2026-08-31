@@ -39,8 +39,8 @@ export interface CreatePostInput {
   content: string;
   postNo: number;
   date: Date;
-
   category: string | null;
+  isNotice: boolean;
 
   authorUid: string;
   email: string | null;
