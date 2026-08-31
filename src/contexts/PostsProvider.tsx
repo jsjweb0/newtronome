@@ -217,6 +217,7 @@ async function createPostInFirestore(
         postNo: input.postNo,
         date: input.date,
         category: input.category,
+        isNotice: input.isNotice === true,
         likeCount: 0,
         likedUsers: [],
         authorUid: input.authorUid,
@@ -233,7 +234,6 @@ async function createPostInFirestore(
         ...data,
         updatedAt: null,
         viewCount: 0,
-        isNotice: false,
     };
 }
 
