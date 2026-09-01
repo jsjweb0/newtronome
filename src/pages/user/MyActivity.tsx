@@ -68,11 +68,13 @@ export default function MyActivity() {
 
   // 5) 검색어 변경 시 URL 리셋
   useEffect(() => {
-    const qp = new URLSearchParams(searchParams);
-    qp.set('page', '1');
-    qp.set('keyword', searchKeyword);
-    setSearchParams(qp);
-  }, [searchKeyword]);
+    setSearchParams((previousParams) => {
+      const nextParams = new URLSearchParams(previousParams);
+      nextParams.set('page', '1');
+      nextParams.set('keyword', searchKeyword);
+      return nextParams;
+    });
+  }, [searchKeyword, setSearchParams]);
 
   const handlePostPageChange = (page: number) => {
     setPostPage(page);

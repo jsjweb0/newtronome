@@ -10,33 +10,54 @@ import Pagination from '../../components/board/Pagination';
 import PetPostList from '../../components/board/PetPostList';
 import PetPostListSkeleton from '../../components/board/PetPostListSkeleton';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
+import type { AnimalKind } from '../../components/board/AnimalKindFilter';
+import type { SexFilterValue } from '../../components/board/SexFilter';
+import type { StatusFilterValue } from '../../components/board/StatusFilter';
+import {
+  parsePetPostsResponse,
+  parseRegionOptionsResponse,
+  type PetPost,
+  type RegionOption,
+} from '../../utils/petApi';
+
+function getAnimalKind(value: string | null): AnimalKind {
+  return value === 'dog' || value === 'cat' || value === 'etc' ? value : 'all';
+}
+
+function getSexFilter(value: string | null): SexFilterValue {
+  return value === 'M' || value === 'F' || value === 'Q' ? value : '';
+}
+
+function getStatusFilter(value: string | null): StatusFilterValue {
+  return value === '보호중' || value === '종료(반환)' ? value : '';
+}
 
 export default function PetBoardPage() {
   const { showToast } = useToast();
   const { user } = useAuth();
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<PetPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [likedIds, setLikedIds] = useState([]);
-  const [regionOptions, setRegionOptions] = useState([]);
+  const [likedIds, setLikedIds] = useState<string[]>([]);
+  const [regionOptions, setRegionOptions] = useState<RegionOption[]>([]);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const pageParam = parseInt(searchParams.get('page')) || 1;
+  const pageParam = Number.parseInt(searchParams.get('page') ?? '', 10) || 1;
   const keywordParam = searchParams.get('keyword') || '';
   const sortParam = searchParams.get('sort') === 'asc';
   const regionCodeParam = searchParams.get('region') || '';
-  const kindFilterParam = searchParams.get('kind') || 'all';
-  const sexFilterParam = searchParams.get('sex') || '';
-  const statusFilterParam = searchParams.get('status') || '';
+  const kindFilterParam = getAnimalKind(searchParams.get('kind'));
+  const sexFilterParam = getSexFilter(searchParams.get('sex'));
+  const statusFilterParam = getStatusFilter(searchParams.get('status'));
   const likedParam = searchParams.get('liked') === 'true';
 
   const [currentPage, setCurrentPage] = useState(pageParam);
   const [searchKeyword, setSearchKeyword] = useState(keywordParam);
   const [dateSort, setDateSort] = useState(sortParam);
   const [regionCode, setRegionCode] = useState(regionCodeParam);
-  const [kindFilter, setKindFilter] = useState(kindFilterParam);
-  const [sexFilter, setSexFilter] = useState(sexFilterParam);
-  const [statusFilter, setStatusFilter] = useState(statusFilterParam);
+  const [kindFilter, setKindFilter] = useState<AnimalKind>(kindFilterParam);
+  const [sexFilter, setSexFilter] = useState<SexFilterValue>(sexFilterParam);
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>(statusFilterParam);
   const [showOnlyLiked, setShowOnlyLiked] = useState(likedParam);
 
   useEffect(() => {
@@ -52,10 +73,8 @@ export default function PetBoardPage() {
             },
           }
         );
-        const data = await res.json();
-        const posts = data.response?.body?.items?.item || [];
-
-        setPosts(posts);
+        const data: unknown = await res.json();
+        setPosts(parsePetPostsResponse(data));
       } catch (e) {
         console.error('펫 데이터 오류', e);
         showToast({ message: '펫 데이터를 불러오지 못했어요.', type: 'error' });
@@ -71,16 +90,19 @@ export default function PetBoardPage() {
     const fetchRegions = async () => {
       const serviceKey =
         'l7ngeStfaLO1QpNc4njFsAoLLALk//VGMTfhTwFidxSvqRMd4YLHKsp2u28o5zpEPlYjmr5y5UOpSt4xphNqkA==';
-      const res = await fetch(
-        `https://apis.data.go.kr/1543061/abandonmentPublicService_v2/sido_v2?serviceKey=${serviceKey}&numOfRows=100&_type=json`
-      );
-      const data = await res.json();
-      const regionList = data.response?.body?.items?.item || [];
-      setRegionOptions(regionList);
+      try {
+        const res = await fetch(
+          `https://apis.data.go.kr/1543061/abandonmentPublicService_v2/sido_v2?serviceKey=${serviceKey}&numOfRows=100&_type=json`
+        );
+        const data: unknown = await res.json();
+        setRegionOptions(parseRegionOptionsResponse(data));
+      } catch {
+        showToast({ message: '지역 정보를 불러오지 못했어요.', type: 'error' });
+      }
     };
 
     fetchRegions();
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     const fetchLikedPosts = async () => {
@@ -88,11 +110,11 @@ export default function PetBoardPage() {
 
       try {
         const snap = await getDocs(collection(db, 'pet'));
-        const result = [];
+        const result: string[] = [];
 
         snap.forEach((docSnap) => {
           const data = docSnap.data();
-          if (data.likedUsers?.includes(user.email)) {
+          if (Array.isArray(data.likedUsers) && data.likedUsers.includes(user.uid)) {
             result.push(docSnap.id); // 문서 ID = desertionNo
           }
         });
@@ -140,7 +162,7 @@ export default function PetBoardPage() {
       )
       .filter((post) => !showOnlyLiked || likedIds.includes(post.desertionNo?.toString()));
 
-    const uniqueMap = new Map();
+    const uniqueMap = new Map<string, PetPost>();
     filtered.forEach((post) => uniqueMap.set(post.desertionNo, post));
     return Array.from(uniqueMap.values());
   }, [
@@ -159,12 +181,12 @@ export default function PetBoardPage() {
   const totalPages = getTotalPages(filteredPosts.length, itemsPerPage);
   const currentItems = getCurrentPageItems(filteredPosts, currentPage, itemsPerPage);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
 
   useEffect(() => {
-    const pageFromParams = parseInt(searchParams.get('page'));
+    const pageFromParams = Number.parseInt(searchParams.get('page') ?? '', 10);
     const keywordFromParams = searchParams.get('keyword') || '';
     const sortFromParams = searchParams.get('sort') === 'asc';
 
@@ -189,11 +211,20 @@ export default function PetBoardPage() {
     if (!pageFromQuery && isFilterChanged.some((v) => v)) {
       setCurrentPage(1);
     }
-  }, [searchKeyword, dateSort, regionCode, kindFilter, sexFilter, statusFilter, showOnlyLiked]);
+  }, [
+    searchKeyword,
+    dateSort,
+    regionCode,
+    kindFilter,
+    sexFilter,
+    statusFilter,
+    showOnlyLiked,
+    searchParams,
+  ]);
 
   useEffect(() => {
     const newParams = new URLSearchParams();
-    newParams.set('page', '1');
+    newParams.set('page', currentPage.toString());
     newParams.set('keyword', searchKeyword);
     newParams.set('sort', dateSort ? 'asc' : 'desc');
     if (regionCode) newParams.set('region', regionCode);
@@ -203,7 +234,6 @@ export default function PetBoardPage() {
     if (showOnlyLiked) newParams.set('liked', 'true');
 
     setSearchParams(newParams, { replace: false });
-    console.log('🔁 URL 쿼리 갱신됨:', newParams.toString());
   }, [
     currentPage,
     searchKeyword,
@@ -213,6 +243,7 @@ export default function PetBoardPage() {
     sexFilter,
     statusFilter,
     showOnlyLiked,
+    setSearchParams,
   ]);
 
   useEffect(() => {
@@ -241,8 +272,6 @@ export default function PetBoardPage() {
         보호동물
       </h2>
       <PetSearchBar
-        posts={posts}
-        filteredPosts={filteredPosts}
         searchKeyword={searchKeyword}
         setSearchKeyword={setSearchKeyword}
         filter={kindFilter}
@@ -259,8 +288,6 @@ export default function PetBoardPage() {
       />
       <SortButtonGroup
         posts={posts}
-        setPosts={setPosts}
-        initialNotice={posts}
         dateSort={dateSort}
         setDateSort={setDateSort}
       />

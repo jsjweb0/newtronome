@@ -9,35 +9,54 @@ import {
   Info,
   SquareArrowOutUpRight,
   PhoneOutgoing,
-  MessageCircle,
 } from 'lucide-react';
 import ShareButton from '../../components/board/ShareButton';
 import ImageSlider from '../../components/ui/Slider';
 import PetPostViewSkeleton from '../../components/board/PetPostViewSkeleton';
 import LikeButton from '../../components/ui/LikeButton';
+import {
+  parsePetPostsResponse,
+  type PetPost,
+} from '../../utils/petApi';
+
+type PetListLocationState = {
+  page?: number;
+  keyword?: string;
+  sort?: boolean;
+};
 
 export default function PetPostView() {
   const { id } = useParams();
-  const [post, setPost] = useState(null);
+  const [post, setPost] = useState<PetPost | null>(null);
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
 
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const page = location.state?.page || parseInt(searchParams.get('page')) || 1;
-  const keyword = location.state?.keyword || searchParams.get('keyword') || '';
-  const sort = location.state?.sort || searchParams.get('sort') || 'desc';
+  const locationState = location.state as PetListLocationState | null;
+  const pageFromQuery = Number.parseInt(searchParams.get('page') ?? '', 10);
+  const page = locationState?.page ?? (Number.isNaN(pageFromQuery) ? 1 : pageFromQuery);
+  const keyword = locationState?.keyword ?? searchParams.get('keyword') ?? '';
+  const sort = locationState?.sort === undefined
+    ? searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
+    : locationState.sort ? 'asc' : 'desc';
 
   useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
     const fetchPost = async () => {
       try {
         const res = await fetch(
           'https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2?serviceKey=l7ngeStfaLO1QpNc4njFsAoLLALk//VGMTfhTwFidxSvqRMd4YLHKsp2u28o5zpEPlYjmr5y5UOpSt4xphNqkA==&pageNo=1&numOfRows=100&_type=json'
         );
-        const data = await res.json();
-        const items = data.response?.body?.items?.item || [];
-        const found = items.find((item) => item.desertionNo === id);
+        const data: unknown = await res.json();
+        const found = parsePetPostsResponse(data).find(
+          (item) => item.desertionNo === id
+        );
 
         if (found) {
           setPost(found);
@@ -67,7 +86,9 @@ export default function PetPostView() {
   const endDate = dayjs(post.noticeEdt);
   const today = dayjs();
   const dayLeft = endDate.diff(today, 'day');
-  const images = [post.popfile1, post.popfile2].filter(Boolean);
+  const images = [post.popfile1, post.popfile2].filter(
+    (image): image is string => typeof image === 'string'
+  );
   const orgNm = post.orgNm?.split(' ').slice(0, 2).join(' ');
 
   return (
@@ -117,7 +138,10 @@ export default function PetPostView() {
         </div>
         {/* 내용 */}
         <div>
-          <ImageSlider images={images} alt={post?.kindNm || '동물' + post?.colorCd || ''} />
+          <ImageSlider
+            images={images}
+            alt={`${post.kindNm ?? '동물'} ${post.colorCd ?? ''}`.trim()}
+          />
           <div className="mt-8 text-center">
             <BaseButton as="link" to={`tel:${post.careTel}`} className="!px-6 !text-sm">
               📞 입양 문의하기
@@ -202,7 +226,7 @@ export default function PetPostView() {
                         중성화 여부
                       </th>
                       <td className="px-3 md:px-6 py-4 text-sm text-gray-800 dark:text-neutral-200">
-                        {post.neuterYn === 'Y' ? '예' : post.sexCd === 'N' ? '아니오' : '미상'}
+                        {post.neuterYn === 'Y' ? '예' : post.neuterYn === 'N' ? '아니오' : '미상'}
                       </td>
                     </tr>
                     <tr>
@@ -273,7 +297,7 @@ export default function PetPostView() {
                       <td className="px-3 md:px-6 py-4 break-keep text-sm text-gray-800 dark:text-neutral-200">
                         {post.careAddr}
                         <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(post.careAddr)}`}
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(post.careAddr ?? '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="group flex md:inline-flex items-center gap-x-1 md:ml-2 text-sm font-semibold rounded-lg border border-transparent text-blue-600 hover:text-blue-800 focus:outline-hidden focus:text-blue-800 disabled:opacity-50 disabled:pointer-events-none dark:text-blue-500 dark:hover:text-blue-400 dark:focus:text-blue-400"
@@ -314,7 +338,7 @@ export default function PetPostView() {
                 📞 입양 문의하기
               </Link>
               <div className="block h-3 border-e border-gray-300 mx-2 md:mx-3 dark:border-neutral-600"></div>
-              <LikeButton docId={post.desertionNo} collection="pet" initialCount={post.likeCount} />
+              <LikeButton docId={post.desertionNo} collection="pet" />
               <div className="block h-3 border-e border-gray-300 mx-2 md:mx-3 dark:border-neutral-600"></div>
               <ShareButton post={post} />
             </div>
@@ -330,7 +354,7 @@ export default function PetPostView() {
                 onClick={() => {
                   const query = new URLSearchParams();
 
-                  query.set('page', page?.toString() || '1');
+                  query.set('page', page.toString());
                   if (keyword) query.set('keyword', keyword);
                   if (sort) query.set('sort', sort);
 

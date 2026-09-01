@@ -3,21 +3,9 @@ import { Link } from "react-router-dom";
 import noImage from "../../assets/no-image.webp";
 import ShareButton from "./ShareButton";
 import LikeButton from '../ui/LikeButton';
+import type { PetPost } from '../../utils/petApi';
 
-export interface PetPost {
-    desertionNo: string;
-    noticeSdt?: string;
-    noticeEdt?: string;
-    popfile1?: string;
-    kindNm?: string;
-    colorCd?: string;
-    careNm?: string;
-    processState?: string;
-    upKindNm?: string;
-    orgNm?: string;
-    sexCd?: string;
-    likeCount?: number;
-}
+export type { PetPost } from '../../utils/petApi';
 
 type PetPostItemProps = {
     post: PetPost;
