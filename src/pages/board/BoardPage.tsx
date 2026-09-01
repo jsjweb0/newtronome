@@ -1,5 +1,9 @@
 import { useSearchParams, useParams } from 'react-router-dom';
-import { usePosts } from '../../contexts/PostsContext';
+import {
+  isCommunityBoardType,
+  type Post,
+  usePosts,
+} from '../../contexts/PostsContext';
 import { useEffect, useMemo, useState } from 'react';
 import SearchBar from '../../components/board/SearchBar';
 import SortButtonGroup from '../../components/board/SortButtonGroup';
@@ -9,16 +13,14 @@ import WriteButton from '../../components/auth/WriteButton';
 import PostListSkeleton from '../../components/board/PostListSkeleton';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 
-const VALID_BOARD_TYPES = ['notice', 'free', 'pet'];
-
 export default function BoardPage() {
   const { boardType } = useParams();
   const { getPosts, deletePost } = usePosts();
-  const [posts, setLocalPosts] = useState([]);
+  const [posts, setLocalPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageParam = parseInt(searchParams.get('page')) || 1;
+  const pageParam = Number.parseInt(searchParams.get('page') ?? '', 10) || 1;
   const keywordParam = searchParams.get('keyword') || '';
   const sortParam = searchParams.get('sort') === 'asc';
 
@@ -27,7 +29,8 @@ export default function BoardPage() {
   const [dateSort, setDateSort] = useState(sortParam);
 
   useEffect(() => {
-    if (!boardType) return;
+    if (!isCommunityBoardType(boardType)) return;
+
     const fetchData = async () => {
       setLoading(true);
       const result = await getPosts(boardType);
@@ -52,14 +55,14 @@ export default function BoardPage() {
   const totalPages = getTotalPages(totalItems);
   const currentItems = getCurrentPageItems(filteredPosts, currentPage);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = (newPage: number) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set('page', newPage);
+    newParams.set('page', newPage.toString());
     setSearchParams(newParams);
   };
 
   useEffect(() => {
-    const pageFromParams = parseInt(searchParams.get('page'));
+    const pageFromParams = Number.parseInt(searchParams.get('page') ?? '', 10);
     const keywordFromParams = searchParams.get('keyword') || '';
     const sortFromParams = searchParams.get('sort') === 'asc';
 
@@ -79,10 +82,10 @@ export default function BoardPage() {
       newParams.set('sort', dateSort ? 'asc' : 'desc');
       setSearchParams(newParams);
     }
-  }, [searchKeyword, dateSort]);
+  }, [searchKeyword, dateSort, searchParams, setSearchParams]);
 
   // 존재하지 않는 게시판 처리
-  if (!VALID_BOARD_TYPES.includes(boardType)) {
+  if (!isCommunityBoardType(boardType)) {
     return (
       <div className="max-w-[85rem] mx-auto mt-20 px-4 text-center">
         <h2 className="font-bold">존재하지 않는 게시판입니다.</h2>
@@ -110,8 +113,6 @@ export default function BoardPage() {
       <SearchBar searchKeyword={searchKeyword} setSearchKeyword={setSearchKeyword} />
       <SortButtonGroup
         posts={posts}
-        setPosts={setLocalPosts}
-        initialNotice={posts}
         dateSort={dateSort}
         setDateSort={setDateSort}
       />

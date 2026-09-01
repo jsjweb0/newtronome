@@ -2,7 +2,11 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { Link } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { usePosts } from '../../contexts/PostsContext';
+import {
+  isCommunityBoardType,
+  type Post,
+  usePosts,
+} from '../../contexts/PostsContext';
 import { useEffect, useState } from 'react';
 import { AuthAccess } from '../../components/auth/AuthAccess';
 import { BaseButton } from '../../components/ui/BaseButton';
@@ -22,21 +26,30 @@ import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip';
 import { formatDate } from '../../utils/format.js';
 
+type BoardLocationState = {
+  page?: number;
+  keyword?: string;
+  sort?: 'asc' | 'desc';
+};
+
 export default function PostView() {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const { boardType, id } = useParams();
   const { getPosts, updateViewCount, deletePost } = usePosts();
-  const [postsState, setPostsState] = useState([]);
+  const [postsState, setPostsState] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPost, setCurrentPost] = useState(null);
+  const [currentPost, setCurrentPost] = useState<Post | null>(null);
 
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const page = location.state?.page || parseInt(searchParams.get('page')) || 1;
-  const keyword = location.state?.keyword || searchParams.get('keyword') || '';
-  const sort = location.state?.sort || searchParams.get('sort') || 'desc';
+  const locationState = location.state as BoardLocationState | null;
+  const pageFromQuery = Number.parseInt(searchParams.get('page') ?? '', 10);
+  const page = locationState?.page ?? (Number.isNaN(pageFromQuery) ? 1 : pageFromQuery);
+  const keyword = locationState?.keyword ?? searchParams.get('keyword') ?? '';
+  const sortFromQuery = searchParams.get('sort');
+  const sort = locationState?.sort ?? (sortFromQuery === 'asc' ? 'asc' : 'desc');
 
   const currentIndex = postsState.findIndex((p) => String(p.id) === id);
   const prevPost = postsState[currentIndex - 1];
@@ -49,6 +62,12 @@ export default function PostView() {
   const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
+    if (!id || !isCommunityBoardType(boardType)) {
+      setCurrentPost(null);
+      setLoading(false);
+      return;
+    }
+
     const fetchPost = async () => {
       const posts = await getPosts(boardType);
       setPostsState(posts);
@@ -77,7 +96,7 @@ export default function PostView() {
   }, [boardType, id, getPosts, updateViewCount]);
 
   useEffect(() => {
-    if (boardType !== 'pet' && currentPost?.id) {
+    if (isCommunityBoardType(boardType) && currentPost?.id) {
       let mounted = true;
       getCommentCountFromDB(boardType, currentPost.id)
         .then((count) => {
@@ -92,11 +111,17 @@ export default function PostView() {
     }
   }, [boardType, currentPost]);
 
+  if (!id || !isCommunityBoardType(boardType)) {
+    return <div className="text-center mt-10 font-bold">존재하지 않는 게시판입니다.</div>;
+  }
+
   if (loading) return <PostViewSkeleton />;
   if (!currentPost)
     return <div className="text-center mt-10 font-bold">존재하지 않는 게시글입니다.</div>;
 
-  const deletePosts = async (targetId) => {
+  const deletePosts = async (targetId: Post['id']) => {
+    if (!isCommunityBoardType(boardType)) return;
+
     if (!window.confirm('삭제하시겠습니까?')) return;
 
     const id = Date.now();
@@ -183,7 +208,6 @@ export default function PostView() {
                 <LikeButton
                   docId={currentPost.id}
                   collection={boardType}
-                  initialCount={currentPost.likeCount}
                 />
               </Tooltip>
               <div className="block h-3 border-e border-gray-300 mx-3 dark:border-neutral-600"></div>
@@ -233,7 +257,7 @@ export default function PostView() {
               <BaseButton
                 onClick={() => {
                   const query = new URLSearchParams();
-                  query.set('page', page || 1);
+                  query.set('page', page.toString());
                   if (keyword) query.set('keyword', keyword);
                   query.set('sort', sort || 'desc');
                   navigate(
