@@ -1,25 +1,29 @@
 import { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import ImageSlider from '../components/ui/Slider';
-import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore.js';
-import { toHighResArtwork } from '../utils/image.js';
+import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore';
+import { toHighResArtwork } from '../utils/image';
 import { GridIcon } from '../components/icons';
 import { CircleX, List, ListMusic } from 'lucide-react';
 import TrackItem from '../components/track/TrackItem';
 import HomePageSkeleton from './HomePageSkeleton';
 import soundCloudLogoBlack from '../assets/brands/soundcloud-logo-black.webp';
 import soundCloudLogoWhite from '../assets/brands/soundcloud-logo-white.webp';
+import type { PlayerOutletContext } from '../layouts/MainLayout';
+import type { PlayerTrack } from '../features/player/types/player.types';
 
-const formatDuration = (min) => {
+const formatDuration = (min: number) => {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
 };
 
+type ViewMode = 'grid' | 'list';
+
 export default function HomePage() {
-  const { playlistUrl, onSelectTrack, onToggleTrack } = useOutletContext() ?? {};
+  const { playlistUrl, onSelectTrack, onToggleTrack } = useOutletContext<PlayerOutletContext>();
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   const tracks = usePlayerStore((state) => state.tracks);
   const currentTrack = usePlayerStore(selectCurrentTrack);
@@ -31,7 +35,7 @@ export default function HomePage() {
     return Math.floor(totalDurationMs / 1000 / 60);
   }, [tracks]);
 
-  const handleTrackClick = (track) => {
+  const handleTrackClick = (track: PlayerTrack) => {
     const isCurrentTrack = String(currentTrack?.id) === String(track.id);
 
     if (isCurrentTrack) {
@@ -61,11 +65,13 @@ export default function HomePage() {
   return (
     <div className="px-3">
       <div className="flex max-lg:flex-col gap-x-10 items-center z-0 relative py-14">
-        <img
-          src={currentTrack?.artworkUrl}
-          className="z-[-1] absolute inset-0 w-full h-full object-cover opacity-30 blur-md scale-110"
-          alt=""
-        />
+        {currentTrack?.artworkUrl && (
+          <img
+            src={currentTrack.artworkUrl}
+            className="z-[-1] absolute inset-0 w-full h-full object-cover opacity-30 blur-md scale-110"
+            alt=""
+          />
+        )}
         <div className="shrink-0 w-80 max-w-full">
           <div className="overflow-hidden relative pt-[100%]">
             <ImageSlider images={images} className="absolute! top-0 left-0" />

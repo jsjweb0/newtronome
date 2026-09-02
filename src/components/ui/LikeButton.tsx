@@ -107,7 +107,6 @@ export default function LikeButton({
       );
 
       showToast({ message: notification.message });
-      addNotification(notification);
     } catch (err) {
       console.error('좋아요 처리 중 에러:', err);
       showToast({ message: notificationErr.message, type: notificationErr.type });

@@ -11,7 +11,7 @@ import { ThumbsUp } from 'lucide-react';
 import { BaseButton } from '../ui/BaseButton';
 import { useToast } from '../../contexts/ToastContext';
 import Pagination from './Pagination';
-import { formatDate } from '../../utils/format.js';
+import { formatDate } from '../../utils/format';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 
 interface MyCommentSectionProps {

@@ -1,12 +1,33 @@
 import { SlidersHorizontal, Search, RefreshCcw } from 'lucide-react';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { Menu, MenuButton, MenuItems } from '@headlessui/react';
 import AnimalKindFilter from './AnimalKindFilter';
 import AnimalRegionFilter from './AnimalRegionFilter';
 import SexFilter from './SexFilter';
 import StatusFilter from './StatusFilter';
+import type { SexFilterValue } from './SexFilter';
+import type { AnimalKind } from './AnimalKindFilter';
+import type { RegionOption } from './AnimalRegionFilter';
+import type { StatusFilterValue } from './StatusFilter';
 import clsx from 'clsx';
+import type { Dispatch, SetStateAction } from 'react';
 
-export default function SearchBar({
+interface SearchBarProps {
+  searchKeyword: string;
+  setSearchKeyword: Dispatch<SetStateAction<string>>;
+  filter: AnimalKind;
+  setFilter: Dispatch<SetStateAction<AnimalKind>>;
+  regionCode: string;
+  setRegionCode: Dispatch<SetStateAction<string>>;
+  regionOptions: RegionOption[];
+  sexFilter: SexFilterValue;
+  setSexFilter: Dispatch<SetStateAction<SexFilterValue>>;
+  statusFilter: StatusFilterValue;
+  setStatusFilter: Dispatch<SetStateAction<StatusFilterValue>>;
+  showOnlyLiked: boolean;
+  setShowOnlyLiked: Dispatch<SetStateAction<boolean>>;
+}
+
+export default function PetSearchBar({
   searchKeyword,
   setSearchKeyword,
   filter,
@@ -20,7 +41,7 @@ export default function SearchBar({
   setStatusFilter,
   showOnlyLiked,
   setShowOnlyLiked,
-}) {
+}: SearchBarProps) {
   const appliedFilterCount = [
     filter !== 'all',
     regionCode !== '',

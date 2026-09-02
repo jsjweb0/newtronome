@@ -24,7 +24,7 @@ import { getCommentCountFromDB } from '../../utils/comment';
 import ShareButton from '../../components/board/ShareButton';
 import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip';
-import { formatDate } from '../../utils/format.js';
+import { formatDate } from '../../utils/format';
 
 type BoardLocationState = {
   page?: number;
@@ -144,7 +144,7 @@ export default function PostView() {
   };
 
   return (
-    <div className="max-w-[85rem] mx-auto px-4">
+    <div className="max-w-[85rem] mx-auto px-4 py-10">
       <div className="flex flex-row max-md:flex-col items-center justify-between gap-2 px-4 py-4 border-y border-gray-300">
         <h4 className="font-medium text-sm md:text-xl">
           <span className="block md:inline-block md:mr-3 text-sm md:text-base text-center text-gray-500 dark:text-neutral-400">

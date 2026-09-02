@@ -5,8 +5,8 @@ import {
     viewModeMultiClass,
     type ViewMode,
 } from '../../utils/viewModeClass';
-import { formatTime } from "../../utils/format.js";
-import { toHighResArtwork } from "../../utils/image.js";
+import { formatTime } from "../../utils/format";
+import { toHighResArtwork } from "../../utils/image";
 import { PauseRound, PlayRound } from '../icons';
 import noImage from "../../assets/no-image.png";
 import clsx from "clsx";

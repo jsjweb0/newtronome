@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import PetSearchBar from '../../components/board/PetSearchBar.jsx';
+import PetSearchBar from '../../components/board/PetSearchBar';
 import SortButtonGroup from '../../components/board/SortButtonGroup';
 import Pagination from '../../components/board/Pagination';
 import PetPostList from '../../components/board/PetPostList';
@@ -257,7 +257,7 @@ export default function PetBoardPage() {
 
   if (loading) {
     return (
-      <div className="max-w-[85rem] mx-auto mb-8 px-4">
+      <div className="max-w-[85rem] mx-auto mb-8 px-4 py-10">
         <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
           보호동물
         </h2>
@@ -267,7 +267,7 @@ export default function PetBoardPage() {
   }
 
   return (
-    <div className="max-w-[85rem] mx-auto mb-8 px-4">
+    <div className="max-w-[85rem] mx-auto mb-8 px-4 py-10">
       <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
         보호동물
       </h2>

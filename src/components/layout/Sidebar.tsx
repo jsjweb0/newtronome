@@ -6,12 +6,10 @@ import {
   Menu,
   X,
   Music,
-  Home,
   Dog,
   LogIn,
   LogOut,
   Activity,
-  CassetteTape,
   Disc3,
   Heart,
 } from 'lucide-react';
@@ -20,12 +18,36 @@ import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 import Tooltip from '../ui/Tooltip';
 import NotificationDropdown from '../ui/NotificationDropdown';
+import type { ComponentType, SVGProps } from 'react';
+import HSDropdown from '@preline/dropdown';
 
-export default function Sidebar({ collapsed = false }) {
+interface SidebarProps {
+  collapsed?: boolean;
+}
+
+interface NavItemBase {
+  label: string;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  requiresAuth?: boolean;
+  requiresGuest?: boolean;
+  hideOnLg?: boolean;
+}
+
+type NavItem =
+  | (NavItemBase & {
+    path: string;
+    action?: never;
+  })
+  | (NavItemBase & {
+    path?: never;
+    action: () => Promise<void>;
+  });
+
+export default function Sidebar({ collapsed = false }: SidebarProps) {
   const { user, logout, avatarUrl, nicknameUrl } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
 
-  const navItems = [
+  const navItems: ReadonlyArray<NavItem> = [
     { label: 'Browse', path: '/', icon: Music },
     { label: 'Likes', path: '/likes', icon: Heart, requiresAuth: true },
     { label: 'Notice', path: '/board/notice', icon: Disc3 },
@@ -48,7 +70,7 @@ export default function Sidebar({ collapsed = false }) {
     'flex items-center gap-x-2 w-full px-3 py-3 rounded-full text-sm lg:text-base transition-all duration-300';
   const navActiveClasses = 'bg-primary/6 text-primary font-semibold';
   const navInactiveClasses = 'hover:text-primary hover:bg-primary/6';
-  const getNavItemClass = (isActive) =>
+  const getNavItemClass = (isActive: boolean) =>
     clsx(
       navBaseClasses,
       isActive ? navActiveClasses : navInactiveClasses,
@@ -57,33 +79,37 @@ export default function Sidebar({ collapsed = false }) {
   const navIconClasses = 'shrink-0 size-5 lg:size-6 transition-colors';
 
   const profileImage = () => {
-    if (user.photoURL) {
+    if (user?.photoURL) {
       return user.photoURL;
     }
-    if (user.displayName) {
+    if (user?.displayName) {
       return nicknameUrl;
     }
     return avatarUrl;
   };
 
   useEffect(() => {
-    window.HSStaticMethods?.autoInit?.();
+    //window.HSStaticMethods?.autoInit();
+    HSDropdown.autoInit();
   }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const resetStyles = () => {
-      document.getElementById('navbar').removeAttribute('style');
+      const navbar = document.getElementById('navbar');
+      if (navbar) {
+        navbar.removeAttribute('style');
+      }
     };
 
     const mql = window.matchMedia('(max-width: 1024px)');
-    const handleChange = (e) => setIsMobile(e.matches);
+    const handleChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
 
     setIsMobile(mql.matches);
 
     if (mql.matches) resetStyles();
-    const onMatchChange = (e) => e.matches && resetStyles();
+    const onMatchChange = (event: MediaQueryListEvent) => event.matches && resetStyles();
 
     if (mql.addEventListener) {
       mql.addEventListener('change', handleChange);
@@ -93,7 +119,7 @@ export default function Sidebar({ collapsed = false }) {
       mql.addListener(onMatchChange);
     }
 
-    document.addEventListener('hidden.hs.collapse', resetStyles);
+    document.addEventListener('close.hs.dropdown', resetStyles);
 
     return () => {
       if (mql.removeEventListener) {
@@ -103,7 +129,7 @@ export default function Sidebar({ collapsed = false }) {
         mql.removeListener(handleChange);
         mql.removeListener(onMatchChange);
       }
-      document.removeEventListener('hidden.hs.collapse', resetStyles);
+      document.removeEventListener('close.hs.dropdown', resetStyles);
     };
   }, []);
 
@@ -143,39 +169,44 @@ export default function Sidebar({ collapsed = false }) {
           className={clsx(
             'hs-dropdown-menu transition-[opacity,margin] duration hs-dropdown-open:opacity-100 max-lg:opacity-0 z-50 lg:!transform-none',
             'hidden lg:block lg:basis-full lg:grow w-full transition-all duration-300',
-            'max-lg:px-3 max-lg:mt-2'
+            'max-lg:px-3 max-lg:mt-2',
+            'max-lg:max-h-[calc(100dvh-3.5rem)] max-lg:overflow-y-auto max-lg:overscroll-contain'
           )}
         >
           <div className="relative max-lg:bg-background rounded-xl max-lg:p-3 max-lg:shadow-md">
             <ul className="space-y-1">
-              {visibleNav.map(({ label, path, icon: Icon, action, hideOnLg }) => (
-                <li key={label} className={clsx('mb-2', hideOnLg && 'lg:hidden')}>
-                  {path ? (
-                    <Tooltip content={label} position="right" enabled={enableTooltip}>
-                      <NavLink to={path} className={({ isActive }) => getNavItemClass(isActive)}>
+              {visibleNav.map((item) => {
+                const { label, icon: Icon, hideOnLg } = item;
+
+                return (
+                  <li key={label} className={clsx('mb-2', hideOnLg && 'lg:hidden')}>
+                    {item.path !== undefined ? (
+                      <Tooltip content={label} position="right" enabled={enableTooltip}>
+                        <NavLink to={item.path} className={({ isActive }) => getNavItemClass(isActive)}>
+                          <Icon className={navIconClasses} />
+                          <span
+                            className={clsx(
+                              'transition-all duration-300 ease-in-out whitespace-nowrap',
+                              collapsed ? 'lg:animate-fade-slide-out' : 'lg:animate-fade-slide-in'
+                            )}
+                          >
+                            {label}
+                          </span>
+                        </NavLink>
+                      </Tooltip>
+                    ) : (
+                      <button
+                        type="button"
+                        className={clsx('w-full', getNavItemClass(false))}
+                        onClick={item.action}
+                      >
                         <Icon className={navIconClasses} />
-                        <span
-                          className={clsx(
-                            'transition-all duration-300 ease-in-out whitespace-nowrap',
-                            collapsed ? 'lg:animate-fade-slide-out' : 'lg:animate-fade-slide-in'
-                          )}
-                        >
-                          {label}
-                        </span>
-                      </NavLink>
-                    </Tooltip>
-                  ) : (
-                    <button
-                      type="button"
-                      className={clsx('w-full', getNavItemClass(false))}
-                      onClick={action}
-                    >
-                      <Icon className={navIconClasses} />
-                      <span>{label}</span>
-                    </button>
-                  )}
-                </li>
-              ))}
+                        <span>{label}</span>
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
               <li key="dark-mode-toggle" className="lg:hidden mb-2">
                 <DarkModeToggle
                   tooltipEnabled={false}
@@ -190,7 +221,7 @@ export default function Sidebar({ collapsed = false }) {
                 <div className="shrink-0 w-20 h-20 rounded-full bg-textSub">
                   <img
                     src={profileImage()}
-                    alt={user.displayName || user.email}
+                    alt={user.displayName || user.email || ''}
                     className="rounded-full object-cover w-full h-full"
                   />
                 </div>

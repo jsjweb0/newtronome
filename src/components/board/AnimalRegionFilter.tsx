@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { MapPin } from "lucide-react";
 
-type RegionOption = {
+export type RegionOption = {
     orgdownNm: string;
 };
 
