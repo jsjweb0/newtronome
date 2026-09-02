@@ -34,7 +34,6 @@ jobs:
 
       - name: Build
         env:
-          VITE_API_BASE_URL: https://newtronome-soundcloud-api.jsjweb0.workers.dev/api
           VITE_BASE_PATH: /newtronome/
         run: npm run build
 
@@ -77,7 +76,6 @@ jobs:
 
       - name: Build for Cloudflare Workers
         env:
-          VITE_API_BASE_URL: https://newtronome-soundcloud-api.jsjweb0.workers.dev/api
           VITE_BASE_PATH: /
         run: npm run build
 

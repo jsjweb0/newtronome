@@ -92,7 +92,7 @@ export default function PetPostView() {
   const orgNm = post.orgNm?.split(' ').slice(0, 2).join(' ');
 
   return (
-    <div className="max-w-[85rem] mx-auto px-4">
+    <div className="max-w-[85rem] mx-auto px-4 py-10">
       <div className="px-4 py-4 border-y border-gray-300 text-center">
         <h4 className="font-semibold text-md md:text-2xl">{`[${post.kindNm}] ${post.colorCd}`}</h4>
         <div className="flex flex-wrap justify-center gap-2 text-xs md:text-sm text-white mt-4">

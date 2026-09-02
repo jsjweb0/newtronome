@@ -1,5 +1,5 @@
-import { toHighResArtwork } from '../../utils/image.js';
-import { formatTime } from '../../utils/format.js';
+import { toHighResArtwork } from '../../utils/image';
+import { formatTime } from '../../utils/format';
 import HeaderButtons from '../layout/HeaderButtons';
 import { AudioEqualizerIcon } from '../icons';
 import { ListMusic, Play } from 'lucide-react';
@@ -11,7 +11,7 @@ import soundCloudFaviconWhite from '../../assets/brands/soundcloud-favicon-white
 import Tooltip from '../ui/Tooltip';
 import type { PlayerTrack } from '../../features/player/types/player.types';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
-import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton.js';
+import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
 
 interface PlaylistPanelProps {
   playlistUrl: string;

@@ -1,15 +1,16 @@
 # Newtronome
 
-Demo: https://newtronome.jsjweb0.workers.dev/
+- Demo: https://newtronome.jsjweb0.workers.dev/
+- Repository: https://github.com/jsjweb0/newtronome
 
 Newtronome은 React 학습 과정에서 시작해 음악 재생, 사용자 인증, 커뮤니티 기능으로 확장한 개인 프로젝트입니다. SoundCloud 개인 플레이리스트를 기반으로 랜덤 재생을 제공하며, 로그인 사용자는 트랙 저장, 프로필 수정, 게시글·댓글 작성과 활동 내역 조회 기능을 이용할 수 있습니다.
 
-음악 재생과 트랙 정보는 공식 SoundCloud Widget 이벤트를 React와 Zustand 상태에 동기화하며, 별도의 SoundCloud Client ID나 비공식 API 프록시를 사용하지 않습니다. 기존 JavaScript 코드는 TypeScript로 점진적으로 전환하고 있으며, SoundCloud와 Firestore의 외부 데이터를 검증한 뒤 애플리케이션 상태로 변환하고 있습니다.
+음악 재생과 트랙 정보는 공식 SoundCloud Widget 이벤트를 React와 Zustand 상태에 동기화하며, 별도의 SoundCloud Client ID나 비공식 API 프록시를 사용하지 않습니다. React 애플리케이션 코드를 TypeScript로 전환했으며, SoundCloud와 Firestore의 외부 데이터를 검증한 뒤 애플리케이션 상태로 변환하고 있습니다.
 
 ## Tech Stack
 
 - React
-- TypeScript (점진적 전환)
+- TypeScript
 - Vite
 - Zustand
 - Tailwind CSS
@@ -70,7 +71,7 @@ npm run build
 npm run frontend:deploy
 ```
 
-`main` 브랜치에 변경 사항이 반영되면 GitHub Actions가 동일한 `wrangler.toml`로 빌드와 배포를 자동 실행합니다. 자동 배포에는 GitHub 저장소의 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` secret이 필요합니다.
+`main` 브랜치에 변경 사항이 반영되면 GitHub Actions가 GitHub Pages와 Cloudflare Workers 배포를 실행합니다. Cloudflare 배포는 `wrangler.toml`을 사용하며, 저장소에 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` secret이 필요합니다.
 
 ## Build Commands
 
@@ -79,6 +80,10 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+## 번들 크기 최적화
+
+주요 페이지를 지연 로딩하고 Preline 전체 모듈 대신 Dropdown만 불러오도록 변경했습니다. Vite 빌드 기준 메인 JavaScript 청크는 `1,376.66kB`에서 `1,100.41kB`로 약 20% 감소했으며, 남아 있는 공통 의존성 분리는 향후 개선할 예정입니다.
 
 ## 문제 해결: 불안정한 SoundCloud API 연동을 공식 Widget으로 전환
 
@@ -126,7 +131,7 @@ SoundCloud Widget은 iframe에 실제로 렌더링된 범위만큼 플레이리�
 
 ## 향후 개선 사항
 
-- 남아 있는 JavaScript 파일을 TypeScript로 점진적으로 전환해 타입 안정성 강화
+- Firebase와 공통 의존성의 청크 분리를 통한 초기 JavaScript 번들 최적화
 - 음악, 게시판, 마이페이지의 로딩·빈 상태·오류 상태 보완
 - 플레이리스트 로딩과 재생 흐름에 대한 E2E 테스트 추가
 - Likes 페이지에서 저장한 트랙을 단일 재생 모드로 실행하고, 재생 중에는 기존 플레이리스트 패널을 비활성화한 뒤 트랙 종료 시 정지하도록 플레이어 모드 분리
