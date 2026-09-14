@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, Heart } from 'lucide-react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useOutletContext } from 'react-router-dom';
 import TrackItem from '../../../components/track/TrackItem';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -9,11 +9,19 @@ import {
   subscribeToSavedTracks,
 } from '../services/savedTracks';
 import type { SavedTrack } from '../types/saved-track.types';
+import { selectCurrentTrack, usePlayerStore } from '../../player/stores/usePlayerStore';
+import type { PlayerOutletContext } from '../../../layouts/MainLayout';
+import type { PlayerTrack } from '../../player/types/player.types';
 
 export default function LikedTracksPage() {
   const { user, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
   const location = useLocation();
+
+  const { onPlayBookmarkTrack, onToggleTrack } = useOutletContext<PlayerOutletContext>();
+  const playbackMode = usePlayerStore((state) => state.playbackMode);
+  const currentTrack = usePlayerStore(selectCurrentTrack);
+  const isPlaying = usePlayerStore((state) => state.isPlaying);
 
   const [tracks, setTracks] = useState<SavedTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +52,19 @@ export default function LikedTracksPage() {
       }
     );
   }, [isAuthLoading, user?.uid]);
+
+  const handleTrackClick = (track: PlayerTrack) => {
+    const isCurrentBookmark =
+      playbackMode === 'bookmark' &&
+      String(currentTrack?.id) === String(track.id);
+
+    if (isCurrentBookmark) {
+      onToggleTrack();
+      return;
+    }
+
+    onPlayBookmarkTrack(track);
+  };
 
   const handleRemove = async (track: SavedTrack) => {
     if (!user?.uid || removingTrackId !== null) return;
@@ -126,7 +147,10 @@ export default function LikedTracksPage() {
                   <TrackItem
                     idx={index}
                     track={track}
-                    interactive={false}
+                    interactive={Boolean(track.permalinkUrl)}
+                    currentTrack={currentTrack}
+                    isPlaying={isPlaying}
+                    onTrackClick={handleTrackClick}
                     footerActions={
                       <div className="flex items-center justify-center gap-2">
                         {track.permalinkUrl ? (

@@ -10,9 +10,16 @@ import type { PlayerTrack } from '../types/player.types';
 const PLAYLIST_LOAD_RETRY_DELAY_MS = 250;
 const PLAYLIST_LOAD_MAX_RETRIES = 12;
 
+type PlaylistSnapshot = {
+  currentIndex: number;
+  positionMs: number;
+};
+
 const isPlayerTrack = (track: PlayerTrack | null): track is PlayerTrack => track !== null;
 
-export function useSoundCloudWidget() {
+export function useSoundCloudWidget(playlistUrl: string) {
+  const playlistSnapshotRef = useRef<PlaylistSnapshot | null>(null);
+
   const [iframeElement, setIframeElement] = useState<HTMLIFrameElement | null>(null);
 
   const iframeRef = useCallback((element: HTMLIFrameElement | null) => {
@@ -22,7 +29,6 @@ export function useSoundCloudWidget() {
   const widgetRef = useRef<SoundCloudWidgetInstance | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isPlaylistLoading, setIsPlaylistLoading] = useState(true);
-
   const [widgetTrack, setWidgetTrack] = useState<PlayerTrack | null>(null);
   const [widgetIsPlaying, setWidgetIsPlaying] = useState(false);
 
@@ -34,6 +40,7 @@ export function useSoundCloudWidget() {
   const setMuted = usePlayerStore((state) => state.setMuted);
   const setCurrentTrack = usePlayerStore((state) => state.setCurrentTrack);
   const setPlaylist = usePlayerStore((state) => state.setPlaylist);
+  const setPlaybackMode = usePlayerStore((state) => state.setPlaybackMode);
 
   const selectTrack = useCallback((index: number) => {
     widgetRef.current?.skip(index);
@@ -95,11 +102,18 @@ export function useSoundCloudWidget() {
     };
 
     const handleReady = () => {
+      const playbackMode = usePlayerStore.getState().playbackMode;
+
       setIsReady(true);
       setWidgetIsPlaying(false);
       updateCurrentTrack(true);
-      updatePlaylistTracks();
       updateDuration();
+
+      if (playbackMode === 'playlist') {
+        updatePlaylistTracks();
+      } else {
+        setIsPlaylistLoading(false);
+      }
     };
 
     const handlePlay = () => {
@@ -114,6 +128,17 @@ export function useSoundCloudWidget() {
       setPlaying(false);
     };
 
+    const handleFinish = () => {
+      const playbackMode = usePlayerStore.getState().playbackMode;
+
+      if (playbackMode !== 'bookmark') return;
+
+      widget.seekTo(0);
+      setCurrentTime(0);
+      setWidgetIsPlaying(false);
+      setPlaying(false);
+    };
+
     const handlePlayProgress = (event?: SoundCloudProgressEvent) => {
       if (!event) return;
 
@@ -123,6 +148,7 @@ export function useSoundCloudWidget() {
     widget.bind(events.READY, handleReady);
     widget.bind(events.PLAY, handlePlay);
     widget.bind(events.PAUSE, handlePause);
+    widget.bind(events.FINISH, handleFinish);
     widget.bind(events.PLAY_PROGRESS, handlePlayProgress);
 
     const safelyUnbind = (eventName: string) => {
@@ -144,6 +170,7 @@ export function useSoundCloudWidget() {
       safelyUnbind(events.READY);
       safelyUnbind(events.PLAY);
       safelyUnbind(events.PAUSE);
+      safelyUnbind(events.FINISH);
       safelyUnbind(events.PLAY_PROGRESS);
 
       if (widgetRef.current === widget) {
@@ -159,6 +186,111 @@ export function useSoundCloudWidget() {
   const pause = useCallback(() => {
     widgetRef.current?.pause();
   }, []);
+
+  const playBookmarkTrack = useCallback(
+    (track: PlayerTrack) => {
+      const widget = widgetRef.current;
+      const permalinkUrl = track.permalinkUrl;
+
+      if (!widget || !permalinkUrl) return;
+
+      const loadBookmarkTrack = () => {
+        if (widgetRef.current !== widget) return;
+
+        setPlaybackMode('bookmark');
+        setPlaying(false);
+        setCurrentTrack(track);
+        setCurrentTime(0);
+        setDuration(track.durationMs / 1000);
+
+        widget.load(permalinkUrl, {
+          auto_play: true,
+        });
+      };
+
+      const playbackMode = usePlayerStore.getState().playbackMode;
+
+      if (playbackMode === 'bookmark') {
+        loadBookmarkTrack();
+        return;
+      }
+
+      widget.getCurrentSoundIndex((currentIndex) => {
+        if (widgetRef.current !== widget) return;
+
+        widget.getPosition((positionMs) => {
+          if (widgetRef.current !== widget) return;
+
+          playlistSnapshotRef.current = {
+            currentIndex,
+            positionMs,
+          };
+
+          loadBookmarkTrack();
+        });
+      });
+    },
+    [
+      setCurrentTime,
+      setCurrentTrack,
+      setDuration,
+      setPlaybackMode,
+      setPlaying,
+    ]
+  );
+
+  const restorePlaylist = useCallback(() => {
+    const widget = widgetRef.current;
+    const snapshot = playlistSnapshotRef.current;
+
+    if (!widget) return;
+
+    const currentIndex = snapshot?.currentIndex ?? 0;
+    const positionMs = snapshot?.positionMs ?? 0;
+
+    setPlaybackMode('playlist');
+    setPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsReady(false);
+    setIsPlaylistLoading(true);
+
+    widget.load(playlistUrl, {
+      auto_play: false,
+      start_track: currentIndex,
+      callback: () => {
+        if (widgetRef.current !== widget) return;
+
+        widget.seekTo(positionMs);
+        widget.pause();
+
+        widget.getCurrentSound((sound) => {
+          const playlistTrack = mapSoundCloudWidgetTrack(sound);
+
+          setWidgetTrack(playlistTrack);
+          setCurrentTrack(playlistTrack);
+        });
+
+        widget.getDuration((durationMs) => {
+          setDuration(durationMs / 1000);
+        });
+
+        setCurrentTime(positionMs / 1000);
+        setPlaying(false);
+        setIsReady(true);
+        setIsPlaylistLoading(false);
+
+        playlistSnapshotRef.current = null;
+      },
+    });
+  }, [
+    playlistUrl,
+    setCurrentTime,
+    setCurrentTrack,
+    setDuration,
+    setPlaybackMode,
+    setPlaying,
+  ]);
 
   const seek = useCallback((seconds: number) => {
     if (!Number.isFinite(seconds)) return;
@@ -212,6 +344,8 @@ export function useSoundCloudWidget() {
     isPlaylistLoading,
     play,
     pause,
+    playBookmarkTrack,
+    restorePlaylist,
     toggle,
     seek,
     previousTrack,

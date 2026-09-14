@@ -19,6 +19,7 @@ export interface SoundCloudProgressEvent {
 
 export interface SoundCloudWidgetLoadOptions {
   auto_play?: boolean;
+  start_track?: number;
   color?: string;
   show_artwork?: boolean;
   show_user?: boolean;
