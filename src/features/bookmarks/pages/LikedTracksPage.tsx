@@ -115,18 +115,18 @@ export default function LikedTracksPage() {
           />
 
           <p className="font-medium text-textBase">
-            로그인 후 Likes를 이용할 수 있습니다.
+            자, 이제 좋아하는 음악을 모아볼 시간.
           </p>
 
           <p className="mt-1 text-sm text-textSub">
-            마음에 드는 트랙을 저장하고 다시 감상해 보세요.
+            로그인하고 마음에 드는 트랙을 저장하세요. 듣고 싶은 순간, 바로 다시 만날 수 있으니까요.
           </p>
 
           <Link
             to="/login"
             className="mt-5 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            로그인하기
+            로그인하고 시작하기
           </Link>
         </div>
       ) : isLoading ? (
@@ -146,9 +146,9 @@ export default function LikedTracksPage() {
       ) : tracks.length === 0 ? (
         <div className="rounded-xl border border-textThr px-4 py-16 text-center">
           <Heart aria-hidden="true" className="mx-auto mb-3 size-8 text-textSub" />
-          <p className="font-medium text-textBase">저장된 트랙이 없습니다.</p>
+          <p className="font-medium text-textBase">좋아하는 음악을 위한 자리.</p>
           <p className="mt-1 text-sm text-textSub">
-            마음에 드는 트랙의 북마크 버튼을 눌러 저장해 보세요.
+            마음에 드는 트랙을 발견했다면, 북마크하고 이곳에서 다시 만나보세요.
           </p>
         </div>
       ) : (
