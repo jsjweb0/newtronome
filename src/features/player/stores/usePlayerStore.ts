@@ -4,11 +4,16 @@ import type { PlayerStore } from '../types/player.types';
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
   tracks: [],
   currentTrack: null,
+  playbackMode: 'playlist',
   currentIndex: 0,
   isPlaying: false,
   currentTime: 0,
   duration: 0,
   isMuted: false,
+
+  setPlaybackMode: (mode) => {
+    set({ playbackMode: mode });
+  },
 
   setPlaylist: (tracks, startIndex = 0) => {
     const safeIndex =

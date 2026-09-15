@@ -44,7 +44,7 @@ export default function SoundCloudWidget({
         height={WIDGET_PRELOAD_HEIGHT}
         scrolling="no"
         frameBorder="0"
-        allow="autoplay"
+        allow="autoplay; encrypted-media"
         className="block w-full"
       />
     </>

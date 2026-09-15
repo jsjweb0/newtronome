@@ -11,6 +11,7 @@ import { PanelLeft } from 'lucide-react';
 import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle';
+import type { PlayerTrack } from '../features/player/types/player.types';
 
 const PLAYLIST_URLS = [
   'https://soundcloud.com/ssu-1/sets/2025-summer',
@@ -35,6 +36,7 @@ export interface PlayerOutletContext {
   playlistUrl: string;
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
+  onPlayBookmarkTrack: (track: PlayerTrack) => void;
 }
 
 export default function MainLayout() {
@@ -42,13 +44,15 @@ export default function MainLayout() {
     const randomIndex = Math.floor(Math.random() * PLAYLIST_URLS.length);
     return PLAYLIST_URLS[randomIndex];
   });
-  const soundCloudWidget = useSoundCloudWidget();
+  const soundCloudWidget = useSoundCloudWidget(playlistUrl);
 
   const tracks = usePlayerStore((state) => state.tracks);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
+  const playbackMode = usePlayerStore((state) => state.playbackMode);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
+
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -72,6 +76,7 @@ export default function MainLayout() {
     playlistUrl,
     onSelectTrack: soundCloudWidget.selectTrack,
     onToggleTrack: soundCloudWidget.toggle,
+    onPlayBookmarkTrack: soundCloudWidget.playBookmarkTrack,
   };
 
   return (
@@ -129,6 +134,7 @@ export default function MainLayout() {
           tracks={tracks}
           onSelect={soundCloudWidget.selectTrack}
           isPlaying={isPlaying}
+          isPlaylistMode={playbackMode === 'playlist'}
           soundCloudWidget={soundCloudWidget}
         />
       </div>

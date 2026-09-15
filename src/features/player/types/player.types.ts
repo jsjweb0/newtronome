@@ -1,3 +1,5 @@
+export type PlaybackMode = 'playlist' | 'bookmark';
+
 export interface PlayerTrack {
   id: number | string;
   title: string;
@@ -12,6 +14,7 @@ export interface PlayerTrack {
 export interface PlayerState {
   tracks: PlayerTrack[];
   currentTrack: PlayerTrack | null;
+  playbackMode: PlaybackMode;
   currentIndex: number;
   isPlaying: boolean;
   currentTime: number;
@@ -20,6 +23,8 @@ export interface PlayerState {
 }
 
 export interface PlayerActions {
+  setPlaybackMode: (mode: PlaybackMode) => void;
+
   setPlaylist: (tracks: PlayerTrack[], startIndex?: number) => void;
   addTrack: (track: PlayerTrack) => void;
   selectTrack: (index: number) => void;

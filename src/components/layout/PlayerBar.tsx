@@ -27,6 +27,9 @@ export default function PlayerBar({
   collapsed,
   soundCloudWidget,
 }: PlayerBarProps) {
+  const playbackMode = usePlayerStore((state) => state.playbackMode);
+  const isBookmarkMode = playbackMode === 'bookmark';
+
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const currentTime = usePlayerStore((state) => state.currentTime);
@@ -116,12 +119,20 @@ export default function PlayerBar({
               <RotateCcw aria-hidden="true" />
             </button>
           </Tooltip>
-          <Tooltip content="Previous" className="max-xl:hidden">
+          <Tooltip
+            content={isBookmarkMode ? '북마크 단일 재생 중' : 'Previous'}
+            className="max-xl:hidden"
+          >
             <button
               type="button"
-              className="inline-flex items-center justify-center w-11 h-11 p-2.5"
+              disabled={isBookmarkMode}
               onClick={previousTrack}
-              aria-label="이전 트랙"
+              className="inline-flex items-center justify-center w-11 h-11 p-2.5 disabled:cursor-not-allowed disabled:opacity-30"
+              aria-label={
+                isBookmarkMode
+                  ? '북마크 단일 재생 중에는 이전 트랙을 사용할 수 없습니다'
+                  : '이전 트랙'
+              }
             >
               <SkipBack aria-hidden="true" className="fill-textBase" />
             </button>
@@ -140,18 +151,36 @@ export default function PlayerBar({
               )}
             </button>
           </Tooltip>
-          <Tooltip content="Next" className="max-xl:hidden">
+          <Tooltip
+            content={isBookmarkMode ? '북마크 단일 재생 중' : 'Next'}
+            className="max-xl:hidden"
+          >
             <button
               type="button"
+              disabled={isBookmarkMode}
               onClick={nextTrack}
-              className="inline-flex items-center justify-center w-11 h-11 p-2.5"
-              aria-label="다음 트랙"
+              className="inline-flex items-center justify-center w-11 h-11 p-2.5 disabled:cursor-not-allowed disabled:opacity-30"
+              aria-label={
+                isBookmarkMode
+                  ? '북마크 단일 재생 중에는 다음 트랙을 사용할 수 없습니다'
+                  : '다음 트랙'
+              }
             >
               <SkipForward aria-hidden="true" className="fill-textBase" />
             </button>
           </Tooltip>
           <Tooltip content="Shuffle" className="max-xl:hidden">
-            <button type="button" onClick={playRandomTrack} aria-label="임의의 트랙 재생">
+            <button
+              type="button"
+              disabled={isBookmarkMode}
+              onClick={playRandomTrack}
+              aria-label={
+                isBookmarkMode
+                  ? '북마크 단일 재생 중에는 임의 재생을 사용할 수 없습니다'
+                  : '임의의 트랙 재생'
+              }
+              className="disabled:cursor-not-allowed disabled:opacity-30"
+            >
               <Shuffle aria-hidden="true" />
             </button>
           </Tooltip>
@@ -159,7 +188,10 @@ export default function PlayerBar({
       </div>
 
       <div className="shrink-0 flex gap-x-1.5 xl:gap-x-5 absolute right-16 xl:right-4 bottom-2.5 xl:top-1/2 2xl:static 2xl:mt-5 ">
-        <Tooltip content={collapsed ? '플레이리스트 닫기' : '플레이리스트 열기'} position="top">
+        <Tooltip
+          content={collapsed ? '플레이리스트 닫기' : '플레이리스트 열기'}
+          position="top"
+        >
           <button
             type="button"
             onClick={onPanelToggle}
