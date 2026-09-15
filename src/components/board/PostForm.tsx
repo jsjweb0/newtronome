@@ -15,6 +15,7 @@ import type {
   CommunityBoardType,
   Post,
 } from '../../contexts/PostsContext';
+import { FREE_BOARD_CATEGORIES, LEGACY_FREE_BOARD_CATEGORY_VALUES, } from '../../constants/freeBoardCategories';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -56,13 +57,16 @@ export default function PostForm({
   const today = new Date();
   const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const categoryList = ['카테고리1', '카테고리2', '카테고리3', '카테고리4'];
-
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setInputTitle(initialData.title || '');
       setInputContent(initialData.content || '');
-      setSelectedCategory(initialData.category || '');
+
+      const initialCategory = initialData.category ?? '';
+      setSelectedCategory(
+        LEGACY_FREE_BOARD_CATEGORY_VALUES[initialCategory] ?? initialCategory
+      );
+
       setNotice(initialData.isNotice || false);
       const authorName = initialData.displayName || initialData.email;
       setWriter(
@@ -163,9 +167,9 @@ export default function PostForm({
             >
               <option value="">카테고리를 선택하세요</option>
 
-              {categoryList.map((category) => (
-                <option key={category} value={category}>
-                  {category}
+              {FREE_BOARD_CATEGORIES.map((category) => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
                 </option>
               ))}
             </select>

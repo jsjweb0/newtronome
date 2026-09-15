@@ -25,6 +25,7 @@ import ShareButton from '../../components/board/ShareButton';
 import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip';
 import { formatDate } from '../../utils/format';
+import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
 
 type BoardLocationState = {
   page?: number;
@@ -119,6 +120,10 @@ export default function PostView() {
   if (!currentPost)
     return <div className="text-center mt-10 font-bold">존재하지 않는 게시글입니다.</div>;
 
+  const categoryLabel = currentPost.category
+    ? FREE_BOARD_CATEGORY_LABELS[currentPost.category] ?? currentPost.category
+    : null;
+
   const deletePosts = async (targetId: Post['id']) => {
     if (!isCommunityBoardType(boardType)) return;
 
@@ -148,7 +153,7 @@ export default function PostView() {
       <div className="flex flex-row max-md:flex-col items-center justify-between gap-2 px-4 py-4 border-y border-gray-300">
         <h4 className="font-medium text-sm md:text-xl">
           <span className="block md:inline-block md:mr-3 text-sm md:text-base text-center text-gray-500 dark:text-neutral-400">
-            {currentPost.category}
+            {categoryLabel}
           </span>
           {currentPost.title}
         </h4>

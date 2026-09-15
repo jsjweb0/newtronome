@@ -9,7 +9,7 @@ type SearchBarProps = {
 
 export default function SearchBar({ searchKeyword, setSearchKeyword }: SearchBarProps) {
     return (
-        <div className="w-full max-w-xl m-auto mt-4 md:mt-8 mb-5 text-center">
+        <div className="w-full max-w-xl m-auto mt-4 md:mt-8 mb-5 text-center peer-[.category-filter]:mt-3">
             <form>
                 <div className="flex flex-row items-center gap-2 sm:">
                     <div className="relative w-full">
