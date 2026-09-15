@@ -49,7 +49,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
 
   const navItems: ReadonlyArray<NavItem> = [
     { label: 'Browse', path: '/', icon: Music },
-    { label: 'Likes', path: '/likes', icon: Heart, requiresAuth: true },
+    { label: 'Likes', path: '/likes', icon: Heart },
     { label: 'Notice', path: '/board/notice', icon: Disc3 },
     { label: 'Free Board', path: '/board/free', icon: Activity },
     { label: 'Archive', path: '/board/pet', icon: Dog },

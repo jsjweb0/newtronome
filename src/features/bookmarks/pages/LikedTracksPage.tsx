@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, Heart } from 'lucide-react';
-import { Navigate, useLocation, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import TrackItem from '../../../components/track/TrackItem';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -16,7 +16,6 @@ import type { PlayerTrack } from '../../player/types/player.types';
 export default function LikedTracksPage() {
   const { user, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
-  const location = useLocation();
 
   const { onPlayBookmarkTrack, onToggleTrack } = useOutletContext<PlayerOutletContext>();
   const playbackMode = usePlayerStore((state) => state.playbackMode);
@@ -96,10 +95,6 @@ export default function LikedTracksPage() {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  }
-
   return (
     <section className="mx-auto w-full px-4 py-6 lg:px-8 lg:py-10">
       <header className="mb-6 pb-4">
@@ -107,12 +102,34 @@ export default function LikedTracksPage() {
           <Heart aria-hidden="true" className="size-6 text-primary" />
           <h2 className="text-2xl font-bold text-textBase">Likes</h2>
         </div>
-        <p className="mt-2 text-sm text-textSub">
+        <p className="sr-only">
           SoundCloud에서 저장한 트랙을 확인하고 관리할 수 있습니다.
         </p>
       </header>
 
-      {isLoading ? (
+      {!user ? (
+        <div className="rounded-xl border border-textThr px-4 py-16 text-center">
+          <Heart
+            aria-hidden="true"
+            className="mx-auto mb-3 size-8 text-textSub"
+          />
+
+          <p className="font-medium text-textBase">
+            로그인 후 Likes를 이용할 수 있습니다.
+          </p>
+
+          <p className="mt-1 text-sm text-textSub">
+            마음에 드는 트랙을 저장하고 다시 감상해 보세요.
+          </p>
+
+          <Link
+            to="/login"
+            className="mt-5 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            로그인하기
+          </Link>
+        </div>
+      ) : isLoading ? (
         <div
           className="rounded-xl border border-textThr px-4 py-16 text-center text-sm text-textSub"
           role="status"

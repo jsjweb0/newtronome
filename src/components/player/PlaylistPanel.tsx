@@ -19,6 +19,7 @@ interface PlaylistPanelProps {
   onSelect: (index: number) => void;
   collapsed: boolean;
   isPlaying: boolean;
+  isPlaylistMode: boolean;
   soundCloudWidget: ReturnType<typeof useSoundCloudWidget>;
 }
 
@@ -28,6 +29,7 @@ export default function PlaylistPanel({
   onSelect,
   collapsed,
   isPlaying,
+  isPlaylistMode,
   soundCloudWidget,
 }: PlaylistPanelProps) {
   const widgetTrack = soundCloudWidget.widgetTrack;
@@ -184,7 +186,9 @@ export default function PlaylistPanel({
                 </li>
               ) : tracks.length > 0 ? (
                 tracks.map((track, index) => {
-                  const isActive = track.id === playlistTrack?.id;
+                  const isActive =
+                    isPlaylistMode &&
+                    String(track.id) === String(playlistTrack?.id);
 
                   return (
                     <li key={track.id}>

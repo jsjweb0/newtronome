@@ -10,16 +10,9 @@ import type { PlayerTrack } from '../types/player.types';
 const PLAYLIST_LOAD_RETRY_DELAY_MS = 250;
 const PLAYLIST_LOAD_MAX_RETRIES = 12;
 
-type PlaylistSnapshot = {
-  currentIndex: number;
-  positionMs: number;
-};
-
 const isPlayerTrack = (track: PlayerTrack | null): track is PlayerTrack => track !== null;
 
 export function useSoundCloudWidget(playlistUrl: string) {
-  const playlistSnapshotRef = useRef<PlaylistSnapshot | null>(null);
-
   const [iframeElement, setIframeElement] = useState<HTMLIFrameElement | null>(null);
 
   const iframeRef = useCallback((element: HTMLIFrameElement | null) => {
@@ -42,9 +35,53 @@ export function useSoundCloudWidget(playlistUrl: string) {
   const setPlaylist = usePlayerStore((state) => state.setPlaylist);
   const setPlaybackMode = usePlayerStore((state) => state.setPlaybackMode);
 
-  const selectTrack = useCallback((index: number) => {
-    widgetRef.current?.skip(index);
-  }, []);
+  const isSourceSwitchingRef = useRef(false);
+
+  const selectTrack = useCallback(
+    (index: number) => {
+      const widget = widgetRef.current;
+      if (!widget) return;
+
+      const { playbackMode, tracks } = usePlayerStore.getState();
+
+      if (index < 0 || index >= tracks.length) return;
+
+      const selectedTrack = tracks[index];
+
+      if (playbackMode === 'playlist') {
+        widget.skip(index);
+        return;
+      }
+
+      if (isSourceSwitchingRef.current) return;
+
+      isSourceSwitchingRef.current = true;
+
+      // 선택한 일반 플레이리스트 곡으로 UI를 즉시 갱신
+      setPlaybackMode('playlist');
+      setWidgetTrack(selectedTrack);
+      setCurrentTrack(selectedTrack);
+      setPlaying(false);
+      setCurrentTime(0);
+      setDuration(selectedTrack.durationMs / 1000);
+
+      widget.load(playlistUrl, {
+        auto_play: true,
+        start_track: index,
+        callback: () => {
+          isSourceSwitchingRef.current = false;
+        },
+      });
+    },
+    [
+      playlistUrl,
+      setCurrentTime,
+      setCurrentTrack,
+      setDuration,
+      setPlaybackMode,
+      setPlaying,
+    ]
+  );
 
   useEffect(() => {
     setIsReady(false);
@@ -69,11 +106,16 @@ export function useSoundCloudWidget(playlistUrl: string) {
       });
     };
 
-    const updateCurrentTrack = (updateGlobalTrack: boolean) => {
+    const updateCurrentTrack = (
+      updateGlobalTrack: boolean,
+      updatePlaylistTrack: boolean
+    ) => {
       widget.getCurrentSound((sound) => {
         const nextTrack = mapSoundCloudWidgetTrack(sound);
 
-        setWidgetTrack(nextTrack);
+        if (updatePlaylistTrack) {
+          setWidgetTrack(nextTrack);
+        }
 
         if (updateGlobalTrack) {
           setCurrentTrack(nextTrack);
@@ -84,6 +126,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
     const updatePlaylistTracks = (retryCount = 0) => {
       widget.getSounds((sounds) => {
         if (widgetRef.current !== widget) return;
+        if (usePlayerStore.getState().playbackMode !== 'playlist') return;
 
         const tracks = sounds.map(mapSoundCloudWidgetTrack).filter(isPlayerTrack);
         const hasPartialTracks = sounds.length === 0 || tracks.length < sounds.length;
@@ -102,14 +145,17 @@ export function useSoundCloudWidget(playlistUrl: string) {
     };
 
     const handleReady = () => {
+      isSourceSwitchingRef.current = false;
+
       const playbackMode = usePlayerStore.getState().playbackMode;
+      const isPlaylistMode = playbackMode === 'playlist';
 
       setIsReady(true);
       setWidgetIsPlaying(false);
-      updateCurrentTrack(true);
+      updateCurrentTrack(true, isPlaylistMode);
       updateDuration();
 
-      if (playbackMode === 'playlist') {
+      if (isPlaylistMode) {
         updatePlaylistTracks();
       } else {
         setIsPlaylistLoading(false);
@@ -117,9 +163,11 @@ export function useSoundCloudWidget(playlistUrl: string) {
     };
 
     const handlePlay = () => {
+      const playbackMode = usePlayerStore.getState().playbackMode;
+
       setWidgetIsPlaying(true);
       setPlaying(true);
-      updateCurrentTrack(true);
+      updateCurrentTrack(true, playbackMode === 'playlist');
       updateDuration();
     };
 
@@ -196,6 +244,9 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
       const loadBookmarkTrack = () => {
         if (widgetRef.current !== widget) return;
+        if (isSourceSwitchingRef.current) return;
+
+        isSourceSwitchingRef.current = true;
 
         setPlaybackMode('bookmark');
         setPlaying(false);
@@ -205,30 +256,13 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
         widget.load(permalinkUrl, {
           auto_play: true,
+          callback: () => {
+            isSourceSwitchingRef.current = false;
+          },
         });
       };
 
-      const playbackMode = usePlayerStore.getState().playbackMode;
-
-      if (playbackMode === 'bookmark') {
-        loadBookmarkTrack();
-        return;
-      }
-
-      widget.getCurrentSoundIndex((currentIndex) => {
-        if (widgetRef.current !== widget) return;
-
-        widget.getPosition((positionMs) => {
-          if (widgetRef.current !== widget) return;
-
-          playlistSnapshotRef.current = {
-            currentIndex,
-            positionMs,
-          };
-
-          loadBookmarkTrack();
-        });
-      });
+      loadBookmarkTrack();
     },
     [
       setCurrentTime,
@@ -238,59 +272,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
       setPlaying,
     ]
   );
-
-  const restorePlaylist = useCallback(() => {
-    const widget = widgetRef.current;
-    const snapshot = playlistSnapshotRef.current;
-
-    if (!widget) return;
-
-    const currentIndex = snapshot?.currentIndex ?? 0;
-    const positionMs = snapshot?.positionMs ?? 0;
-
-    setPlaybackMode('playlist');
-    setPlaying(false);
-    setCurrentTime(0);
-    setDuration(0);
-    setIsReady(false);
-    setIsPlaylistLoading(true);
-
-    widget.load(playlistUrl, {
-      auto_play: false,
-      start_track: currentIndex,
-      callback: () => {
-        if (widgetRef.current !== widget) return;
-
-        widget.seekTo(positionMs);
-        widget.pause();
-
-        widget.getCurrentSound((sound) => {
-          const playlistTrack = mapSoundCloudWidgetTrack(sound);
-
-          setWidgetTrack(playlistTrack);
-          setCurrentTrack(playlistTrack);
-        });
-
-        widget.getDuration((durationMs) => {
-          setDuration(durationMs / 1000);
-        });
-
-        setCurrentTime(positionMs / 1000);
-        setPlaying(false);
-        setIsReady(true);
-        setIsPlaylistLoading(false);
-
-        playlistSnapshotRef.current = null;
-      },
-    });
-  }, [
-    playlistUrl,
-    setCurrentTime,
-    setCurrentTrack,
-    setDuration,
-    setPlaybackMode,
-    setPlaying,
-  ]);
 
   const seek = useCallback((seconds: number) => {
     if (!Number.isFinite(seconds)) return;
@@ -345,7 +326,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
     play,
     pause,
     playBookmarkTrack,
-    restorePlaylist,
     toggle,
     seek,
     previousTrack,

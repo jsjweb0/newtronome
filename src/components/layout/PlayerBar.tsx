@@ -10,7 +10,6 @@ import {
   RotateCcw,
   Shuffle,
   VolumeOff,
-  ListRestart,
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip';
 import { useDarkMode } from '../../contexts/DarkModeContext';
@@ -37,7 +36,7 @@ export default function PlayerBar({
   const duration = usePlayerStore((state) => state.duration);
   const isMuted = usePlayerStore((state) => state.isMuted);
 
-  const { toggle, seek, toggleMute, rewindToStart, previousTrack, nextTrack, playRandomTrack, restorePlaylist } =
+  const { toggle, seek, toggleMute, rewindToStart, previousTrack, nextTrack, playRandomTrack } =
     soundCloudWidget;
 
   const { isDarkMode } = useDarkMode();
@@ -190,31 +189,15 @@ export default function PlayerBar({
 
       <div className="shrink-0 flex gap-x-1.5 xl:gap-x-5 absolute right-16 xl:right-4 bottom-2.5 xl:top-1/2 2xl:static 2xl:mt-5 ">
         <Tooltip
-          content={
-            isBookmarkMode
-              ? '플레이리스트로 돌아가기'
-              : collapsed
-                ? '플레이리스트 닫기'
-                : '플레이리스트 열기'
-          }
+          content={collapsed ? '플레이리스트 닫기' : '플레이리스트 열기'}
           position="top"
         >
           <button
             type="button"
-            onClick={isBookmarkMode ? restorePlaylist : onPanelToggle}
-            aria-label={
-              isBookmarkMode
-                ? '플레이리스트로 돌아가기'
-                : collapsed
-                  ? '플레이리스트 닫기'
-                  : '플레이리스트 열기'
-            }
+            onClick={onPanelToggle}
+            aria-label={collapsed ? '플레이리스트 닫기' : '플레이리스트 열기'}
           >
-            {isBookmarkMode ? (
-              <ListRestart aria-hidden="true" className="size-4 xl:size-7" />
-            ) : (
-              <ListMusic aria-hidden="true" className="size-4 xl:size-7" />
-            )}
+            <ListMusic aria-hidden="true" className="size-4 xl:size-7" />
           </button>
         </Tooltip>
         <Tooltip content="북마크">

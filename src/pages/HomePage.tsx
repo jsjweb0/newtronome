@@ -25,6 +25,7 @@ export default function HomePage() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
+  const playbackMode = usePlayerStore((state) => state.playbackMode);
   const tracks = usePlayerStore((state) => state.tracks);
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
@@ -36,7 +37,9 @@ export default function HomePage() {
   }, [tracks]);
 
   const handleTrackClick = (track: PlayerTrack) => {
-    const isCurrentTrack = String(currentTrack?.id) === String(track.id);
+    const isCurrentTrack =
+      playbackMode === 'playlist' &&
+      String(currentTrack?.id) === String(track.id);
 
     if (isCurrentTrack) {
       onToggleTrack?.();

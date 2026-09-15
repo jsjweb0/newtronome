@@ -53,9 +53,6 @@ export default function MainLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
 
-  useEffect(() => {
-    setIsPanelCollapsed(playbackMode === 'playlist');
-  }, [playbackMode]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -137,6 +134,7 @@ export default function MainLayout() {
           tracks={tracks}
           onSelect={soundCloudWidget.selectTrack}
           isPlaying={isPlaying}
+          isPlaylistMode={playbackMode === 'playlist'}
           soundCloudWidget={soundCloudWidget}
         />
       </div>
