@@ -5,7 +5,6 @@ import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import clsx from 'clsx';
-import { useNotifications } from '../../contexts/NotificationContext';
 
 interface LikeButtonProps {
   type?: 'heart' | 'thumb';
@@ -31,7 +30,6 @@ export default function LikeButton({
   'aria-describedby': ariaDescribedBy,
 }: LikeButtonProps) {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
   const { showToast } = useToast();
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(0);
@@ -110,7 +108,6 @@ export default function LikeButton({
     } catch (err) {
       console.error('좋아요 처리 중 에러:', err);
       showToast({ message: notificationErr.message, type: notificationErr.type });
-      addNotification(notificationErr);
     }
   };
 
