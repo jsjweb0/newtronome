@@ -54,9 +54,12 @@ export default function EditPostPage() {
       title: updatedPost.title,
       content: updatedPost.content,
       category: updatedPost.category,
-      isNotice: updatedPost.isNotice,
       updatedAt: new Date().toISOString(),
     };
+
+    if (user.email === 'admin@email.com') {
+      changedFields.isNotice = updatedPost.isNotice;
+    }
 
     try {
       await updatePost(boardType, id, changedFields);
@@ -68,7 +71,9 @@ export default function EditPostPage() {
       });
 
       navigate(`/board/${boardType}`);
-    } catch {
+    } catch (error) {
+      console.error('게시글 수정 실패:', error);
+
       const notification = {
         notificationId: Date.now(),
         message: '게시글 수정에 실패했습니다.',
@@ -78,6 +83,7 @@ export default function EditPostPage() {
         message: notification.message,
         type: 'error',
       });
+
       addNotification(notification);
     }
   };

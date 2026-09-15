@@ -12,6 +12,10 @@ import Pagination from '../../components/board/Pagination';
 import WriteButton from '../../components/auth/WriteButton';
 import PostListSkeleton from '../../components/board/PostListSkeleton';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
+import CategoryFilter, {
+  type CategoryFilterValue,
+} from '../../components/board/CategoryFilter';
+import { isFreeBoardCategoryValue } from '../../constants/freeBoardCategories';
 
 export default function BoardPage() {
   const { boardType } = useParams();
@@ -23,6 +27,14 @@ export default function BoardPage() {
   const pageParam = Number.parseInt(searchParams.get('page') ?? '', 10) || 1;
   const keywordParam = searchParams.get('keyword') || '';
   const sortParam = searchParams.get('sort') === 'asc';
+  const categoryParam = searchParams.get('category');
+
+  const selectedCategory: CategoryFilterValue =
+    boardType === 'free' &&
+      categoryParam &&
+      isFreeBoardCategoryValue(categoryParam)
+      ? categoryParam
+      : '';
 
   const [currentPage, setCurrentPage] = useState(pageParam);
   const [searchKeyword, setSearchKeyword] = useState(keywordParam);
@@ -48,8 +60,18 @@ export default function BoardPage() {
         const secondPostNo = Number.isFinite(Number(b.postNo)) ? Number(b.postNo) : 0;
         return dateSort ? firstPostNo - secondPostNo : secondPostNo - firstPostNo;
       })
-      .filter((post) => (post.title || '').toLowerCase().includes(searchKeyword.toLowerCase()));
-  }, [posts, searchKeyword, dateSort]);
+      .filter((post) => {
+        const matchesKeyword = (post.title || '')
+          .toLowerCase()
+          .includes(searchKeyword.toLowerCase());
+
+        const matchesCategory =
+          selectedCategory === '' ||
+          post.category === selectedCategory;
+
+        return matchesKeyword && matchesCategory;
+      });
+  }, [posts, searchKeyword, selectedCategory, dateSort]);
 
   const totalItems = filteredPosts.length;
   const totalPages = getTotalPages(totalItems);
@@ -84,6 +106,22 @@ export default function BoardPage() {
     }
   }, [searchKeyword, dateSort, searchParams, setSearchParams]);
 
+  const handleCategoryChange = (
+    category: CategoryFilterValue
+  ) => {
+    const newParams = new URLSearchParams(searchParams);
+
+    newParams.set('page', '1');
+
+    if (category) {
+      newParams.set('category', category);
+    } else {
+      newParams.delete('category');
+    }
+
+    setSearchParams(newParams);
+  };
+
   // 존재하지 않는 게시판 처리
   if (!isCommunityBoardType(boardType)) {
     return (
@@ -110,7 +148,19 @@ export default function BoardPage() {
       <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
         {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
       </h2>
-      <SearchBar searchKeyword={searchKeyword} setSearchKeyword={setSearchKeyword} />
+
+      {boardType === 'free' && (
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
+        />
+      )}
+
+      <SearchBar
+        searchKeyword={searchKeyword}
+        setSearchKeyword={setSearchKeyword}
+      />
+
       <SortButtonGroup
         posts={posts}
         dateSort={dateSort}

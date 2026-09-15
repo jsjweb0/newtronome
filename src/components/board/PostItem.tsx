@@ -11,6 +11,7 @@ import type {
   CommunityBoardType,
   Post,
 } from '../../contexts/PostsContext';
+import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
 
 type PostItemProps = {
   post: Post;
@@ -43,11 +44,16 @@ function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateS
   }, [boardType, post.id]);
 
   const categoryColorMap: Record<string, string> = {
-    카테고리1: 'text-blue-500 font-normal',
-    카테고리2: 'text-fuchsia-900 font-normal',
-    카테고리3: 'text-gray-400 font-normal',
-    카테고리4: 'text-neutral-500 font-normal',
+    chat: 'text-blue-500 font-normal',
+    quote: 'text-orange-400 font-normal',
+    recommendation: 'text-gray-400 font-normal',
+    question: 'text-pink-300 font-normal',
   };
+
+  const categoryLabel = post.category
+    ? FREE_BOARD_CATEGORY_LABELS[post.category] ?? post.category
+    : null;
+
   const displayAuthor =
     boardType === 'notice'
       ? '관리자'
@@ -122,11 +128,12 @@ function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateS
             keyword: searchKeyword,
           }}
         >
-          {post.category && (
+          {post.category && categoryLabel && (
             <span
-              className={`shrink-0 inline-block ${categoryColorMap[post.category] || 'text-gray-500'} mr-2`}
+              className={`shrink-0 inline-block ${categoryColorMap[post.category] || 'text-gray-500'
+                } mr-2`}
             >
-              [{post.category}]
+              [{categoryLabel}]
             </span>
           )}
 
