@@ -13,6 +13,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import ScrollToTopSmooth from './components/ui/ScrollToTopSmooth';
 import LikedTracksPage from './features/bookmarks/pages/LikedTracksPage';
 import { lazy, Suspense } from 'react';
+import ITunesSearchPage from './features/itunes/pages/ITunesSearchPage';
 
 function App() {
   const HomePage = lazy(() => import('./pages/HomePage'));
@@ -31,6 +32,7 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/account" element={<AccountProfile />} />
             <Route path="/likes" element={<LikedTracksPage />} />
+            <Route path="/search" element={<ITunesSearchPage />} />
             <Route
               path="/mypage"
               element={

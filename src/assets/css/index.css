@@ -112,6 +112,22 @@
   .scrollbar::-webkit-scrollbar-thumb:hover {
     background: var(--color-background);
   }
+
+  .music-search-input::-webkit-search-cancel-button {
+    display: none;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .music-search-input:-webkit-autofill,
+  .music-search-input:-webkit-autofill:hover,
+  .music-search-input:-webkit-autofill:focus,
+  .music-search-input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--color-textBase);
+    caret-color: var(--color-textBase);
+    box-shadow: 0 0 0 1000px var(--color-background) inset;
+    -webkit-box-shadow: 0 0 0 1000px var(--color-background) inset;
+  }
 }
 
 .fade-in {
