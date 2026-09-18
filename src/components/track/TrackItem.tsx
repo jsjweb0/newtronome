@@ -22,6 +22,7 @@ type TrackItemProps = {
     interactive?: boolean;
     showDuration?: boolean;
     footerActions?: ReactNode;
+    ariaLabel?: string;
 };
 
 export default function TrackItem({
@@ -34,7 +35,8 @@ export default function TrackItem({
     isPlayingPreview = false,
     interactive = true,
     showDuration = false,
-    footerActions
+    footerActions,
+    ariaLabel,
 }: TrackItemProps) {
     const isThisTrack = currentTrack?.id === track.id;
     const isPlayingTrack = isThisTrack && isPlaying;
@@ -147,6 +149,7 @@ export default function TrackItem({
                     onClick={() => {
                         onTrackClick?.(track);
                     }}
+                    aria-label={ariaLabel}
                     className={contentClassName}
                 >
                     {trackContent}
