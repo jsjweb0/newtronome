@@ -11,5 +11,5 @@ export interface ITunesTrack {
 
 export interface ITunesSearchResponse {
     resultCount: number;
-    results: ITunesTrack[];
+    results: unknown[];
 }

@@ -70,8 +70,7 @@ export async function searchITunesTracks(
         country: 'US',
         media: 'music',
         entity: 'song',
-        limit: '20',
-        lang: 'ko_kr',
+        limit: '100',
     });
 
     const response = await fetch(

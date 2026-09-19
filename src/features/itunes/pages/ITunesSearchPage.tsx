@@ -1,14 +1,17 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ITunesTrack } from "../types/itunes.types";
 import type { PlayerTrack } from '../../player/types/player.types';
 import { searchITunesTracks } from "../services/searchITunesTracks";
-import { Music, Search as SearchIcon, CircleX, Music2, Clock3, SquareArrowOutUpRight, X as XIcon } from "lucide-react";
+import { Music, Search as SearchIcon, CircleX, Music2, Clock3, ChevronRight, X as XIcon, Plus as PlusIcon } from "lucide-react";
 import clsx from "clsx";
 import { AudioEqualizerIcon } from '../../../components/icons';
 import TrackItemSkeleton from "../../../components/track/TrackItemSkeleton";
 import appleMusicBadge from '../../../assets/brands/apple-music-listen-badge-2x.png';
 import Tooltip from "../../../components/ui/Tooltip";
 import TrackItem from "../../../components/track/TrackItem";
+import { useOutletContext } from "react-router-dom";
+import type { PlayerOutletContext } from "../../../layouts/MainLayout";
+import { usePlayerStore } from "../../player/stores/usePlayerStore";
 
 const getLargeArtworkUrl = (artworkUrl: string) => {
   return artworkUrl.replace(
@@ -34,11 +37,19 @@ const mapITunesTrackToPlayerTrack = (
 
 const RECENT_SEARCHES_KEY = 'recentSearches';
 const MAX_RECENT_SEARCHES = 5;
-const RECOMMENDED = ['nudisco', 'french house', 'house music', 'deep house'];
+const INITIAL_VISIBLE_COUNT = 20;
+const LOAD_MORE_COUNT = 20;
 
 export default function ITunesSearchPage() {
+  const { onPauseSoundCloud } = useOutletContext<PlayerOutletContext>();
+
   const [keyword, setKeyword] = useState('');
   const [tracks, setTracks] = useState<ITunesTrack[]>([]);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+
+  const visibleTracks = tracks.slice(0, visibleCount);
+  const hasMoreTracks = visibleCount < tracks.length;
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -46,8 +57,10 @@ export default function ITunesSearchPage() {
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const [playingPreviewTrackId, setPlayingPreviewTrackId] =
-    useState<number | null>(null);
+  const [playingPreviewTrackId, setPlayingPreviewTrackId] = useState<number | null>(null);
+
+  const playlistTracks = usePlayerStore((state) => state.tracks);
+  const [recommendedArtists, setRecommendedArtists] = useState<string[]>([]);
 
   // 최근 검색어
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
@@ -109,6 +122,36 @@ export default function ITunesSearchPage() {
     });
   };
 
+  useEffect(() => {
+    const uniqueArtists = [
+      ...new Set(
+        playlistTracks.map((track) => track.artist.trim()).filter((artist) => artist && artist !== '알 수 없는 아티스트')
+      ),
+    ];
+
+    const shuffledArtists = [...uniqueArtists];
+
+    for (
+      let index = shuffledArtists.length - 1;
+      index > 0;
+      index -= 1
+    ) {
+      const randomIndex = Math.floor(
+        Math.random() * (index + 1)
+      );
+
+      [
+        shuffledArtists[index],
+        shuffledArtists[randomIndex],
+      ] = [
+          shuffledArtists[randomIndex],
+          shuffledArtists[index],
+        ];
+    }
+
+    setRecommendedArtists(shuffledArtists.slice(0, 5));
+  }, [playlistTracks]);
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const runSearch = async (searchTerm: string) => {
@@ -116,8 +159,10 @@ export default function ITunesSearchPage() {
 
     if (!trimmedKeyword) return;
 
-    // 진행 중인 이전 검색 요청 취소
+    // 진행 중인 이전 검색 요청과 미리듣기 취소
     abortControllerRef.current?.abort();
+    stopPreview();
+    setVisibleCount(INITIAL_VISIBLE_COUNT);
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -166,19 +211,18 @@ export default function ITunesSearchPage() {
   }
 
   useEffect(() => {
+    const audio = audioRef.current;
+
     return () => {
       abortControllerRef.current?.abort();
+
+      if (audio) {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+      }
     };
   }, []);
-
-  // 추천 검새어
-  const getAppleMusicSearchUrl = (term: string) => {
-    const url = new URL('https://music.apple.com/kr/search');
-
-    url.searchParams.set('term', term);
-
-    return url.toString();
-  };
 
   const handlePreview = async (track: ITunesTrack) => {
     const audio = audioRef.current;
@@ -191,10 +235,11 @@ export default function ITunesSearchPage() {
       playingPreviewTrackId === track.trackId;
 
     if (isCurrentPreview && !audio.paused) {
-      audio.pause();
-      setPlayingPreviewTrackId(null);
+      stopPreview();
       return;
     }
+
+    onPauseSoundCloud();
 
     audio.pause();
     audio.src = track.previewUrl;
@@ -207,6 +252,28 @@ export default function ITunesSearchPage() {
       setPlayingPreviewTrackId(null);
     }
   };
+
+  const stopPreview = useCallback(() => {
+    const audio = audioRef.current;
+
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+    }
+
+    setPlayingPreviewTrackId(null);
+  }, []);
+
+  const isSoundCloudPlaying = usePlayerStore(
+    (state) => state.isPlaying
+  );
+
+  useEffect(() => {
+    if (!isSoundCloudPlaying) return;
+
+    stopPreview();
+  }, [isSoundCloudPlaying, stopPreview]);
 
   return (
     <div className="mx-auto w-full px-2 lg:px-4 pb-6 lg:pb-10">
@@ -297,29 +364,30 @@ export default function ITunesSearchPage() {
         {/* 추천 검색어 */}
         <div className={clsx('flex flex-col lg:flex-row gap-2 items-start lg:items-center')}>
           <p className="text-sm text-textSub">추천 검색어</p>
-          <ul className="flex flex-wrap gap-2 max-lg:w-full max-lg:flex-col">
-            {RECOMMENDED.map((term) => (
-              <li
-                key={term}
-                className="inline-flex items-center gap-x-2 lg:bg-textThr rounded-full text-textBase hover:bg-primary/10"
-              >
-                <a
-                  href={getAppleMusicSearchUrl(term)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${term} 플레이리스트를 Apple Music에서 검색하기`}
-                  className={clsx(
-                    'group inline-flex items-center gap-x-1 relative lg:px-3 py-1.5 text-xs lg:text-sm hover:text-primary ' +
-                    'max-lg:w-full max-lg:pl-1'
-                  )}
+          {recommendedArtists.length > 0 && (
+            <ul className="flex flex-wrap gap-2 max-lg:w-full max-lg:flex-col">
+              {recommendedArtists.map((artist) => (
+                <li
+                  key={artist}
+                  className="inline-flex items-center gap-x-2 lg:bg-textThr rounded-full text-textBase hover:bg-primary/10"
                 >
-                  <Music2 aria-hidden="true" className="size-3 text-textSub group-hover:text-primary" />
-                  {term}
-                  <SquareArrowOutUpRight aria-hidden="true" className="block lg:hidden size-3 absolute top-1/2 right-1.5 -translate-y-1/2 text-textSub group-hover:text-primary" />
-                </a>
-              </li>
-            ))}
-          </ul>
+                  <button
+                    type="button"
+                    onClick={() => handleRecentSearch(artist)}
+                    className={clsx(
+                      'group inline-flex items-center gap-x-1 relative lg:pl-3 lg:pr-4 py-1.5 text-xs lg:text-sm hover:text-primary',
+                      'max-lg:w-full max-lg:pl-1'
+                    )}
+                  >
+                    <Music2 aria-hidden="true" className="size-3 text-textSub group-hover:text-primary" />
+                    {artist}
+                    <ChevronRight aria-hidden="true" className="block lg:hidden size-3 absolute top-1/2 right-1.5 -translate-y-1/2 text-textSub group-hover:text-primary" />
+                  </button>
+                </li>
+
+              ))}
+            </ul>
+          )}
         </div>
       </div>
       {/* //검색어 목록 */}
@@ -384,7 +452,7 @@ export default function ITunesSearchPage() {
               </h2>
             </div>
             <ul className="grid grid-cols-3 md:grid-cols-5 gap-x-4 gap-y-8 lg:gap-y-14 mt-6">
-              {tracks.map((track, index) => {
+              {visibleTracks.map((track, index) => {
                 const displayTrack = mapITunesTrackToPlayerTrack(track);
                 const isPlayingPreview =
                   playingPreviewTrackId === track.trackId;
@@ -422,14 +490,35 @@ export default function ITunesSearchPage() {
                 );
               })}
             </ul>
+            {hasMoreTracks && (
+              <div className="flex justify-center mt-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVisibleCount((previousCount) =>
+                      Math.min(
+                        previousCount + LOAD_MORE_COUNT,
+                        tracks.length
+                      )
+                    );
+                  }}
+                  className={clsx(
+                    'inline-flex gap-1.5 items-center py-3 px-8 bg-background rounded-xl md:rounded-2xl',
+                    'text-textBase text-sm border border-textThr dark:border-none focus:ring-primary',
+                    'hover:text-primary transition-all'
+                  )}
+                >
+                  20개 더 보기 <PlusIcon aria-hidden="true" className="size-3" />
+                </button>
+              </div>
+            )}
           </>
         )}
-        {/* audio 임시 */}
+        {/* audio */}
         <audio
           ref={audioRef}
           onEnded={() => setPlayingPreviewTrackId(null)}
         />
-        {/* //audio */}
       </section>
     </div>
   );

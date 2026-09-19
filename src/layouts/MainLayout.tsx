@@ -36,6 +36,7 @@ export interface PlayerOutletContext {
   playlistUrl: string;
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
+  onPauseSoundCloud: () => void;
   onPlayBookmarkTrack: (track: PlayerTrack) => void;
 }
 
@@ -76,6 +77,7 @@ export default function MainLayout() {
     playlistUrl,
     onSelectTrack: soundCloudWidget.selectTrack,
     onToggleTrack: soundCloudWidget.toggle,
+    onPauseSoundCloud: soundCloudWidget.pause,
     onPlayBookmarkTrack: soundCloudWidget.playBookmarkTrack,
   };
 
