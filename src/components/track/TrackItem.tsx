@@ -22,6 +22,7 @@ type TrackItemProps = {
     interactive?: boolean;
     showDuration?: boolean;
     footerActions?: ReactNode;
+    ariaLabel?: string;
 };
 
 export default function TrackItem({
@@ -34,7 +35,8 @@ export default function TrackItem({
     isPlayingPreview = false,
     interactive = true,
     showDuration = false,
-    footerActions
+    footerActions,
+    ariaLabel,
 }: TrackItemProps) {
     const isThisTrack = currentTrack?.id === track.id;
     const isPlayingTrack = isThisTrack && isPlaying;
@@ -76,7 +78,7 @@ export default function TrackItem({
                     className={clsx(
                         "block object-cover w-full h-full transition-transform",
                         viewModeClass(viewMode, "absolute top-0 left-0"),
-                        interactive && "group-hover:scale-110"
+                        interactive && "group-hover:scale-110 group-focus-visible:scale-110"
                     )}
                     onError={(event) => {
                         event.currentTarget.src = noImage;
@@ -88,7 +90,8 @@ export default function TrackItem({
                         "hidden items-center justify-center absolute inset-0 bg-white/30 ",
                         "opacity-0 transition-all duration-300",
                         "group-hover:flex group-[.isPlaying]:flex group-[.isPaused]:flex",
-                        "group-hover:opacity-100 group-[.isPlaying]:opacity-100 group-[.isPaused]:opacity-100"
+                        "group-hover:opacity-100 group-[.isPlaying]:opacity-100 group-[.isPaused]:opacity-100",
+                        "group-focus-visible:flex group-focus-visible:opacity-100"
                     )}
                     >
                         {isPlayingTrack || isPlayingPreview ? (
@@ -147,6 +150,7 @@ export default function TrackItem({
                     onClick={() => {
                         onTrackClick?.(track);
                     }}
+                    aria-label={ariaLabel}
                     className={contentClassName}
                 >
                     {trackContent}

@@ -12,6 +12,7 @@ import {
   Activity,
   Disc3,
   Heart,
+  Search as SearchIcon
 } from 'lucide-react';
 import { LogoIcon, LogoMoIcon, Turntable, MusicLibrary } from '../icons';
 import clsx from 'clsx';
@@ -49,6 +50,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
 
   const navItems: ReadonlyArray<NavItem> = [
     { label: 'Browse', path: '/', icon: Music },
+    { label: 'Search', path: '/search', icon: SearchIcon },
     { label: 'Likes', path: '/likes', icon: Heart },
     { label: 'Notice', path: '/board/notice', icon: Disc3 },
     { label: 'Free Board', path: '/board/free', icon: Activity },
@@ -167,7 +169,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
         {/* Collapse */}
         <div
           className={clsx(
-            'hs-dropdown-menu transition-[opacity,margin] duration hs-dropdown-open:opacity-100 max-lg:opacity-0 z-50 lg:!transform-none',
+            'hs-dropdown-menu transition-[opacity,margin] duration hs-dropdown-open:opacity-100 max-lg:opacity-0 z-50 lg:transform-none!',
             'hidden lg:block lg:basis-full lg:grow w-full transition-all duration-300',
             'max-lg:px-3 max-lg:mt-2',
             'max-lg:max-h-[calc(100dvh-3.5rem)] max-lg:overflow-y-auto max-lg:overscroll-contain'
@@ -211,7 +213,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
                 <DarkModeToggle
                   tooltipEnabled={false}
                   showText={true}
-                  className="w-full !justify-start text-sm"
+                  className="w-full justify-start! text-sm"
                 />
               </li>
             </ul>
