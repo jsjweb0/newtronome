@@ -12,23 +12,17 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn()
-        && request.auth.token.get('email', '') == 'admin@email.com';
+        && request.auth.token.get('admin', false) == true;
     }
 
     function isPostAuthor() {
       return isSignedIn()
-        && (
-          resource.data.get('authorUid', '') == request.auth.uid
-          || resource.data.get('email', '') == request.auth.token.get('email', '')
-        );
+        && resource.data.get('authorUid', '') == request.auth.uid;
     }
 
     function isCommentAuthor() {
       return isSignedIn()
-        && (
-          resource.data.get('writerUid', '') == request.auth.uid
-          || resource.data.get('writerEmail', '') == request.auth.token.get('email', '')
-        );
+        && resource.data.get('writerUid', '') == request.auth.uid;
     }
 
     function isValidPostContentUpdate() {

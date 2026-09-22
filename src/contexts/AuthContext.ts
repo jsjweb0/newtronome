@@ -7,6 +7,7 @@ export interface AuthUser {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  isAdmin: boolean;
   nickname?: string | null;
   createdAt?: Timestamp | Date | null;
 }
