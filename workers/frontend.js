@@ -42,12 +42,15 @@ export default {
       limit: '100',
     });
 
-    const response = await fetch(`https://itunes.apple.com/search?${searchParams.toString()}`, {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'NEWTRONOME/1.0',
-      },
-    });
+    const response = await fetch(
+      `https://itunes.apple.com/WebObjects/MZStoreServices.woa/wa/wsSearch?${searchParams.toString()}`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'NEWTRONOME/1.0',
+        },
+      }
+    );
 
     if (!response.ok) {
       return Response.json(
