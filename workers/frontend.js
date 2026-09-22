@@ -45,6 +45,7 @@ export default {
     const response = await fetch(`https://itunes.apple.com/search?${searchParams.toString()}`, {
       headers: {
         Accept: 'application/json',
+        'User-Agent': 'NEWTRONOME/1.0',
       },
     });
 
