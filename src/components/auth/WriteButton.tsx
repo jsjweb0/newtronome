@@ -1,6 +1,7 @@
 import { BaseButton } from '../ui/BaseButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { Pencil } from 'lucide-react';
+import { getUserRole } from '../../utils/role';
 
 type BoardTypeProps = {
   boardType: 'notice' | 'free' | 'pet';
@@ -9,7 +10,7 @@ type BoardTypeProps = {
 export default function WriteButton({ boardType }: BoardTypeProps) {
   const { user } = useAuth();
 
-  const role = !user ? 'guest' : user.email === 'admin@email.com' ? 'admin' : 'user';
+  const role = getUserRole(user);
 
   const canWrite =
     (boardType === 'notice' && role === 'admin') || (boardType === 'free' && role !== 'guest');

@@ -23,6 +23,7 @@ export interface Comment {
   createdAt: Date;
   likeCount: number;
   liked: boolean;
+  writerUid: string | null;
   writerEmail: string | null;
   displayName: string | null;
   photoURL: string | null;
@@ -85,6 +86,7 @@ function convertCommentDocument(
       ? data.likeCount
       : 0,
     liked: typeof myUid === 'string' && likedUsers.includes(myUid),
+    writerUid: getNullableString(data.writerUid),
     writerEmail: getNullableString(data.writerEmail),
     displayName: getNullableString(data.displayName),
     photoURL: getNullableString(data.photoURL),
@@ -182,6 +184,7 @@ export async function createCommentInDB(
     createdAt: createdAt.toDate(),
     likeCount: data.likeCount,
     liked: false,
+    writerUid: data.writerUid,
     writerEmail: data.writerEmail,
     displayName: data.displayName,
     photoURL: data.photoURL,

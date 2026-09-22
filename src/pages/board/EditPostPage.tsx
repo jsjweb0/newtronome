@@ -12,6 +12,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import PostForm, {
   type PostFormValues,
 } from '../../components/board/PostForm';
+import { getUserRole } from '../../utils/role';
 
 export default function EditPostPage() {
   const { boardType, id } = useParams();
@@ -21,6 +22,7 @@ export default function EditPostPage() {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const { user } = useAuth();
+  const role = getUserRole(user);
 
   useEffect(() => {
     if (!id || !isCommunityBoardType(boardType)) {
@@ -57,7 +59,7 @@ export default function EditPostPage() {
       updatedAt: new Date().toISOString(),
     };
 
-    if (user.email === 'admin@email.com') {
+    if (role === 'admin') {
       changedFields.isNotice = updatedPost.isNotice;
     }
 
@@ -102,8 +104,7 @@ export default function EditPostPage() {
 
   const canEdit =
     user &&
-    (user.email === post.email ||
-      user.email === 'admin@email.com');
+    (user.uid === post.authorUid || role === 'admin');
 
   if (!canEdit) {
     return <Navigate to={`/board/${boardType}`} replace />;
