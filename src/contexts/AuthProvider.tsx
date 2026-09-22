@@ -8,7 +8,13 @@ import {
     setDoc,
 } from 'firebase/firestore';
 import type { DocumentData, Timestamp } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+    createUserWithEmailAndPassword,
+    getIdTokenResult,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    signOut,
+} from 'firebase/auth';
 import { auth, db } from '../firebase';
 
 import { AuthContext } from './AuthContext';
@@ -91,21 +97,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 setUser(null);
             } else {
                 try {
-                    // Firestore에서 유저 프로필 읽기
-                    const snap = await getDoc(doc(db, 'users', authUser.uid));
+                    // Firestore 프로필과 Firebase Auth Claim을 함께 읽기
+                    const [snap, tokenResult] = await Promise.all([
+                        getDoc(doc(db, 'users', authUser.uid)),
+                        getIdTokenResult(authUser),
+                    ]);
+
                     if (
                         !isMounted ||
                         requestId !== authRequestIdRef.current
                     ) {
                         return;
                     }
-                    const profile = snap.exists() ? normalizeUserProfile(snap.data()) : {};
-                    // Auth + Firestore 프로필 병합
+
+                    const profile = snap.exists()
+                        ? normalizeUserProfile(snap.data())
+                        : {};
+
                     setUser({
                         uid: authUser.uid,
                         email: authUser.email,
                         displayName: authUser.displayName,
                         photoURL: profile.photoURL ?? authUser.photoURL,
+                        isAdmin: tokenResult.claims.admin === true,
                         nickname: profile.nickname,
                         createdAt: profile.createdAt,
                     });
@@ -124,6 +138,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         email: authUser.email,
                         displayName: authUser.displayName,
                         photoURL: authUser.photoURL,
+                        isAdmin: false,
                     });
                 }
             }

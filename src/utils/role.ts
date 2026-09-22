@@ -1,14 +1,12 @@
 export type UserRole = 'guest' | 'user' | 'admin';
 
-interface UserWithEmail {
-  email: string | null;
+interface UserWithRole {
+  isAdmin: boolean;
 }
 
 export function getUserRole(
-  user: UserWithEmail | null | undefined
+  user: UserWithRole | null | undefined
 ): UserRole {
   if (!user) return 'guest';
-  return user.email === 'admin@email.com'
-    ? 'admin'
-    : 'user';
+  return user.isAdmin ? 'admin' : 'user';
 }
