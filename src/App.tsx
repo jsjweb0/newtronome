@@ -15,11 +15,11 @@ import LikedTracksPage from './features/bookmarks/pages/LikedTracksPage';
 import { lazy, Suspense } from 'react';
 import ITunesSearchPage from './features/itunes/pages/ITunesSearchPage';
 
-function App() {
-  const HomePage = lazy(() => import('./pages/HomePage'));
-  const AccountProfile = lazy(() => import('./pages/user/AccountProfile'));
-  const PetBoardPage = lazy(() => import('./pages/board/PetBoardPage'));
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AccountProfile = lazy(() => import('./pages/user/AccountProfile'));
+const PetBoardPage = lazy(() => import('./pages/board/PetBoardPage'));
 
+function App() {
   return (
     <>
       <ScrollToTopSmooth />
