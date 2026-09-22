@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
     doc,
@@ -49,6 +49,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
+    const authRequestIdRef = useRef(0);
 
     const signup: AuthContextValue['signup'] = async (email, password) => {
         // 1) 이메일/비밀번호 가입
@@ -80,7 +81,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     useEffect(() => {
         let isMounted = true;
+
         const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+            const requestId = ++authRequestIdRef.current;
+
             if (!isMounted) return;
 
             if (!authUser) {
@@ -88,7 +92,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             } else {
                 try {
                     // Firestore에서 유저 프로필 읽기
-                    const snap = await getDoc(doc(db, "users", authUser.uid));
+                    const snap = await getDoc(doc(db, 'users', authUser.uid));
+                    if (
+                        !isMounted ||
+                        requestId !== authRequestIdRef.current
+                    ) {
+                        return;
+                    }
                     const profile = snap.exists() ? normalizeUserProfile(snap.data()) : {};
                     // Auth + Firestore 프로필 병합
                     setUser({
@@ -100,7 +110,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         createdAt: profile.createdAt,
                     });
                 } catch (error) {
-                    console.error("Failed to fetch user profile:", error);
+                    if (
+                        !isMounted ||
+                        requestId !== authRequestIdRef.current
+                    ) {
+                        return;
+                    }
+
+                    console.error('Failed to fetch user profile:', error);
+
+                    setUser({
+                        uid: authUser.uid,
+                        email: authUser.email,
+                        displayName: authUser.displayName,
+                        photoURL: authUser.photoURL,
+                    });
                 }
             }
             setLoading(false);
@@ -125,14 +149,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, [user?.nickname, user?.displayName]);
 
     useEffect(() => {
-        if (!user?.uid) return;
-        const userRef = doc(db, "users", user.uid);
+        const subscribedUserId = user?.uid;
+
+        if (!subscribedUserId) return;
+
+        const userRef = doc(db, 'users', subscribedUserId);
+
         const unsubscribeProfile = onSnapshot(
             userRef,
             snap => {
                 if (snap.exists()) {
                     setUser((previousUser) => {
-                        if (!previousUser) return null;
+                        if (
+                            !previousUser ||
+                            previousUser.uid !== subscribedUserId
+                        ) {
+                            return previousUser;
+                        }
 
                         const profile = normalizeUserProfile(snap.data());
 
