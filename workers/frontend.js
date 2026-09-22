@@ -53,6 +53,8 @@ export default {
       return Response.json(
         {
           message: 'iTunes 검색 요청에 실패했습니다.',
+          upstreamStatus: response.status,
+          upstreamLocation: response.headers.get('Location'),
         },
         {
           status: 502,
