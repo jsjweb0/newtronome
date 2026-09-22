@@ -173,7 +173,7 @@ export default function Comment({
               >
                 Reply
               </button>
-              <AuthAccess allow={['admin', data.writerEmail]}>
+              <AuthAccess allow={['admin']} ownerUid={data.writerUid}>
                 {/* dropdown menu */}
                 <div className="relative mt-0.5">
                   <button

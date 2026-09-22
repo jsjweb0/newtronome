@@ -179,7 +179,7 @@ export default function PostView() {
         </p>
       )}
       <div className="py-5 px-3 md:py-12 md:px-7 border-b border-gray-300">
-        <AuthAccess allow={['admin', currentPost.email]}>
+        <AuthAccess allow={['admin']} ownerUid={currentPost.authorUid}>
           <div className="flex gap-2 justify-center md:justify-start mb-8">
             <Link
               to={`/board/${boardType}/edit/${currentPost.id}`}
