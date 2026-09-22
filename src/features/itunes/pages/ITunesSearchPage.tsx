@@ -90,37 +90,33 @@ export default function ITunesSearchPage() {
       return;
     }
 
-    setRecentSearches((previousSearches) => {
-      const nextSearches = [
+    setRecentSearches((previousSearches) =>
+      [
         trimmedSearchTerm,
         ...previousSearches.filter(
-          (term) => term.toLowerCase() !== trimmedSearchTerm.toLowerCase()
+          (term) =>
+            term.toLowerCase() !== trimmedSearchTerm.toLowerCase()
         ),
-      ].slice(0, MAX_RECENT_SEARCHES);
-
-      localStorage.setItem(
-        RECENT_SEARCHES_KEY,
-        JSON.stringify(nextSearches)
-      );
-
-      return nextSearches;
-    });
+      ].slice(0, MAX_RECENT_SEARCHES)
+    );
   };
 
   const removeRecentSearch = (searchTerm: string) => {
-    setRecentSearches((previousSearches) => {
-      const nextSearches = previousSearches.filter(
-        (term) => term !== searchTerm
-      );
+    setRecentSearches((previousSearches) =>
+      previousSearches.filter((term) => term !== searchTerm)
+    );
+  };
 
+  useEffect(() => {
+    try {
       localStorage.setItem(
         RECENT_SEARCHES_KEY,
-        JSON.stringify(nextSearches)
+        JSON.stringify(recentSearches)
       );
-
-      return nextSearches;
-    });
-  };
+    } catch {
+      // 저장 실패가 음악 검색 결과에 영향을 주지 않게 한다.
+    }
+  }, [recentSearches]);
 
   useEffect(() => {
     const uniqueArtists = [
@@ -298,7 +294,7 @@ export default function ITunesSearchPage() {
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setKeyword('')}
-              className="inline-flex items-center absolute right-9 md:right-11 h-full px-2 md:px-4 text-textSub"
+              className="inline-flex items-center absolute right-10 md:right-11 h-full px-2 md:px-4 text-textSub"
               aria-label="검색어 지우기"
             >
               <CircleX aria-hidden="true" className="size-4 md:size-5" />
@@ -308,13 +304,11 @@ export default function ITunesSearchPage() {
           <button type="submit"
             disabled={isLoading}
             aria-label={isLoading ? '검색 중...' : '검색'}
-            className="inline-flex justify-center items-center absolute right-1 h-full px-4 rounded-full bg-none"
+            className="inline-flex justify-center items-center absolute right-1 h-full px-3 md:px-4 rounded-full bg-none"
           >
             <SearchIcon aria-hidden="true" className="size-4 md:size-6" />
           </button>
         </div>
-
-        {errorMessage && <p role="alert">{errorMessage}</p>}
       </form>
 
       {/* 검색어 목록 */}
@@ -391,7 +385,6 @@ export default function ITunesSearchPage() {
         </div>
       </div>
       {/* //검색어 목록 */}
-
 
       <section className="mt-6" aria-labelledby="search-results-title">
         {!hasSearched && (

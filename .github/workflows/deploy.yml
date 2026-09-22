@@ -35,6 +35,7 @@ jobs:
       - name: Build
         env:
           VITE_BASE_PATH: /newtronome/
+          VITE_ITUNES_SEARCH_API_URL: https://newtronome.jsjweb0.workers.dev/api/itunes/search
         run: npm run build
 
       - name: Add SPA fallback
