@@ -1,9 +1,5 @@
 import type { ITunesSearchResponse, ITunesTrack } from "../types/itunes.types";
 
-const ITUNES_SEARCH_API_URL =
-    import.meta.env.VITE_ITUNES_SEARCH_API_URL ??
-    '/api/itunes/search';
-
 const isRecord = (
     value: unknown
 ): value is Record<string, unknown> => {
@@ -71,10 +67,14 @@ export async function searchITunesTracks(
 
     const params = new URLSearchParams({
         term: trimmedKeyword,
+        country: 'US',
+        media: 'music',
+        entity: 'song',
+        limit: '100',
     });
 
     const response = await fetch(
-        `${ITUNES_SEARCH_API_URL}?${params.toString()}`,
+        `https://itunes.apple.com/search?${params.toString()}`,
         { signal }
     );
 
