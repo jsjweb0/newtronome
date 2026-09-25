@@ -24,7 +24,7 @@ export default function BoardPage() {
   const [loading, setLoading] = useState(true);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageParam = Number.parseInt(searchParams.get('page') ?? '', 10) || 1;
+  const pageParam = Number(searchParams.get('page') ?? '1');
   const keywordParam = searchParams.get('keyword') || '';
   const sortParam = searchParams.get('sort') === 'asc';
   const categoryParam = searchParams.get('category');
@@ -36,9 +36,9 @@ export default function BoardPage() {
       ? categoryParam
       : '';
 
-  const [currentPage, setCurrentPage] = useState(pageParam);
-  const [searchKeyword, setSearchKeyword] = useState(keywordParam);
-  const [dateSort, setDateSort] = useState(sortParam);
+  const searchKeyword = keywordParam;
+  const [draftKeyword, setDraftKeyword] = useState(keywordParam);
+  const dateSort = sortParam;
 
   useEffect(() => {
     if (!isCommunityBoardType(boardType)) return;
@@ -74,8 +74,25 @@ export default function BoardPage() {
   }, [posts, searchKeyword, selectedCategory, dateSort]);
 
   const totalItems = filteredPosts.length;
-  const totalPages = getTotalPages(totalItems);
+  const totalPages = Math.max(1, getTotalPages(totalItems));
+  const currentPage = Number.isSafeInteger(pageParam)
+    ? Math.min(Math.max(pageParam, 1), totalPages)
+    : 1;
   const currentItems = getCurrentPageItems(filteredPosts, currentPage);
+
+  const handleSearch = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('keyword', draftKeyword);
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+  };
+
+  const handleSortChange = (nextSort: boolean) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('sort', nextSort ? 'asc' : 'desc');
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+  };
 
   const handlePageChange = (newPage: number) => {
     const newParams = new URLSearchParams(searchParams);
@@ -84,27 +101,8 @@ export default function BoardPage() {
   };
 
   useEffect(() => {
-    const pageFromParams = Number.parseInt(searchParams.get('page') ?? '', 10);
-    const keywordFromParams = searchParams.get('keyword') || '';
-    const sortFromParams = searchParams.get('sort') === 'asc';
-
-    setCurrentPage(!isNaN(pageFromParams) ? pageFromParams : 1);
-    setSearchKeyword(keywordFromParams);
-    setDateSort(sortFromParams);
-  }, [searchParams]);
-
-  useEffect(() => {
-    const currentKeyword = searchParams.get('keyword') || '';
-    const currentSort = searchParams.get('sort') || 'desc';
-
-    if (currentKeyword !== searchKeyword || currentSort !== (dateSort ? 'asc' : 'desc')) {
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set('page', '1');
-      newParams.set('keyword', searchKeyword);
-      newParams.set('sort', dateSort ? 'asc' : 'desc');
-      setSearchParams(newParams);
-    }
-  }, [searchKeyword, dateSort, searchParams, setSearchParams]);
+    setDraftKeyword(keywordParam)
+  }, [keywordParam]);
 
   const handleCategoryChange = (
     category: CategoryFilterValue
@@ -157,14 +155,15 @@ export default function BoardPage() {
       )}
 
       <SearchBar
-        searchKeyword={searchKeyword}
-        setSearchKeyword={setSearchKeyword}
+        searchKeyword={draftKeyword}
+        setSearchKeyword={setDraftKeyword}
+        onSearch={handleSearch}
       />
 
       <SortButtonGroup
         posts={posts}
         dateSort={dateSort}
-        setDateSort={setDateSort}
+        setDateSort={handleSortChange}
       />
       <PostList
         posts={posts}
@@ -176,14 +175,27 @@ export default function BoardPage() {
         dateSort={dateSort}
         deletePost={(postId) => deletePost(boardType, postId)}
       />
+      {totalItems === 0 && (
+        <p
+          role="status"
+          className="py-10 text-center text-sm text-gray-500 dark:text-neutral-400"
+        >
+          {posts.length === 0
+            ? '아직 등록된 게시글이 없습니다.'
+            : searchKeyword
+              ? '검색 결과가 없습니다. 다른 검색어로 검색해 보세요.'
+              : selectedCategory
+                ? '이 카테고리에 등록된 게시글이 없습니다.'
+                : '표시할 게시글이 없습니다.'}
+        </p>
+      )}
 
       <WriteButton boardType={boardType} />
 
       <Pagination
         currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
+        setCurrentPage={handlePageChange}
         totalPages={totalPages}
-        onPageChange={handlePageChange}
       />
     </div>
   );
