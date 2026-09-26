@@ -69,11 +69,15 @@ export async function removeSavedTrack(
 export function subscribeToSavedTrack(
   uid: string,
   trackId: PlayerTrack['id'],
-  callback: SavedTrackStatusCallback
+  callback: SavedTrackStatusCallback,
+  onError: SavedTracksErrorCallback
 ): Unsubscribe {
-  return onSnapshot(getSavedTrackRef(uid, trackId), (snapshot) => {
-    callback(snapshot.exists());
-  });
+  return onSnapshot(
+    getSavedTrackRef(uid, trackId), (snapshot) => {
+      callback(snapshot.exists());
+    },
+    onError
+  );
 }
 
 export function subscribeToSavedTracks(

@@ -16,12 +16,15 @@ import CategoryFilter, {
   type CategoryFilterValue,
 } from '../../components/board/CategoryFilter';
 import { isFreeBoardCategoryValue } from '../../constants/freeBoardCategories';
+import { RotateCcw } from 'lucide-react';
 
 export default function BoardPage() {
   const { boardType } = useParams();
   const { getPosts, deletePost } = usePosts();
   const [posts, setLocalPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const pageParam = Number(searchParams.get('page') ?? '1');
@@ -43,14 +46,30 @@ export default function BoardPage() {
   useEffect(() => {
     if (!isCommunityBoardType(boardType)) return;
 
+    let ignore = false;
+
     const fetchData = async () => {
       setLoading(true);
-      const result = await getPosts(boardType);
-      setLocalPosts(result);
-      setLoading(false);
+      setError(null);
+
+      try {
+        const result = await getPosts(boardType);
+
+        if (!ignore) setLocalPosts(result);
+
+      } catch {
+        if (!ignore) setError('게시글을 불러오지 못했습니다.');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
     };
+
     fetchData();
-  }, [boardType, getPosts]);
+
+    return () => {
+      ignore = true;
+    };
+  }, [boardType, getPosts, retryCount]);
 
   const filteredPosts = useMemo(() => {
     return posts
@@ -137,6 +156,21 @@ export default function BoardPage() {
           {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
         </h2>
         <PostListSkeleton />
+      </div>
+    );
+  }
+
+  if (error !== null) {
+    return (
+      <div className="mx-auto max-w-[85rem] px-4 py-10">
+        <p role="alert">{error}</p>
+        <button
+          type="button"
+          onClick={() => setRetryCount((previousCount) => previousCount + 1)}
+          className="inline-flex gap-2"
+        >
+          다시 시도 <RotateCcw aria-hidden="true" />
+        </button>
       </div>
     );
   }
