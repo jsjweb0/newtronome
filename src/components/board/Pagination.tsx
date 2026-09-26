@@ -1,16 +1,20 @@
-import type { Dispatch, SetStateAction } from "react";
 import { BaseButton } from "../ui/BaseButton";
 import { ChevronsLeft, ChevronsRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type PaginationProps = {
     currentPage: number;
-    setCurrentPage: Dispatch<SetStateAction<number>>;
+    setCurrentPage: (page: number) => void;
     totalPages: number;
     onPageChange?: (page: number) => void;
 };
 
-export default function Pagination({ currentPage, setCurrentPage, totalPages, onPageChange }: PaginationProps) {
+export default function Pagination({
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    onPageChange
+}: PaginationProps) {
     const [maxPageButtons, setMaxPageButtons] = useState(5);
 
     useEffect(() => {

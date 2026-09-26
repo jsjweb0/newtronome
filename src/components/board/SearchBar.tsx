@@ -5,12 +5,22 @@ import { Search } from "lucide-react";
 type SearchBarProps = {
     searchKeyword: string;
     setSearchKeyword: Dispatch<SetStateAction<string>>;
+    onSearch?: () => void;
 };
 
-export default function SearchBar({ searchKeyword, setSearchKeyword }: SearchBarProps) {
+export default function SearchBar({
+    searchKeyword,
+    setSearchKeyword,
+    onSearch
+}: SearchBarProps) {
     return (
         <div className="w-full max-w-xl m-auto mt-4 md:mt-8 mb-5 text-center peer-[.category-filter]:mt-3">
-            <form>
+            <form
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    onSearch?.();
+                }}
+            >
                 <div className="flex flex-row items-center gap-2 sm:">
                     <div className="relative w-full">
                         <span className="flex items-center absolute inset-y-0 inset-s-0 z-20 ps-3.5">
@@ -22,7 +32,7 @@ export default function SearchBar({ searchKeyword, setSearchKeyword }: SearchBar
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)} />
                     </div>
-                    <BaseButton variant="primary">검색</BaseButton>
+                    <BaseButton variant="primary" type="submit">검색</BaseButton>
                 </div>
             </form>
         </div>
