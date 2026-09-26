@@ -94,7 +94,7 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
   };
 
   if (loading) {
-    return <p className="text-center text-gray-400 text-sm">댓글 불러오는 중...</p>;
+    return <p className="my-4 text-center text-gray-400 text-sm">댓글 불러오는 중...</p>;
   }
 
   return (
