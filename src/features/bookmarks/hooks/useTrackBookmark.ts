@@ -11,8 +11,12 @@ export function useTrackBookmark(track: PlayerTrack) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    setError(null);
+
     if (!user?.uid) {
       setIsBookmarked(false);
       setIsLoading(false);
@@ -24,11 +28,26 @@ export function useTrackBookmark(track: PlayerTrack) {
     // 해당 트랙 문서 구독
     const unsubscribe = subscribeToSavedTrack(user.uid, track.id, (isSaved) => {
       setIsBookmarked(isSaved);
+      setError(null);
       setIsLoading(false);
-    });
+    },
+      () => {
+        setError('북마크 상태를 확인하지 못했습니다.');
+        setIsLoading(false);
+      }
+    );
 
     return unsubscribe;
-  }, [user?.uid, track.id]);
+  }, [user?.uid, track.id, retryCount]);
+
+  const retrySubscription = () => {
+    showToast({
+      message: '북마크 상태를 확인하지 못해 다시 조회합니다.',
+      type: 'error',
+    });
+
+    setRetryCount((previousCount) => previousCount + 1);
+  };
 
   const toggleBookmark = async () => {
     if (!user?.uid) {
@@ -39,7 +58,7 @@ export function useTrackBookmark(track: PlayerTrack) {
       return;
     }
 
-    if (isSaving) return;
+    if (isLoading || isSaving || error !== null) return;
 
     setIsSaving(true);
 
@@ -73,6 +92,8 @@ export function useTrackBookmark(track: PlayerTrack) {
     isBookmarked,
     isLoading,
     isSaving,
+    error,
+    retrySubscription,
     toggleBookmark,
   };
 }

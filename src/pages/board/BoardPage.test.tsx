@@ -50,6 +50,7 @@ function HistoryControls() {
       <span data-testid="location">{location.search}</span>
       <button onClick={() => navigate(-1)}>이전 기록</button>
       <button onClick={() => navigate(1)}>다음 기록</button>
+      <button onClick={() => navigate('/board/notice')}>공지사항으로 이동</button>
     </>
   );
 }
@@ -58,9 +59,9 @@ function currentSearch() {
   return screen.getByTestId('location').textContent ?? '';
 }
 
-async function renderBoard(url = '/board/free', boardPosts = posts) {
+function renderBoardWithQuery(getPosts: PostsContextValue['getPosts'], url = '/board/free') {
   const context: PostsContextValue = {
-    getPosts: vi.fn().mockResolvedValue(boardPosts),
+    getPosts,
     getPost: vi.fn(),
     getMyPosts: vi.fn(),
     createPost: vi.fn(),
@@ -78,12 +79,27 @@ async function renderBoard(url = '/board/free', boardPosts = posts) {
       </MemoryRouter>
     </PostsContext.Provider>
   );
+}
+
+async function renderBoard(url = '/board/free', boardPosts = posts) {
+  renderBoardWithQuery(vi.fn().mockResolvedValue(boardPosts), url);
   const input = await screen.findByRole<HTMLInputElement>('textbox', { name: '검색어' });
   return { input };
 }
 
 function visiblePostTitles() {
   return screen.queryAllByRole('link').map((link) => link.textContent);
+}
+
+// 실제 네트워크나 타이머 없이 요청의 완료 시점과 순서를 제어한다.
+function createPendingPostsRequest() {
+  let resolve!: (value: Post[]) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<Post[]>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
 }
 
 afterEach(() => {
@@ -189,6 +205,112 @@ describe('BoardPage URL navigation', () => {
     expect(visiblePostTitles().slice(-1)[0]).toBe(lastTitle);
     expect(currentSearch()).toBe(`?page=${page}`);
   });
+});
+
+describe('BoardPage request failures and stale responses', () => {
+  it('distinguishes a failed query from an empty board and recovers on retry', async () => {
+    const retryRequest = createPendingPostsRequest();
+    const getPosts = vi.fn<PostsContextValue['getPosts']>()
+      .mockRejectedValueOnce(new Error('조회 실패'))
+      .mockReturnValueOnce(retryRequest.promise);
+    renderBoardWithQuery(getPosts);
+
+    expect((await screen.findByRole('alert')).textContent)
+      .toBe('게시글을 불러오지 못했습니다.');
+    expect(screen.queryByText('아직 등록된 게시글이 없습니다.')).toBeNull();
+    expect(screen.queryByRole('textbox', { name: '검색어' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect(getPosts).toHaveBeenCalledTimes(2);
+    expect(getPosts).toHaveBeenNthCalledWith(1, 'free');
+    expect(getPosts).toHaveBeenNthCalledWith(2, 'free');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByRole('button', { name: '다시 시도' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: '검색어' })).toBeNull();
+
+    await act(async () => { retryRequest.resolve(posts); });
+    expect(screen.queryByRole('textbox', { name: '검색어' })).not.toBeNull();
+    expect(visiblePostTitles()).toHaveLength(10);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('allows another retry after a repeated failure and shows a successful empty result', async () => {
+    const getPosts = vi.fn<PostsContextValue['getPosts']>()
+      .mockRejectedValueOnce(new Error('첫 번째 실패'))
+      .mockRejectedValueOnce(new Error('두 번째 실패'))
+      .mockResolvedValueOnce([]);
+    renderBoardWithQuery(getPosts);
+
+    await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect((await screen.findByRole('alert')).textContent)
+      .toBe('게시글을 불러오지 못했습니다.');
+    expect(screen.queryByText('아직 등록된 게시글이 없습니다.')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect((await screen.findByRole('status')).textContent)
+      .toBe('아직 등록된 게시글이 없습니다.');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(getPosts).toHaveBeenCalledTimes(3);
+  });
+
+  it.each(['success', 'failure'] as const)(
+    'ignores an old %s while the current board is still loading',
+    async (outcome) => {
+      const oldRequest = createPendingPostsRequest();
+      const currentRequest = createPendingPostsRequest();
+      const getPosts = vi.fn<PostsContextValue['getPosts']>()
+        .mockReturnValueOnce(oldRequest.promise)
+        .mockReturnValueOnce(currentRequest.promise);
+      renderBoardWithQuery(getPosts);
+      fireEvent.click(screen.getByRole('button', { name: '공지사항으로 이동' }));
+      expect(getPosts).toHaveBeenNthCalledWith(2, 'notice');
+
+      await act(async () => {
+        if (outcome === 'success') oldRequest.resolve(posts);
+        else oldRequest.reject(new Error('이전 게시판 조회 실패'));
+      });
+
+      expect(screen.queryByRole('heading', { name: '공지사항' })).not.toBeNull();
+      expect(screen.queryByRole('textbox', { name: '검색어' })).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.queryByText('아직 등록된 게시글이 없습니다.')).toBeNull();
+      expect(visiblePostTitles()).toHaveLength(0);
+
+      await act(async () => { currentRequest.resolve([]); });
+      expect(screen.getByRole('status').textContent)
+        .toBe('아직 등록된 게시글이 없습니다.');
+      expect(screen.queryByRole('alert')).toBeNull();
+    }
+  );
+
+  it.each(['success', 'failure'] as const)(
+    'keeps the current board results when an old request finishes with %s',
+    async (outcome) => {
+      const oldRequest = createPendingPostsRequest();
+      const noticePost: Post = {
+        ...posts[0], id: 'notice-post', boardType: 'notice', title: '현재 공지사항',
+      };
+      const getPosts = vi.fn<PostsContextValue['getPosts']>()
+        .mockReturnValueOnce(oldRequest.promise)
+        .mockResolvedValueOnce([noticePost]);
+      renderBoardWithQuery(getPosts);
+      fireEvent.click(screen.getByRole('button', { name: '공지사항으로 이동' }));
+      await screen.findByRole('textbox', { name: '검색어' });
+      const currentTitles = visiblePostTitles();
+      expect(currentTitles).toHaveLength(1);
+      expect(currentTitles[0]).toContain('현재 공지사항');
+
+      await act(async () => {
+        if (outcome === 'success') oldRequest.resolve(posts);
+        else oldRequest.reject(new Error('이전 게시판 조회 실패'));
+      });
+
+      expect(visiblePostTitles()).toEqual(currentTitles);
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.queryByRole('heading', { name: '공지사항' })).not.toBeNull();
+    }
+  );
 });
 
 describe('BoardPage empty results', () => {
