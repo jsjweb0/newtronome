@@ -23,7 +23,7 @@ export default function ConfirmDialog({
         <DialogPanel className="flex justify-center items-center w-full max-w-xs md:max-w-md p-0 bg-transparent">
           <div className="grow ease-out transition-all shadow-lg">
             <div className="relative flex flex-col bg-background rounded-xl">
-              <div className="absolute top-2 bottom-2">
+              <div className="absolute top-2 left-2">
                 <button
                   type="button"
                   onClick={onDismiss}
@@ -54,7 +54,7 @@ export default function ConfirmDialog({
                   className={clsx(
                     'w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-es-xl border border-transparent bg-gray-100 text-gray-800 max-md:text-xs',
                     'hover:bg-gray-200 focus:outline-hidden focus:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none',
-                    'dark:bg-white/10 dark:hover:bg-white/20 dark:text-white dark:hover:text-white dark:focus:text-white'
+                    'dark:bg-textThr/65! dark:hover:bg-textThr! dark:text-white dark:hover:text-white dark:focus:bg-textThr!'
                   )}
                 >
                   취소
