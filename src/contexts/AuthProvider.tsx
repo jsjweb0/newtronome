@@ -4,8 +4,6 @@ import {
     doc,
     getDoc,
     onSnapshot,
-    serverTimestamp,
-    setDoc,
 } from 'firebase/firestore';
 import type { DocumentData, Timestamp } from 'firebase/firestore';
 import {
@@ -56,16 +54,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
     const authRequestIdRef = useRef(0);
-
     const signup: AuthContextValue['signup'] = async (email, password) => {
-        // 1) 이메일/비밀번호 가입
-        const { user } = await createUserWithEmailAndPassword(auth, email, password);
-
-        // 2) Firestore users/{uid} 문서 생성 (기본 정보)
-        await setDoc(doc(db, "users", user.uid), {
-            email: user.email,
-            createdAt: serverTimestamp()
-        });
+        const { user } = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password,
+        );
 
         return user;
     };
@@ -96,6 +90,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (!authUser) {
                 setUser(null);
             } else {
+                const creationTime = authUser.metadata.creationTime;
+                const parsedCreationDate = creationTime
+                    ? new Date(creationTime)
+                    : null;
+
+                const accountCreatedAt =
+                    parsedCreationDate && !Number.isNaN(parsedCreationDate.getTime())
+                        ? parsedCreationDate
+                        : null;
+
                 try {
                     // Firestore 프로필과 Firebase Auth Claim을 함께 읽기
                     const [snap, tokenResult] = await Promise.all([
@@ -121,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         photoURL: profile.photoURL ?? authUser.photoURL,
                         isAdmin: tokenResult.claims.admin === true,
                         nickname: profile.nickname,
-                        createdAt: profile.createdAt,
+                        createdAt: profile.createdAt ?? accountCreatedAt,
                     });
                 } catch (error) {
                     if (
@@ -139,6 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         displayName: authUser.displayName,
                         photoURL: authUser.photoURL,
                         isAdmin: false,
+                        createdAt: accountCreatedAt,
                     });
                 }
             }
@@ -187,17 +192,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         return {
                             ...previousUser,
                             ...profile,
+                            displayName: profile.nickname ?? previousUser.displayName,
+                            createdAt: profile.createdAt ?? previousUser.createdAt,
                             photoURL: profile.photoURL ?? previousUser.photoURL,
                         };
                     });
                 }
             },
             error => {
-                console.error("Profile onSnapshot error:", error);
+                console.error('Profile onSnapshot error:', error);
+                showToast({
+                    message: '프로필 자동 동기화가 중단됐습니다. 새로고침해주세요.',
+                    type: 'error',
+                });
             }
         );
         return unsubscribeProfile;
-    }, [user?.uid]);
+    }, [user?.uid, showToast]);
 
     const contextValue: AuthContextValue = {
         user,

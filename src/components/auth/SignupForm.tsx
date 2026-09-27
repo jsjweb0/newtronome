@@ -5,6 +5,7 @@ import FormInput from '../ui/FormInput';
 import useForm from '../../hooks/useForm';
 import { useNotifications } from '../../contexts/NotificationContext';
 import clsx from 'clsx';
+import { useRef, useState } from 'react';
 
 interface SignupFormValues {
   email: string;
@@ -19,6 +20,8 @@ export default function SignupForm() {
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
   const { signup } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const validateSignup = (form: SignupFormValues): SignupFormErrors => {
     const errors: SignupFormErrors = {};
@@ -47,7 +50,41 @@ export default function SignupForm() {
     validateSignup
   );
 
-  const isDirty = form.email !== '' || form.password !== '' || form.confirmPassword !== '';
+  const isDirty = form.email !== '' && form.password !== '' && form.confirmPassword !== '';
+
+  const handleLogin = async (
+    formData: SignupFormValues,
+  ): Promise<void> => {
+    const id = Date.now();
+    const notification = { id, message: '회원가입 성공!' };
+
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      await signup(formData.email, formData.password);
+
+      showToast({ message: notification.message });
+      addNotification(notification);
+
+      navigate('/');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : '알 수 없는 오류가 발생했습니다.';
+
+      console.error(message);
+      showToast({
+        message: `에러 발생: ${message}`,
+        type: 'error',
+      });
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <div className="mt-7 px-4">
@@ -68,32 +105,7 @@ export default function SignupForm() {
         <div className="mt-10">
           <form
             noValidate
-            onSubmit={handleSubmit(async (
-              formData: SignupFormValues,
-            ): Promise<void> => {
-              const id = Date.now();
-              const notification = { id, message: '회원가입 성공!' };
-
-              try {
-                await signup(formData.email, formData.password);
-
-                showToast({ message: notification.message });
-                addNotification(notification);
-
-                navigate('/');
-              } catch (error: unknown) {
-                const message =
-                  error instanceof Error
-                    ? error.message
-                    : '알 수 없는 오류가 발생했습니다.';
-
-                console.error(message);
-                showToast({
-                  message: `에러 발생: ${message}`,
-                  type: 'error',
-                });
-              }
-            })}
+            onSubmit={handleSubmit(handleLogin)}
           >
             <div className="grid gap-y-4">
               <FormInput
@@ -133,9 +145,9 @@ export default function SignupForm() {
                   'text-sm font-medium rounded-lg border border-transparent bg-primary text-white',
                   'disabled:bg-textThr disabled:pointer-events-none'
                 )}
-                disabled={!isDirty}
+                disabled={!isDirty || isSubmitting}
               >
-                가입하기
+                {isSubmitting ? '가입 중...' : '가입하기'}
               </button>
             </div>
           </form>

@@ -15,7 +15,7 @@ export interface AuthUser {
 export interface AuthContextValue {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<UserCredential>;
-  signup: (email: string, password: string, nickname?: string, photoURL?: string) => Promise<User>;
+  signup: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   loading: boolean;
   avatarUrl: string;
