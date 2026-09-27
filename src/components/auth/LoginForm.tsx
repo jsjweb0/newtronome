@@ -6,6 +6,7 @@ import FormInput from '../ui/FormInput';
 import useForm from '../../hooks/useForm';
 import clsx from 'clsx';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { FirebaseError } from 'firebase/app';
 
 interface LoginFormValues {
   email: string;
@@ -66,18 +67,52 @@ export default function LoginForm() {
     try {
       await login(formData.email, formData.password);
 
-      if (rememberMe) {
-        localStorage.setItem('rememberedEmail', form.email);
-      } else {
-        localStorage.removeItem('rememberedEmail');
+      try {
+        if (rememberMe) {
+          localStorage.setItem(STORAGE_KEY, formData.email);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch {
+        showToast({
+          message: '로그인은 완료됐지만 아이디 저장 설정을 반영하지 못했습니다.',
+          type: 'error',
+        });
       }
 
       navigate('/');
 
       showToast({ message: notification.message });
       addNotification(notification);
-    } catch {
-      setLoginError('이메일 또는 비밀번호가 틀렸습니다.');
+    } catch (error: unknown) {
+      let message = '로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
+
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case 'auth/invalid-credential':
+          case 'auth/wrong-password':
+          case 'auth/user-not-found':
+            message = '이메일 또는 비밀번호를 확인해주세요.';
+            break;
+
+          case 'auth/invalid-email':
+            message = '올바른 이메일 형식을 입력해주세요.';
+            break;
+
+          case 'auth/network-request-failed':
+            message = '네트워크 연결을 확인한 후 다시 시도해주세요.';
+            break;
+
+          case 'auth/too-many-requests':
+            message = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+            break;
+
+          default:
+            break;
+        }
+      }
+
+      setLoginError(message);
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
@@ -85,10 +120,14 @@ export default function LoginForm() {
   };
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem(STORAGE_KEY);
-    if (savedEmail) {
-      setForm((prev) => ({ ...prev, email: savedEmail }));
-      setRememberMe(true);
+    try {
+      const savedEmail = localStorage.getItem(STORAGE_KEY);
+      if (savedEmail) {
+        setForm((prev) => ({ ...prev, email: savedEmail }));
+        setRememberMe(true);
+      }
+    } catch {
+
     }
   }, [setForm]);
 
