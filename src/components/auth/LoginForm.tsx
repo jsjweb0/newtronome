@@ -21,6 +21,9 @@ export default function LoginForm() {
   const navigate = useNavigate();
   const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const STORAGE_KEY = 'rememberedEmail';
@@ -47,7 +50,7 @@ export default function LoginForm() {
       validateLogin
     );
 
-  const isDirty = form.email !== '' || form.password !== '';
+  const isDirty = form.email !== '' && form.password !== '';
 
   const handleLogin = async (
     formData: LoginFormValues,
@@ -55,19 +58,29 @@ export default function LoginForm() {
     const id = Date.now();
     const notification = { id, message: '로그인 성공!' };
 
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setLoginError('');
+
     try {
       await login(formData.email, formData.password);
+
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', form.email);
       } else {
         localStorage.removeItem('rememberedEmail');
       }
+
       navigate('/');
 
       showToast({ message: notification.message });
       addNotification(notification);
     } catch {
       setLoginError('이메일 또는 비밀번호가 틀렸습니다.');
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -139,9 +152,9 @@ export default function LoginForm() {
                   'text-sm font-medium text-white bg-primary',
                   'disabled:pointer-events-none disabled:bg-textThr disabled:text-neutral-500'
                 )}
-                disabled={!isDirty}
+                disabled={!isDirty || isSubmitting}
               >
-                로그인
+                {isSubmitting ? '로그인 중...' : '로그인'}
               </button>
             </div>
           </form>
