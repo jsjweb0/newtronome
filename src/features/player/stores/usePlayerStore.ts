@@ -19,13 +19,17 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     const safeIndex =
       tracks.length === 0 ? 0 : Math.min(Math.max(startIndex, 0), tracks.length - 1);
 
-    set({
+    set((state) => ({
       tracks,
       currentIndex: safeIndex,
+      currentTrack:
+        tracks.length === 0 && state.playbackMode === 'playlist'
+          ? null
+          : state.currentTrack,
       isPlaying: false,
       currentTime: 0,
       duration: 0,
-    });
+    }));
   },
 
   setCurrentTrack: (currentTrack) => {

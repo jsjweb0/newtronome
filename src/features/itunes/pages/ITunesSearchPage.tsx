@@ -62,6 +62,8 @@ export default function ITunesSearchPage() {
   const playlistTracks = usePlayerStore((state) => state.tracks);
   const [recommendedArtists, setRecommendedArtists] = useState<string[]>([]);
 
+  const previewRequestIdRef = useRef(0);
+
   // 최근 검색어
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
@@ -222,6 +224,7 @@ export default function ITunesSearchPage() {
 
   const handlePreview = async (track: ITunesTrack) => {
     const audio = audioRef.current;
+    const requestId = ++previewRequestIdRef.current;
 
     if (!audio || !track.previewUrl) {
       return;
@@ -243,14 +246,24 @@ export default function ITunesSearchPage() {
 
     try {
       await audio.play();
+
+      if (previewRequestIdRef.current !== requestId) {
+        return;
+      }
+
       setPlayingPreviewTrackId(track.trackId);
     } catch {
-      setPlayingPreviewTrackId(null);
+      if (previewRequestIdRef.current === requestId) {
+        setPlayingPreviewTrackId(null);
+      }
+
     }
   };
 
   const stopPreview = useCallback(() => {
     const audio = audioRef.current;
+
+    previewRequestIdRef.current += 1;
 
     if (audio) {
       audio.pause();

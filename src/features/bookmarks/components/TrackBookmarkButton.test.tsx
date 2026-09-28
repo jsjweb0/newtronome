@@ -4,6 +4,7 @@ import type { PlayerTrack } from '../../player/types/player.types';
 import { useTrackBookmark } from '../hooks/useTrackBookmark';
 import { removeSavedTrack, saveTrack, subscribeToSavedTrack } from '../services/savedTracks';
 import TrackBookmarkButton from './TrackBookmarkButton';
+import { usePlayerStore } from '../../player/stores/usePlayerStore';
 
 const mocks = vi.hoisted(() => ({
   user: { uid: 'user-1' } as { uid: string } | null,
@@ -134,6 +135,30 @@ describe('TrackBookmarkButton subscription failures', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBe('북마크 상태를 확인하지 못했습니다.');
     await act(async () => { await result.current.toggleBookmark(); });
+    expect(saveTrack).not.toHaveBeenCalled();
+    expect(removeSavedTrack).not.toHaveBeenCalled();
+  });
+
+  it('keeps SoundCloud playback state when Firebase bookmark lookup fails', () => {
+    usePlayerStore.setState({
+      playbackMode: 'bookmark',
+      currentTrack: track,
+      isPlaying: true,
+      currentTime: 12,
+      duration: 60,
+    });
+    render(<TrackBookmarkButton track={track} />);
+
+    act(() => subscriptions[0].onError(new Error('Firestore unavailable')));
+
+    expect(screen.getByRole('button', { name: /북마크 상태를 확인하지 못했습니다/ })).toBeTruthy();
+    expect(usePlayerStore.getState()).toMatchObject({
+      playbackMode: 'bookmark',
+      currentTrack: track,
+      isPlaying: true,
+      currentTime: 12,
+      duration: 60,
+    });
     expect(saveTrack).not.toHaveBeenCalled();
     expect(removeSavedTrack).not.toHaveBeenCalled();
   });

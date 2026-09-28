@@ -4,7 +4,7 @@ import ImageSlider from '../components/ui/Slider';
 import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore';
 import { toHighResArtwork } from '../utils/image';
 import { GridIcon } from '../components/icons';
-import { CircleX, List, ListMusic } from 'lucide-react';
+import { CircleX, List, ListMusic, RotateCcw } from 'lucide-react';
 import TrackItem from '../components/track/TrackItem';
 import HomePageSkeleton from './HomePageSkeleton';
 import soundCloudLogoBlack from '../assets/brands/soundcloud-logo-black.webp';
@@ -21,7 +21,14 @@ const formatDuration = (min: number) => {
 type ViewMode = 'grid' | 'list';
 
 export default function HomePage() {
-  const { playlistUrl, onSelectTrack, onToggleTrack } = useOutletContext<PlayerOutletContext>();
+  const {
+    playlistUrl,
+    onSelectTrack,
+    onToggleTrack,
+    playlistStatus,
+    widgetError,
+    retryLoad,
+  } = useOutletContext<PlayerOutletContext>();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
@@ -63,7 +70,25 @@ export default function HomePage() {
       .filter((track) => (track.title || '').toLowerCase().includes(searchKeyword.toLowerCase()));
   }, [tracks, searchKeyword]);
 
-  if (!tracks || tracks.length === 0) return <HomePageSkeleton />;
+  if (playlistStatus === 'loading') return <HomePageSkeleton />;
+
+  if (playlistStatus === 'error') {
+    return (
+      <div role="alert" className="px-3 py-14 text-textBase text-center">
+        <p>{widgetError ?? '플레이리스트를 불러오지 못했습니다.'}</p>
+        <button type="button"
+          onClick={retryLoad}
+          className="inline-flex items-center gap-2 mt-4 rounded-lg border border-textThr px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          <RotateCcw className="size-4" aria-hidden="true" /> 다시 시도
+        </button>
+      </div>
+    );
+  }
+
+  if (playlistStatus === 'empty') {
+    return <p className="px-3 py-14 text-textSub">플레이리스트가 비어 있어요</p>;
+  }
 
   return (
     <div className="px-3">
