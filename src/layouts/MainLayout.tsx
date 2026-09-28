@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useSoundCloudWidget } from '../features/player/hooks/useSoundCloudWidget';
 import { usePlayerStore } from '../features/player/stores/usePlayerStore';
@@ -9,6 +9,7 @@ import PlaylistPanel from '../components/player/PlaylistPanel';
 import Tooltip from '../components/ui/Tooltip';
 import { PanelLeft } from 'lucide-react';
 import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton';
+import LoadingLogo from '../components/ui/LoadingLogo';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle';
 import type { PlayerTrack } from '../features/player/types/player.types';
@@ -125,7 +126,9 @@ export default function MainLayout() {
           )}
         >
           <article className="min-h-[calc(100vh-162px)] xl:min-h-[calc(100vh-232px)] max-lg:mt-2">
-            <Outlet context={outletContext} />
+            <Suspense fallback={<LoadingLogo />}>
+              <Outlet context={outletContext} />
+            </Suspense>
           </article>
         </main>
 

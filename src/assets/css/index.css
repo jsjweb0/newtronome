@@ -128,6 +128,26 @@
     box-shadow: 0 0 0 1000px var(--color-background) inset;
     -webkit-box-shadow: 0 0 0 1000px var(--color-background) inset;
   }
+
+  .logo-fill {
+    animation: logo-fill 1.4s ease-in-out infinite;
+  }
+
+  @keyframes logo-fill {
+    0% {
+      clip-path: inset(0 100% 0 0);
+    }
+    75%,
+    100% {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logo-fill {
+      animation: none;
+    }
+  }
 }
 
 .fade-in {

@@ -140,7 +140,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
   return (
     <div>
       <nav id="navbar" className="group hs-dropdown" aria-label="Main">
-        <div className="flex items-center lg:mb-14 lg:pt-3">
+        <div className="hs-dropdown-toggle-wrapper flex items-center lg:mb-14 lg:pt-3">
           <h1 className="grow text-left">
             <Link
               to="/"
