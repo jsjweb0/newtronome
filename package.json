@@ -8,7 +8,7 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test:run": "vitest run --environment jsdom src",
+    "test:run": "vitest run --environment jsdom src workers",
     "test:rules": "XDG_CONFIG_HOME=/tmp/newtronome-firebase-config FIREBASE_CLI_DISABLE_UPDATE_CHECK=true firebase emulators:exec --only firestore --project demo-newtronome \"vitest run --environment node tests/firestore.rules.test.ts\"",
     "preview": "vite preview",
     "frontend:deploy": "npx wrangler deploy"

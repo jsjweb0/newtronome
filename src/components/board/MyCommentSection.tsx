@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -33,6 +33,9 @@ export default function MyCommentSection({
 }: MyCommentSectionProps) {
   const { user, loading: authLoading } = useAuth();
   const { showToast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   // 1) 마이 코멘트 로드
   useEffect(() => {
@@ -40,16 +43,34 @@ export default function MyCommentSection({
 
     if (!user?.uid) {
       setComments([]);
+      setLoading(false);
       return;
     }
 
+    let ignore = false;
+    setComments([]);
+    setLoading(true);
+    setLoadError('');
+
     getMyCommentsFromDB(user.uid)
-      .then((data) => setComments(data))
+      .then((data) => {
+        if (!ignore) setComments(data);
+      })
       .catch((err) => {
-        console.error('❌ 내 댓글 조회 에러:', err);
-        showToast({ message: '댓글 로딩 중 오류가 발생했습니다.', type: 'error' });
+        if (!ignore) {
+          console.error('내 댓글 조회 에러:', err);
+          setLoadError('내 댓글을 불러오지 못했습니다.');
+          showToast({ message: '댓글 로딩 중 오류가 발생했습니다.', type: 'error' });
+        }
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
       });
-  }, [authLoading, user, setComments, showToast]);
+
+    return () => {
+      ignore = true;
+    };
+  }, [authLoading, user?.uid, setComments, showToast, retryCount]);
 
   // 2) 필터 & 정렬
   const filteredComments = useMemo(() => {
@@ -87,7 +108,20 @@ export default function MyCommentSection({
     }
   };
 
-  //if (loading) return <p>로딩 중…</p>;
+  if (loading) {
+    return <p className="mt-4 p-4 text-center text-gray-500">댓글을 불러오는 중입니다.</p>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="mt-4 p-4 text-center" role="alert">
+        <p>{loadError}</p>
+        <button type="button" className="mt-3 text-primary" onClick={() => setRetryCount((count) => count + 1)}>
+          다시 시도
+        </button>
+      </div>
+    );
+  }
 
   if (!filteredComments.length) {
     return (

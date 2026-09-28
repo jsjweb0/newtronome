@@ -35,6 +35,7 @@ jobs:
       - name: Build
         env:
           VITE_BASE_PATH: /newtronome/
+          VITE_PET_API_BASE_URL: https://newtronome.jsjweb0.workers.dev
         run: npm run build
 
       - name: Add SPA fallback

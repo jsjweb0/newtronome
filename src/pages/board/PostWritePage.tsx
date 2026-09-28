@@ -22,24 +22,44 @@ export default function PostWritePage() {
   const navigate = useNavigate();
 
   const [nextPostNo, setNextPostNo] = useState(1);
+  const [isPreparing, setIsPreparing] = useState(true);
+  const [prepareError, setPrepareError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (!isCommunityBoardType(boardType)) return;
 
+    let ignore = false;
+
     const fetchPosts = async () => {
-      const data = await getPosts(boardType);
+      setIsPreparing(true);
+      setPrepareError('');
 
-      const postNumbers = data
-        .map((post) => Number(post.postNo))
-        .filter((postNo) => Number.isFinite(postNo));
+      try {
+        const data = await getPosts(boardType);
+        if (ignore) return;
 
-      const maxPostNo = postNumbers.length ? Math.max(...postNumbers) : 0;
+        const postNumbers = data
+          .map((post) => Number(post.postNo))
+          .filter((postNo) => Number.isFinite(postNo));
 
-      setNextPostNo(maxPostNo + 1);
+        const maxPostNo = postNumbers.length ? Math.max(...postNumbers) : 0;
+        setNextPostNo(maxPostNo + 1);
+      } catch (error) {
+        if (!ignore) {
+          console.error('게시글 번호 조회 실패:', error);
+          setPrepareError('글쓰기 정보를 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!ignore) setIsPreparing(false);
+      }
     };
 
-    fetchPosts();
-  }, [boardType, getPosts]);
+    void fetchPosts();
+    return () => {
+      ignore = true;
+    };
+  }, [boardType, getPosts, retryCount]);
 
   const handleSubmit = async (
     formData: PostFormValues
@@ -49,7 +69,7 @@ export default function PostWritePage() {
     const newPost: CreatePostInput = {
       ...formData,
       postNo: nextPostNo,
-      content: formData.content.replace(/\n/g, '<br>'),
+      content: formData.content,
       date: new Date(),
       email: user.email,
       authorUid: user.uid,
@@ -85,6 +105,19 @@ export default function PostWritePage() {
 
   if (!isCommunityBoardType(boardType)) {
     return <Navigate to="/board/free" replace />;
+  }
+
+  if (isPreparing) return <p className="mt-10 text-center">글쓰기 정보를 불러오는 중입니다.</p>;
+
+  if (prepareError) {
+    return (
+      <div className="mt-10 text-center" role="alert">
+        <p>{prepareError}</p>
+        <button type="button" className="mt-4 text-primary" onClick={() => setRetryCount((count) => count + 1)}>
+          다시 시도
+        </button>
+      </div>
+    );
   }
 
   return <PostForm mode="create" boardType={boardType} onSubmit={handleSubmit} />;

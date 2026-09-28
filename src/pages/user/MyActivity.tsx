@@ -15,11 +15,14 @@ const BOARD_TYPES: CommunityBoardType[] = ['notice', 'free'];
 export default function MyActivity() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const userUid = user?.uid;
   const { getMyPosts, deletePost } = usePosts();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<CommentData[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [postsError, setPostsError] = useState('');
+  const [postsRetryCount, setPostsRetryCount] = useState(0);
   // URL 쿼리 & 로컬 상태
   const [searchParams, setSearchParams] = useSearchParams();
   const pageParam = Number.parseInt(searchParams.get('page') ?? '', 10) || 1;
@@ -31,31 +34,45 @@ export default function MyActivity() {
   // 1. 각각의 페이지 번호를 관리할 state
   useEffect(() => {
     if (loading) return;
-    if (!user) {
+    if (!userUid) {
       void navigate('/login', { replace: true });
     }
-  }, [loading, user, navigate]);
+  }, [loading, userUid, navigate]);
 
   // 1) “내 글” 로드
   useEffect(() => {
-    if (loading || !user) return;
+    if (loading) return;
+    if (!userUid) {
+      setPosts([]);
+      setLoadingPosts(false);
+      return;
+    }
+
+    let ignore = false;
+    setPosts([]);
 
     const fetchMyPosts = async () => {
       setLoadingPosts(true);
+      setPostsError('');
 
       try {
         const result = await Promise.all(BOARD_TYPES.map((type) => getMyPosts(type)));
-
-        setPosts(result.flat());
+        if (!ignore) setPosts(result.flat());
       } catch (error) {
-        console.error('내 게시글 조회 실패:', error);
+        if (!ignore) {
+          console.error('내 게시글 조회 실패:', error);
+          setPostsError('내 게시글을 불러오지 못했습니다.');
+        }
       } finally {
-        setLoadingPosts(false);
+        if (!ignore) setLoadingPosts(false);
       }
     };
 
-    fetchMyPosts();
-  }, [loading, user, getMyPosts]);
+    void fetchMyPosts();
+    return () => {
+      ignore = true;
+    };
+  }, [loading, userUid, getMyPosts, postsRetryCount]);
 
   // 2) URL → state 동기화
   useEffect(() => {
@@ -85,8 +102,6 @@ export default function MyActivity() {
     setCommentPage(page);
     // searchParams.set('commentPage', page)
   };
-
-  if (loadingPosts) return <PostListSkeleton />;
 
   return (
     <div className="mb-8 p-4 lg:p-8">
@@ -139,15 +154,26 @@ export default function MyActivity() {
       <SearchBar searchKeyword={searchKeyword} setSearchKeyword={setSearchKeyword} />
 
       <h3 className="mb-4">나의 게시물</h3>
-      <MyPostsList
-        currentPage={postPage}
-        setCurrentPage={setPostPage}
-        searchKeyword={searchKeyword}
-        deletePost={deletePost}
-        posts={posts}
-        setPosts={setPosts}
-        handlePageChange={handlePostPageChange}
-      />
+      {loadingPosts ? (
+        <PostListSkeleton />
+      ) : postsError ? (
+        <div className="mb-8 p-4 text-center" role="alert">
+          <p>{postsError}</p>
+          <button type="button" className="mt-3 text-primary" onClick={() => setPostsRetryCount((count) => count + 1)}>
+            다시 시도
+          </button>
+        </div>
+      ) : (
+        <MyPostsList
+          currentPage={postPage}
+          setCurrentPage={setPostPage}
+          searchKeyword={searchKeyword}
+          deletePost={deletePost}
+          posts={posts}
+          setPosts={setPosts}
+          handlePageChange={handlePostPageChange}
+        />
+      )}
 
       <h3 className="mb-4">내가 쓴 댓글</h3>
       <MyCommentSection

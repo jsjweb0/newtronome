@@ -18,6 +18,8 @@ export default function EditPostPage() {
   const { boardType, id } = useParams();
   const { getPosts, updatePost } = usePosts();
   const [post, setPost] = useState<Post | null | undefined>(null);
+  const [loadError, setLoadError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
@@ -29,17 +31,32 @@ export default function EditPostPage() {
       return;
     }
 
-    const fetchPost = async () => {
-      const posts = await getPosts(boardType);
-      const found = posts.find(
-        (post) => String(post.id) === id
-      );
+    let ignore = false;
 
-      setPost(found);
+    const fetchPost = async () => {
+      setPost(null);
+      setLoadError('');
+
+      try {
+        const posts = await getPosts(boardType);
+        if (ignore) return;
+
+        const found = posts.find((item) => String(item.id) === id);
+        setPost(found);
+      } catch (error) {
+        if (!ignore) {
+          console.error('게시글 조회 실패:', error);
+          setLoadError('게시글을 불러오지 못했습니다.');
+        }
+      }
     };
 
-    fetchPost();
-  }, [boardType, id, getPosts]);
+    void fetchPost();
+
+    return () => {
+      ignore = true;
+    };
+  }, [boardType, id, getPosts, retryCount]);
 
   const handleEdit = async (
     updatedPost: PostFormValues
@@ -95,6 +112,16 @@ export default function EditPostPage() {
   }
 
   if (post === null) {
+    if (loadError) {
+      return (
+        <div className="mt-10 text-center" role="alert">
+          <p>{loadError}</p>
+          <button type="button" className="mt-4 text-primary" onClick={() => setRetryCount((count) => count + 1)}>
+            다시 시도
+          </button>
+        </div>
+      );
+    }
     return <p>게시글을 불러오는 중입니다.</p>;
   }
 

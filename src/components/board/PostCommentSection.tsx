@@ -28,12 +28,16 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
   const { addNotification } = useNotifications();
   const { user, avatarUrl, nicknameUrl } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState<CommentData[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const submittingRef = useRef(false);
 
   const profileImage = (): string => {
     if (user?.photoURL) {
@@ -46,12 +50,28 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
   };
 
   useEffect(() => {
+    let ignore = false;
+
     setLoading(true);
+    setLoadError('');
     getCommentsFromDB(boardType, postId, user?.uid)
-      .then(setComments)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [boardType, postId, user]);
+      .then((data) => {
+        if (!ignore) setComments(data);
+      })
+      .catch((error) => {
+        if (!ignore) {
+          console.error('댓글 조회 실패:', error);
+          setLoadError('댓글을 불러오지 못했습니다.');
+        }
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [boardType, postId, user?.uid, retryCount]);
 
   useEffect(() => {
     if (typeof onCommentChange === 'function') {
@@ -61,6 +81,7 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (submittingRef.current) return;
 
     if (!comment.trim()) {
       textareaRef.current?.focus();
@@ -76,25 +97,45 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
       return;
     }
 
-    const newCommentForLocal = await createCommentInDB(boardType, postId, {
-      content: comment,
-      writerUid: user.uid,
-      writerEmail: user.email,
-      displayName: user.displayName || null,
-      photoURL: user.photoURL || null,
-    });
+    submittingRef.current = true;
+    setIsSubmitting(true);
 
-    const notificationId = Date.now();
-    const notification = { notificationId, message: '댓글이 등록되었습니다.' };
+    try {
+      const newCommentForLocal = await createCommentInDB(boardType, postId, {
+        content: comment.trim(),
+        writerUid: user.uid,
+        writerEmail: user.email,
+        displayName: user.displayName || null,
+        photoURL: user.photoURL || null,
+      });
 
-    setComments((prev) => [newCommentForLocal, ...prev]);
-    setComment('');
-    showToast({ message: notification.message });
-    addNotification(notification);
+      const notification = { notificationId: Date.now(), message: '댓글이 등록되었습니다.' };
+      setComments((previousComments) => [newCommentForLocal, ...previousComments]);
+      setComment('');
+      showToast({ message: notification.message });
+      addNotification(notification);
+    } catch (error) {
+      console.error('댓글 등록 실패:', error);
+      showToast({ message: '댓글 등록에 실패했습니다.', type: 'error' });
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   if (loading) {
     return <p className="my-4 text-center text-gray-400 text-sm">댓글 불러오는 중...</p>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="my-4 text-center" role="alert">
+        <p className="text-sm text-red-600">{loadError}</p>
+        <BaseButton className="mt-3" variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
+          다시 시도
+        </BaseButton>
+      </div>
+    );
   }
 
   return (
@@ -126,8 +167,8 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
                 ref={textareaRef}
               />
               <div className="absolute bottom-0 right-0 p-2">
-                <BaseButton type="submit" className="py-2!">
-                  작성
+                <BaseButton type="submit" className="py-2!" disabled={isSubmitting}>
+                  {isSubmitting ? '작성 중...' : '작성'}
                 </BaseButton>
               </div>
             </div>
@@ -148,7 +189,6 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
             data={commentData}
             boardType={boardType}
             postId={postId}
-            comments={comments}
             setComments={setComments}
             openDropdownId={openDropdownId}
             setOpenDropdownId={setOpenDropdownId}

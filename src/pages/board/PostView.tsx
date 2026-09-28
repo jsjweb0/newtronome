@@ -26,6 +26,7 @@ import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip';
 import { formatDate } from '../../utils/format';
 import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
+import { normalizeLegacyPostContent } from '../../utils/postContent';
 
 type BoardLocationState = {
   page?: number;
@@ -41,6 +42,8 @@ export default function PostView() {
   const [postsState, setPostsState] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
+  const [loadError, setLoadError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -69,32 +72,63 @@ export default function PostView() {
       return;
     }
 
+    let ignore = false;
+
     const fetchPost = async () => {
-      const posts = await getPosts(boardType);
-      setPostsState(posts);
+      setLoading(true);
+      setLoadError('');
+      setCurrentPost(null);
 
-      const post = posts.find((p) => String(p.id) === id);
-      if (!post) {
-        setCurrentPost(null);
-        setLoading(false);
-        return;
-      }
+      try {
+        const posts = await getPosts(boardType);
+        if (ignore) return;
 
-      if (!post.__viewed) {
-        await updateViewCount(boardType, id);
-        const updated = posts.map((p) =>
-          String(p.id) === id ? { ...p, viewCount: (p.viewCount || 0) + 1, __viewed: true } : p
-        );
-        setPostsState(updated);
-        setCurrentPost({ ...post, viewCount: (post.viewCount || 0) + 1, __viewed: true });
-      } else {
+        setPostsState(posts);
+
+        const post = posts.find((item) => String(item.id) === id);
+        if (!post) return;
+
         setCurrentPost(post);
-      }
+        setLoading(false);
 
-      setLoading(false);
+        if (!post.__viewed) {
+          try {
+            await updateViewCount(boardType, id);
+            if (ignore) return;
+
+            const viewedPost = {
+              ...post,
+              viewCount: post.viewCount + 1,
+              __viewed: true,
+            };
+            setPostsState((currentPosts) =>
+              currentPosts.map((item) =>
+                item.id === post.id ? viewedPost : item
+              )
+            );
+            setCurrentPost(viewedPost);
+          } catch (error) {
+            if (!ignore) {
+              console.error('조회수 기록 실패:', error);
+            }
+          }
+        }
+      } catch (error) {
+        if (!ignore) {
+          console.error('게시글 조회 실패:', error);
+          setLoadError('게시글을 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
     };
-    fetchPost();
-  }, [boardType, id, getPosts, updateViewCount]);
+
+    void fetchPost();
+
+    return () => {
+      ignore = true;
+    };
+  }, [boardType, id, getPosts, updateViewCount, retryCount]);
 
   useEffect(() => {
     if (isCommunityBoardType(boardType) && currentPost?.id) {
@@ -117,6 +151,16 @@ export default function PostView() {
   }
 
   if (loading) return <PostViewSkeleton />;
+  if (loadError) {
+    return (
+      <div className="mt-10 text-center" role="alert">
+        <p className="font-bold">{loadError}</p>
+        <BaseButton className="mt-4" onClick={() => setRetryCount((count) => count + 1)}>
+          다시 시도
+        </BaseButton>
+      </div>
+    );
+  }
   if (!currentPost)
     return <div className="text-center mt-10 font-bold">존재하지 않는 게시글입니다.</div>;
 
@@ -200,10 +244,9 @@ export default function PostView() {
             </button>
           </div>
         </AuthAccess>
-        <pre
-          className="whitespace-pre-wrap font-[Pretendard] text-xs md:text-base"
-          dangerouslySetInnerHTML={{ __html: currentPost.content }}
-        ></pre>
+        <pre className="whitespace-pre-wrap font-[Pretendard] text-xs md:text-base">
+          {normalizeLegacyPostContent(currentPost.content)}
+        </pre>
 
         {/* Sticky Share Group */}
         <div className="mt-8 sticky bottom-6 inset-x-0 text-center">

@@ -40,16 +40,35 @@ function getString(value: unknown): string | undefined {
 }
 
 function getItems(payload: unknown): unknown[] {
-  if (!isRecord(payload)) return [];
+  if (!isRecord(payload)) {
+    throw new Error('보호동물 API 응답 형식이 올바르지 않습니다.');
+  }
 
   const response = payload.response;
-  if (!isRecord(response)) return [];
+  if (!isRecord(response)) {
+    throw new Error('보호동물 API 응답 형식이 올바르지 않습니다.');
+  }
+
+  const header = response.header;
+  if (isRecord(header)) {
+    const resultCode = getString(header.resultCode);
+    if (resultCode && resultCode !== '00' && resultCode !== '0') {
+      throw new Error(getString(header.resultMsg) ?? '보호동물 API 요청에 실패했습니다.');
+    }
+  }
 
   const body = response.body;
-  if (!isRecord(body)) return [];
+  if (!isRecord(body)) {
+    throw new Error('보호동물 API 응답 형식이 올바르지 않습니다.');
+  }
 
   const items = body.items;
-  if (!isRecord(items)) return [];
+  if (items === undefined || items === null || items === '') {
+    return [];
+  }
+  if (!isRecord(items)) {
+    throw new Error('보호동물 API 목록 형식이 올바르지 않습니다.');
+  }
 
   const item = items.item;
   if (Array.isArray(item)) return item;

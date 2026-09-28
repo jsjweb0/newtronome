@@ -19,6 +19,8 @@ import {
   type PetPost,
   type RegionOption,
 } from '../../utils/petApi';
+import { fetchPetPosts, fetchPetRegions } from '../../utils/petApiClient';
+import { RotateCcw } from 'lucide-react';
 
 function getAnimalKind(value: string | null): AnimalKind {
   return value === 'dog' || value === 'cat' || value === 'etc' ? value : 'all';
@@ -35,8 +37,11 @@ function getStatusFilter(value: string | null): StatusFilterValue {
 export default function PetBoardPage() {
   const { showToast } = useToast();
   const { user } = useAuth();
+  const userUid = user?.uid;
   const [posts, setPosts] = useState<PetPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [regionOptions, setRegionOptions] = useState<RegionOption[]>([]);
 
@@ -61,52 +66,53 @@ export default function PetBoardPage() {
   const [showOnlyLiked, setShowOnlyLiked] = useState(likedParam);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchPets = async () => {
-      const serviceKey =
-        'l7ngeStfaLO1QpNc4njFsAoLLALk//VGMTfhTwFidxSvqRMd4YLHKsp2u28o5zpEPlYjmr5y5UOpSt4xphNqkA==';
       try {
-        const res = await fetch(
-          `https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2?serviceKey=${serviceKey}&pageNo=1&numOfRows=30&_type=json`,
-          {
-            headers: {
-              Accept: 'application/json',
-            },
-          }
-        );
-        const data: unknown = await res.json();
+        setLoading(true);
+        setLoadError('');
+        const data = await fetchPetPosts(controller.signal, 30);
         setPosts(parsePetPostsResponse(data));
-      } catch (e) {
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
         console.error('펫 데이터 오류', e);
+        setLoadError('펫 데이터를 불러오지 못했어요.');
         showToast({ message: '펫 데이터를 불러오지 못했어요.', type: 'error' });
       } finally {
-        setLoading(false); // 로딩 끝
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
-    fetchPets();
-  }, [showToast]);
+    void fetchPets();
+    return () => controller.abort();
+  }, [showToast, retryCount]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchRegions = async () => {
-      const serviceKey =
-        'l7ngeStfaLO1QpNc4njFsAoLLALk//VGMTfhTwFidxSvqRMd4YLHKsp2u28o5zpEPlYjmr5y5UOpSt4xphNqkA==';
       try {
-        const res = await fetch(
-          `https://apis.data.go.kr/1543061/abandonmentPublicService_v2/sido_v2?serviceKey=${serviceKey}&numOfRows=100&_type=json`
-        );
-        const data: unknown = await res.json();
+        const data = await fetchPetRegions(controller.signal);
         setRegionOptions(parseRegionOptionsResponse(data));
-      } catch {
+      } catch (error: unknown) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
         showToast({ message: '지역 정보를 불러오지 못했어요.', type: 'error' });
       }
     };
 
-    fetchRegions();
-  }, [showToast]);
+    void fetchRegions();
+    return () => controller.abort();
+  }, [showToast, retryCount]);
 
   useEffect(() => {
+    let active = true;
+
     const fetchLikedPosts = async () => {
-      if (!user) return;
+      if (!userUid) {
+        setLikedIds([]);
+        return;
+      }
 
       try {
         const snap = await getDocs(collection(db, 'pet'));
@@ -114,20 +120,25 @@ export default function PetBoardPage() {
 
         snap.forEach((docSnap) => {
           const data = docSnap.data();
-          if (Array.isArray(data.likedUsers) && data.likedUsers.includes(user.uid)) {
+          if (Array.isArray(data.likedUsers) && data.likedUsers.includes(userUid)) {
             result.push(docSnap.id); // 문서 ID = desertionNo
           }
         });
 
-        setLikedIds(result);
+        if (active) setLikedIds(result);
       } catch (err) {
-        console.error('좋아요 불러오기 실패', err);
-        showToast({ message: '좋아요 정보를 불러오지 못했어요.', type: 'error' });
+        if (active) {
+          console.error('좋아요 불러오기 실패', err);
+          showToast({ message: '좋아요 정보를 불러오지 못했어요.', type: 'error' });
+        }
       }
     };
 
-    fetchLikedPosts();
-  }, [user, showToast]);
+    void fetchLikedPosts();
+    return () => {
+      active = false;
+    };
+  }, [userUid, showToast]);
 
   const filteredPosts = useMemo(() => {
     let filtered = [...posts];
@@ -179,7 +190,16 @@ export default function PetBoardPage() {
 
   const itemsPerPage = 12;
   const totalPages = getTotalPages(filteredPosts.length, itemsPerPage);
-  const currentItems = getCurrentPageItems(filteredPosts, currentPage, itemsPerPage);
+  const safeCurrentPage = totalPages > 0
+    ? Math.min(Math.max(currentPage, 1), totalPages)
+    : 1;
+  const currentItems = getCurrentPageItems(filteredPosts, safeCurrentPage, itemsPerPage);
+
+  useEffect(() => {
+    if (currentPage !== safeCurrentPage) {
+      setCurrentPage(safeCurrentPage);
+    }
+  }, [currentPage, safeCurrentPage]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -193,6 +213,11 @@ export default function PetBoardPage() {
     setCurrentPage(!isNaN(pageFromParams) ? pageFromParams : 1);
     setSearchKeyword(keywordFromParams);
     setDateSort(sortFromParams);
+    setRegionCode(searchParams.get('region') || '');
+    setKindFilter(getAnimalKind(searchParams.get('kind')));
+    setSexFilter(getSexFilter(searchParams.get('sex')));
+    setStatusFilter(getStatusFilter(searchParams.get('status')));
+    setShowOnlyLiked(searchParams.get('liked') === 'true');
   }, [searchParams]);
 
   useEffect(() => {
@@ -266,6 +291,21 @@ export default function PetBoardPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="max-w-[85rem] mx-auto mb-8 px-4 py-10 text-center" role="alert">
+        <p>{loadError}</p>
+        <button
+          type="button"
+          className="inline-flex gap-2 items-center mt-4 text-primary"
+          onClick={() => setRetryCount((count) => count + 1)}
+        >
+          <RotateCcw className="size-4" aria-hidden="true" />다시 시도
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[85rem] mx-auto mb-8 px-4 py-10">
       <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
@@ -294,15 +334,20 @@ export default function PetBoardPage() {
       <PetPostList
         filteredPosts={currentItems}
         searchKeyword={searchKeyword}
-        currentPage={currentPage}
+        currentPage={safeCurrentPage}
         dateSort={dateSort}
       />
-      <Pagination
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+      {filteredPosts.length === 0 && (
+        <p className="mt-8 text-center text-gray-500">조건에 맞는 보호동물이 없습니다.</p>
+      )}
+      {totalPages > 0 && (
+        <Pagination
+          currentPage={safeCurrentPage}
+          setCurrentPage={setCurrentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
     </div>
   );
 }
