@@ -23,8 +23,10 @@ export default function LikedTracksPage() {
   const isPlaying = usePlayerStore((state) => state.isPlaying);
 
   const [tracks, setTracks] = useState<SavedTrack[]>([]);
+  const [loadedUserUid, setLoadedUserUid] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export default function LikedTracksPage() {
 
     if (!user?.uid) {
       setTracks([]);
+      setLoadedUserUid(null);
       setIsLoading(false);
       return;
     }
@@ -43,14 +46,17 @@ export default function LikedTracksPage() {
       user.uid,
       (savedTracks) => {
         setTracks(savedTracks);
+        setLoadedUserUid(user.uid);
+        setErrorMessage('');
         setIsLoading(false);
       },
       () => {
+        setLoadedUserUid(user.uid);
         setErrorMessage('저장한 트랙을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
         setIsLoading(false);
       }
     );
-  }, [isAuthLoading, user?.uid]);
+  }, [isAuthLoading, user?.uid, retryCount]);
 
   const handleTrackClick = (track: PlayerTrack) => {
     const isCurrentBookmark =
@@ -129,7 +135,7 @@ export default function LikedTracksPage() {
             로그인하고 시작하기
           </Link>
         </div>
-      ) : isLoading ? (
+      ) : isLoading || loadedUserUid !== user.uid ? (
         <div
           className="rounded-xl border border-textThr px-4 py-16 text-center text-sm text-textSub"
           role="status"
@@ -141,7 +147,14 @@ export default function LikedTracksPage() {
           className="rounded-xl border border-red-300 bg-red-50 px-4 py-10 text-center text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
           role="alert"
         >
-          {errorMessage}
+          <p>{errorMessage}</p>
+          <button
+            type="button"
+            className="mt-4 font-medium underline"
+            onClick={() => setRetryCount((count) => count + 1)}
+          >
+            다시 시도
+          </button>
         </div>
       ) : tracks.length === 0 ? (
         <div className="rounded-xl border border-textThr px-4 py-16 text-center">

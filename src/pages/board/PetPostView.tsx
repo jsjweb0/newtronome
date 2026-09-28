@@ -18,6 +18,7 @@ import {
   parsePetPostsResponse,
   type PetPost,
 } from '../../utils/petApi';
+import { fetchPetPosts } from '../../utils/petApiClient';
 
 type PetListLocationState = {
   page?: number;
@@ -29,6 +30,8 @@ export default function PetPostView() {
   const { id } = useParams();
   const [post, setPost] = useState<PetPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const { showToast } = useToast();
 
   const location = useLocation();
@@ -48,12 +51,15 @@ export default function PetPostView() {
       return;
     }
 
+    const controller = new AbortController();
+
     const fetchPost = async () => {
+      setLoading(true);
+      setLoadError('');
+      setPost(null);
+
       try {
-        const res = await fetch(
-          'https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2?serviceKey=l7ngeStfaLO1QpNc4njFsAoLLALk//VGMTfhTwFidxSvqRMd4YLHKsp2u28o5zpEPlYjmr5y5UOpSt4xphNqkA==&pageNo=1&numOfRows=100&_type=json'
-        );
-        const data: unknown = await res.json();
+        const data = await fetchPetPosts(controller.signal, 100);
         const found = parsePetPostsResponse(data).find(
           (item) => item.desertionNo === id
         );
@@ -64,19 +70,33 @@ export default function PetPostView() {
         } else {
           showToast({ message: '해당 게시글을 찾을 수 없습니다.', type: 'error' });
         }
-      } catch (e) {
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
         console.error(e);
+        setLoadError('보호동물 정보를 불러오지 못했습니다.');
         showToast({ message: 'API 호출 오류입니다.', type: 'error' });
       } finally {
-        setLoading(false); // 로딩 끝
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
-    fetchPost();
-  }, [id, showToast]);
+    void fetchPost();
+    return () => controller.abort();
+  }, [id, showToast, retryCount]);
 
   if (loading) {
     return <PetPostViewSkeleton />;
+  }
+
+  if (loadError) {
+    return (
+      <div className="mt-20 text-center" role="alert">
+        <p>{loadError}</p>
+        <button type="button" className="mt-4 text-primary" onClick={() => setRetryCount((count) => count + 1)}>
+          다시 시도
+        </button>
+      </div>
+    );
   }
 
   if (!post) {

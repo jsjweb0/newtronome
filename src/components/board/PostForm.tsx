@@ -16,6 +16,7 @@ import type {
   Post,
 } from '../../contexts/PostsContext';
 import { FREE_BOARD_CATEGORIES, LEGACY_FREE_BOARD_CATEGORY_VALUES, } from '../../constants/freeBoardCategories';
+import { normalizeLegacyPostContent } from '../../utils/postContent';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -50,9 +51,11 @@ export default function PostForm({
   const defaultWriter = user?.displayName?.trim() ? user.displayName : user?.email || '';
   const [writer, setWriter] = useState(defaultWriter);
   const [errors, setError] = useState({ category: '', title: '', content: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const titleRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const submittingRef = useRef(false);
 
   const today = new Date();
   const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -60,7 +63,7 @@ export default function PostForm({
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setInputTitle(initialData.title || '');
-      setInputContent(initialData.content || '');
+      setInputContent(normalizeLegacyPostContent(initialData.content || ''));
 
       const initialCategory = initialData.category ?? '';
       setSelectedCategory(
@@ -79,6 +82,7 @@ export default function PostForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submittingRef.current) return;
 
     const newErrors = { category: '', title: '', content: '' };
     let hasError = false;
@@ -111,7 +115,14 @@ export default function PostForm({
       isNotice,
     };
 
-    await onSubmit(payload);
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      await onSubmit(payload);
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   const baseClasses =
@@ -229,8 +240,8 @@ export default function PostForm({
           <BaseButton type="button" className="mr-2" variant="cancel" onClick={() => navigate(-1)}>
             취소
           </BaseButton>
-          <BaseButton type="submit">
-            {mode === 'edit' ? '수정' : '등록'}
+          <BaseButton type="submit" disabled={isSubmitting}>
+            {isSubmitting ? '처리 중...' : mode === 'edit' ? '수정' : '등록'}
           </BaseButton>
         </div>
       </form>

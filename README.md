@@ -33,6 +33,7 @@ Newtronome은 React 학습 과정에서 시작해 음악 재생, 검색, 사용�
 - 로그인 사용자별 트랙 저장 및 Likes 목록 관리
 - 프로필 정보 수정
 - 게시글 작성, 수정, 상세 보기
+- 보호동물 공공 API 조회와 Worker 기반 서비스 키 보호
 - 내가 쓴 글과 댓글을 모아보는 마이페이지
 - 모바일과 데스크톱을 고려한 반응형 UI
 
@@ -68,7 +69,23 @@ npm run dev
 
 ## Frontend Deployment
 
-프론트엔드는 루트의 `wrangler.toml`을 사용해 Cloudflare Workers Static Assets로 배포합니다.
+프론트엔드는 루트의 `wrangler.toml`을 사용해 Cloudflare Workers Static Assets로 배포합니다. 같은 Worker의 `/api/pets`, `/api/pet-regions` 경로가 보호동물 공공 API를 중계하므로 서비스 키가 브라우저 번들에 포함되지 않습니다.
+
+Worker 자체를 로컬에서 실행할 때는 `.dev.vars.example`을 복사해 `.dev.vars`를 만들고 발급받은 키를 설정합니다. `.dev.vars`는 Git에서 제외됩니다.
+
+```bash
+cp .dev.vars.example .dev.vars
+```
+
+일반적인 `npm run dev` 실행에서는 Vite가 `/api` 요청을 배포된 Worker로 전달합니다. Worker 자체를 로컬에서 확인할 때만 `.dev.vars`를 만든 뒤 `npm run build`와 `npx wrangler dev`를 실행합니다.
+
+운영 배포 전에는 노출 이력이 없는 새 키를 Cloudflare Worker secret으로 등록합니다.
+
+```bash
+npx wrangler secret put PET_API_SERVICE_KEY
+```
+
+GitHub Pages처럼 Worker와 다른 origin에서 프론트엔드를 제공할 때만 공개 환경 변수 `VITE_PET_API_BASE_URL`에 Worker 주소를 설정합니다. 이 값은 API 주소이며 비밀정보가 아닙니다.
 
 로컬에서 수동으로 배포하려면 Cloudflare 로그인 후 다음 명령을 실행합니다.
 
@@ -78,7 +95,7 @@ npm run build
 npm run frontend:deploy
 ```
 
-`main` 브랜치에 변경 사항이 반영되면 GitHub Actions가 GitHub Pages와 Cloudflare Workers 배포를 실행합니다. Cloudflare 배포는 `wrangler.toml`을 사용하며, 저장소에 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` secret이 필요합니다.
+`main` 브랜치에 변경 사항이 반영되면 GitHub Actions가 GitHub Pages와 Cloudflare Workers 배포를 실행합니다. Cloudflare 배포는 `wrangler.toml`을 사용하며, 저장소에 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` secret이 필요합니다. `PET_API_SERVICE_KEY`는 저장소 secret이 아니라 `wrangler secret put`으로 Worker에 한 번 등록한 runtime secret을 사용합니다.
 
 ## Build Commands
 

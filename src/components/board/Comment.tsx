@@ -19,7 +19,6 @@ interface CommentProps {
   data: CommentData;
   boardType: string;
   postId: string;
-  comments: CommentData[];
   setComments: Dispatch<SetStateAction<CommentData[]>>;
   openDropdownId: string | null;
   setOpenDropdownId: Dispatch<SetStateAction<string | null>>;
@@ -30,7 +29,6 @@ export default function Comment({
   data,
   boardType,
   postId,
-  comments,
   setComments,
   openDropdownId,
   setOpenDropdownId,
@@ -40,6 +38,7 @@ export default function Comment({
   const [showConfirm, setShowConfirm] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState(data.content);
+  const [isSaving, setIsSaving] = useState(false);
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const writerName = data.displayName || data.writerEmail;
@@ -67,20 +66,29 @@ export default function Comment({
   }, [isEditing]);
 
   const handleEditSubmit = async () => {
+    if (isSaving || !editText.trim()) return;
+    setIsSaving(true);
     const notificationId = Date.now();
     const notification = { notificationId, message: '댓글이 수정되었습니다.' };
     const notificationErr = { notificationId, message: '수정에 실패했습니다.' };
 
     try {
-      await updateCommentInDB(boardType, postId, data.id, editText);
+      const nextContent = editText.trim();
+      await updateCommentInDB(boardType, postId, data.id, nextContent);
 
-      setComments(comments.map((c) => (c.id === data.id ? { ...c, content: editText } : c)));
+      setComments((currentComments) =>
+        currentComments.map((comment) =>
+          comment.id === data.id ? { ...comment, content: nextContent } : comment
+        )
+      );
       setIsEditing(null);
       showToast({ message: notification.message });
       addNotification(notification);
     } catch {
       showToast({ message: notificationErr.message, type: 'error' });
       addNotification(notificationErr);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -94,19 +102,23 @@ export default function Comment({
     setShowConfirm(false);
     setOpenDropdownId(null);
 
+    if (isSaving) return;
+    setIsSaving(true);
     const notificationId = Date.now();
     const notification = { notificationId, message: '댓글이 삭제되었습니다.' };
     const notificationErr = { notificationId, message: '삭제에 실패했습니다.' };
 
     try {
       await deleteCommentFromDB(data.boardType, data.postId, data.id);
-      setComments(comments.filter((c) => c.id !== id));
+      setComments((currentComments) => currentComments.filter((comment) => comment.id !== id));
 
       showToast({ message: notification.message });
       addNotification(notification);
     } catch {
       showToast({ message: notificationErr.message, type: 'error' });
       addNotification(notificationErr);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -140,8 +152,8 @@ export default function Comment({
               placeholder="내용을 입력해주세요."
             />
             <div className="inline-flex gap-1.5 absolute bottom-0 right-0 p-2">
-              <BaseButton type="button" className="py-2!" onClick={handleEditSubmit}>
-                수정
+              <BaseButton type="button" className="py-2!" onClick={handleEditSubmit} disabled={isSaving}>
+                {isSaving ? '수정 중...' : '수정'}
               </BaseButton>
               <BaseButton
                 variant="cancel"
