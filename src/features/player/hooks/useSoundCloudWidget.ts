@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePlayerStore } from '../stores/usePlayerStore';
 import type {
-  SoundCloudProgressEvent,
   SoundCloudWidgetInstance,
 } from '../types/soundcloud-widget.types';
 import { mapSoundCloudWidgetTrack } from '../utils/mapSoundCloudWidgetTrack';
 import type { PlayerTrack } from '../types/player.types';
+
+const isNonNegativeFiniteNumber = (
+  value: unknown
+): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+const isRecord = (
+  value: unknown
+): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const PLAYLIST_LOAD_RETRY_DELAY_MS = 250;
 const PLAYLIST_LOAD_MAX_RETRIES = 12;
@@ -168,9 +177,20 @@ export function useSoundCloudWidget(playlistUrl: string) {
     const updateDuration = () => {
       const id = transitionIdRef.current;
       const trackRequestId = trackRequestIdRef.current;
+
       widget.getDuration((durationMs) => {
         if (trackRequestIdRef.current !== trackRequestId) return;
-        if (widgetRef.current !== widget || transitionIdRef.current !== id || isSourceSwitchingRef.current) return;
+
+        if (
+          widgetRef.current !== widget ||
+          transitionIdRef.current !== id ||
+          isSourceSwitchingRef.current
+        ) return;
+
+        if (!isNonNegativeFiniteNumber(durationMs)) {
+          return;
+        }
+
         setDuration(durationMs / 1000);
       });
     };
@@ -198,10 +218,26 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
     const updatePlaylistTracks = (retryCount = 0) => {
       const id = transitionIdRef.current;
+
       widget.getSounds((sounds) => {
         if (widgetRef.current !== widget) return;
+
         if (transitionIdRef.current !== id || isSourceSwitchingRef.current) return;
+
         if (usePlayerStore.getState().playbackMode !== 'playlist') return;
+
+        if (!Array.isArray(sounds)) {
+          if (retryCount < PLAYLIST_LOAD_MAX_RETRIES) {
+            playlistRetryTimer = window.setTimeout(
+              () => updatePlaylistTracks(retryCount + 1),
+              PLAYLIST_LOAD_RETRY_DELAY_MS
+            );
+            return;
+          }
+
+          failLoad(id);
+          return;
+        }
 
         const tracks = sounds.map(mapSoundCloudWidgetTrack).filter(isPlayerTrack);
         const hasPartialTracks = sounds.length === 0 || tracks.length < sounds.length;
@@ -276,8 +312,13 @@ export function useSoundCloudWidget(playlistUrl: string) {
       setPlaying(false);
     };
 
-    const handlePlayProgress = (event?: SoundCloudProgressEvent) => {
-      if (!event || widgetRef.current !== widget || isSourceSwitchingRef.current) return;
+    const handlePlayProgress = (event?: unknown) => {
+      if (
+        !isRecord(event) ||
+        !isNonNegativeFiniteNumber(event.currentPosition) ||
+        widgetRef.current !== widget ||
+        isSourceSwitchingRef.current
+      ) return;
 
       setCurrentTime(event.currentPosition / 1000);
     };
@@ -400,7 +441,9 @@ export function useSoundCloudWidget(playlistUrl: string) {
   }, [iframeElement, startLoadTimer, widgetError]);
 
   const seek = useCallback((seconds: number) => {
-    if (!Number.isFinite(seconds)) return;
+    if (!isNonNegativeFiniteNumber(seconds)) {
+      return;
+    }
 
     widgetRef.current?.seekTo(seconds * 1000);
   }, []);
@@ -428,7 +471,9 @@ export function useSoundCloudWidget(playlistUrl: string) {
     if (!widget) return;
 
     widget.getSounds((sounds) => {
-      if (sounds.length === 0) return;
+      if (!Array.isArray(sounds) || sounds.length === 0) {
+        return;
+      }
 
       const randomIndex = Math.floor(Math.random() * sounds.length);
 

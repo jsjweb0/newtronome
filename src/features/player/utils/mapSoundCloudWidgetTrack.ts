@@ -1,5 +1,4 @@
 import type { PlayerTrack } from '../types/player.types';
-import type { SoundCloudWidgetTrack } from '../types/soundcloud-widget.types';
 
 const parseSoundCloudTags = (tagList: string): string[] => {
   const tokens = tagList.match(/"[^"]+"|\S+/g) ?? [];
@@ -7,25 +6,53 @@ const parseSoundCloudTags = (tagList: string): string[] => {
   return tokens.map((tag) => tag.replace(/^"|"$/g, '')).filter(Boolean);
 };
 
+const isRecord = (
+  value: unknown
+): value is Record<string, unknown> =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value);
+
+const isTrackId = (
+  value: unknown
+): value is number | string =>
+  (typeof value === 'number' &&
+    Number.isSafeInteger(value) &&
+    value > 0) ||
+  (typeof value === 'string' &&
+    value.trim() !== '');
+
 export function mapSoundCloudWidgetTrack(
-  track: SoundCloudWidgetTrack | null | undefined
+  value: unknown
 ): PlayerTrack | null {
-  if (!track || track.id == null || typeof track.title !== 'string' || track.title.trim() === '') {
+  if (!isRecord(value)) {
     return null;
   }
 
-  const artist = track.user?.username?.trim();
+  if (!isTrackId(value.id) || typeof value.title !== 'string' || value.title.trim() === '') {
+    return null;
+  }
+
+  const id = typeof value.id === 'string' ? value.id.trim() : value.id;
+
+  const artist = isRecord(value.user) && typeof value.user.username === 'string'
+    ? value.user.username.trim()
+    : '';
 
   return {
-    id: track.id,
-    title: track.title.trim(),
+    id,
+    title: value.title.trim(),
     artist: artist || '알 수 없는 아티스트',
-    artworkUrl: typeof track.artwork_url === 'string' ? track.artwork_url : null,
-    permalinkUrl: typeof track.permalink_url === 'string' ? track.permalink_url : null,
+    artworkUrl: typeof value.artwork_url === 'string' ? value.artwork_url : null,
+    permalinkUrl: typeof value.permalink_url === 'string' ? value.permalink_url : null,
     durationMs:
-      typeof track.duration === 'number' && Number.isFinite(track.duration) ? track.duration : 0,
-    genre: typeof track.genre === 'string' ? track.genre.trim() : '',
+      typeof value.duration === 'number' &&
+        Number.isFinite(value.duration) &&
+        value.duration >= 0
+        ? value.duration
+        : 0,
+    genre: typeof value.genre === 'string' ? value.genre.trim() : '',
     tags:
-      typeof track.tag_list === 'string' ? parseSoundCloudTags(track.tag_list) : [],
+      typeof value.tag_list === 'string' ? parseSoundCloudTags(value.tag_list) : [],
   };
 }

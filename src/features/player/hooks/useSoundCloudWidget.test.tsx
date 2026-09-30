@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSoundCloudWidget } from './useSoundCloudWidget';
 import { usePlayerStore } from '../stores/usePlayerStore';
 import type {
-  SoundCloudProgressEvent,
   SoundCloudWidgetInstance,
 } from '../types/soundcloud-widget.types';
 import type { PlayerTrack } from '../types/player.types';
@@ -44,7 +43,7 @@ const bookmarkTrack: PlayerTrack = {
   tags: [],
 };
 
-type WidgetListener = (event?: SoundCloudProgressEvent) => void;
+type WidgetListener = (event?: unknown) => void;
 
 function createWidgetMock() {
   const listeners = new Map<string, WidgetListener>();
@@ -303,6 +302,27 @@ describe('useSoundCloudWidget source switching', () => {
     });
   });
 
+  it('ignores invalid duration, progress, and seek values', () => {
+    const { events, listeners, widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+    usePlayerStore.setState({ currentTime: 7, duration: 180 });
+
+    act(() => listeners.get(events.PLAY)?.());
+    const durationLookup = vi.mocked(widget.getDuration).mock.calls[0][0];
+
+    act(() => {
+      durationLookup(-1);
+      listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: Number.NaN });
+      result.current.seek(-1);
+    });
+
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTime: 7,
+      duration: 180,
+    });
+    expect(widget.seekTo).not.toHaveBeenCalled();
+  });
+
   it('ignores callbacks retained by a replaced Widget instance', () => {
     const { events, listeners, widget } = createWidgetMock();
     const { result } = renderWidgetHook();
@@ -326,43 +346,43 @@ describe('useSoundCloudWidget source switching', () => {
 
   it.each(['select', 'previous', 'next', 'random', 'automatic'] as const)(
     'ignores earlier track and duration lookups after %s playback', (action) => {
-    const { events, listeners, widget } = createWidgetMock();
-    vi.mocked(widget.getSounds).mockImplementation((callback) => callback([
-      { id: 1, title: 'First track' }, { id: 2, title: 'Second track' },
-    ]));
-    const { result } = renderWidgetHook();
+      const { events, listeners, widget } = createWidgetMock();
+      vi.mocked(widget.getSounds).mockImplementation((callback) => callback([
+        { id: 1, title: 'First track' }, { id: 2, title: 'Second track' },
+      ]));
+      const { result } = renderWidgetHook();
 
-    act(() => listeners.get(events.PLAY)?.());
-    const oldTrack = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
-    const oldDuration = vi.mocked(widget.getDuration).mock.calls[0][0];
+      act(() => listeners.get(events.PLAY)?.());
+      const oldTrack = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
+      const oldDuration = vi.mocked(widget.getDuration).mock.calls[0][0];
 
-    act(() => {
-      if (action === 'select') result.current.selectTrack(1);
-      if (action === 'previous') result.current.previousTrack();
-      if (action === 'next') result.current.nextTrack();
-      if (action === 'random') result.current.playRandomTrack();
-    });
-    act(() => listeners.get(events.PLAY)?.());
-    const latestTrack = vi.mocked(widget.getCurrentSound).mock.calls[1][0];
-    const latestDuration = vi.mocked(widget.getDuration).mock.calls[1][0];
-    act(() => {
-      latestTrack({ id: 2, title: 'Second track', duration: 210_000 });
-      latestDuration(210_000);
-      listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 5_000, relativePosition: 0.02, loadProgress: 1 });
-    });
-    act(() => {
-      oldTrack({ id: 1, title: 'First track' });
-      oldDuration(180_000);
-    });
+      act(() => {
+        if (action === 'select') result.current.selectTrack(1);
+        if (action === 'previous') result.current.previousTrack();
+        if (action === 'next') result.current.nextTrack();
+        if (action === 'random') result.current.playRandomTrack();
+      });
+      act(() => listeners.get(events.PLAY)?.());
+      const latestTrack = vi.mocked(widget.getCurrentSound).mock.calls[1][0];
+      const latestDuration = vi.mocked(widget.getDuration).mock.calls[1][0];
+      act(() => {
+        latestTrack({ id: 2, title: 'Second track', duration: 210_000 });
+        latestDuration(210_000);
+        listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 5_000, relativePosition: 0.02, loadProgress: 1 });
+      });
+      act(() => {
+        oldTrack({ id: 1, title: 'First track' });
+        oldDuration(180_000);
+      });
 
-    expect(usePlayerStore.getState()).toMatchObject({
-      currentTrack: { id: 2, title: 'Second track' },
-      isPlaying: true,
-      currentTime: 5,
-      duration: 210,
+      expect(usePlayerStore.getState()).toMatchObject({
+        currentTrack: { id: 2, title: 'Second track' },
+        isPlaying: true,
+        currentTime: 5,
+        duration: 210,
+      });
+      expect(result.current.widgetTrack?.id).toBe(2);
     });
-    expect(result.current.widgetTrack?.id).toBe(2);
-  });
 
   it('does not let READY or PLAY finish an ongoing source switch', () => {
     const { events, listeners, widget } = createWidgetMock();
@@ -592,5 +612,18 @@ describe('useSoundCloudWidget source switching', () => {
 
     expect(result.current.playlistStatus).toBe('ready');
     expect(result.current.widgetError).toBeNull();
+  });
+
+  it('reports a non-array playlist response as an error after retrying', () => {
+    vi.useFakeTimers();
+    const { events, listeners, widget } = createWidgetMock();
+    vi.mocked(widget.getSounds).mockImplementation((callback) => callback({}));
+    const { result } = renderWidgetHook();
+
+    act(() => listeners.get(events.READY)?.());
+    act(() => vi.advanceTimersByTime(3_000));
+
+    expect(result.current.playlistStatus).toBe('error');
+    expect(result.current.widgetError).toBeTruthy();
   });
 });
