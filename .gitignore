@@ -34,3 +34,7 @@ Thumbs.db
 .idea
 .cursor
 AGENTS.md
+
+# Browser test artifacts
+playwright-report/
+test-results/

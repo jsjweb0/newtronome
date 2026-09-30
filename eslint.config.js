@@ -63,6 +63,7 @@ export default [
       '*.config.js',
       'functions/**/*.js',
       'workers/**/*.js',
+      'tests/e2e/**/*.js',
     ],
     languageOptions: {
       ecmaVersion: 2020,
@@ -79,5 +80,9 @@ export default [
       ...js.configs.recommended.rules,
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]' }],
     },
+  },
+  {
+    files: ['tests/e2e/**/*.js'],
+    languageOptions: { globals: globals.browser },
   },
 ]

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Heart, ThumbsUp } from 'lucide-react';
 import { doc, onSnapshot, setDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -30,6 +30,12 @@ export default function LikeButton({
   'aria-describedby': ariaDescribedBy,
 }: LikeButtonProps) {
   const { user } = useAuth();
+  const [lookupStatus, setLookupStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [isSaving, setIsSaving] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const savingRef = useRef(false);
+  const uid = user?.uid;
+
   const { showToast } = useToast();
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(0);
@@ -46,68 +52,86 @@ export default function LikeButton({
   );
 
   useEffect(() => {
-    if (!user) {
-      setCount(0);
+    if (!uid) {
       setLiked(false);
+      setCount(0);
+      setLookupStatus('ready');
       return;
     }
-    const unsub = onSnapshot(
+
+    let active = true;
+    setLookupStatus('loading');
+
+    const unsubscribe = onSnapshot(
       docRef,
+      { includeMetadataChanges: true },
       (snap) => {
+        if (!active || snap.metadata?.hasPendingWrites) return;
+
         const data = snap.data();
         const likedUsers = Array.isArray(data?.likedUsers)
-          ? data.likedUsers.filter((uid): uid is string => typeof uid === 'string')
+          ? data.likedUsers.filter(
+            (value): value is string => typeof value === 'string'
+          )
           : [];
 
+        setLiked(likedUsers.includes(uid));
         setCount(
           typeof data?.likeCount === 'number' && Number.isFinite(data.likeCount)
             ? data.likeCount
             : 0
         );
-        setLiked(likedUsers.includes(user.uid));
+        setLookupStatus('ready');
       },
-      console.error
+      () => {
+        if (active) setLookupStatus('error');
+      }
     );
-    return unsub;
-  }, [docRef, user]);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [docRef, uid, retryCount]);
+
+  const retryLookup = () => {
+    setLookupStatus('loading');
+    setRetryCount((count) => count + 1);
+  };
 
   const handleLike = async () => {
     if (!user) {
       showToast({ message: '로그인 후 이용해 주세요!', type: 'info' });
       return;
     }
-    const newLiked = !liked;
-    setLiked(newLiked);
-    setCount((c) => c + (newLiked ? 1 : -1));
-    setAnimate(true);
-    setTimeout(() => setAnimate(false), 400);
 
-    const id = Date.now();
-    const notification = {
-      id,
-      message: newLiked ? '좋아요를 눌렀습니다!' : '좋아요를 취소했습니다.',
-    };
-    const notificationErr = {
-      id,
-      message: '좋아요 처리에 실패했습니다.',
-      type: 'error' as const,
-    };
+    if (lookupStatus !== 'ready' || savingRef.current) return;
+
+    savingRef.current = true;
+    setIsSaving(true);
+
+    const newLiked = !liked;
 
     try {
-      // 문서가 있으면 update, 없으면 create — merge=true 한 번에!
       await setDoc(
         docRef,
         {
           likeCount: increment(newLiked ? 1 : -1),
-          likedUsers: newLiked ? arrayUnion(user.uid) : arrayRemove(user.uid),
+          likedUsers: newLiked ? arrayUnion(uid) : arrayRemove(uid),
         },
         { merge: true }
       );
 
-      showToast({ message: notification.message });
-    } catch (err) {
-      console.error('좋아요 처리 중 에러:', err);
-      showToast({ message: notificationErr.message, type: notificationErr.type });
+      setAnimate(true);
+      window.setTimeout(() => setAnimate(false), 400);
+      showToast({
+        message: newLiked ? '좋아요를 눌렀습니다!' : '좋아요를 취소했습니다.',
+      });
+    } catch {
+      showToast({ message: '좋아요 처리에 실패했습니다.', type: 'error' });
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -117,10 +141,15 @@ export default function LikeButton({
         <>
           <button
             type="button"
-            onClick={handleLike}
-            className={clsx('group flex items-center px-2 hover:text-gray-800', className)}
-            aria-label="좋아요"
+            onClick={lookupStatus === 'error' ? retryLookup : handleLike}
+            disabled={lookupStatus === 'loading' || isSaving}
+            aria-label={
+              lookupStatus === 'error'
+                ? '좋아요 상태를 확인하지 못했습니다. 다시 시도'
+                : '좋아요'
+            }
             aria-describedby={ariaDescribedBy}
+            className={clsx('group flex items-center px-2 hover:text-gray-800', className)}
           >
             <Heart
               className={clsx(
@@ -129,6 +158,7 @@ export default function LikeButton({
                 liked ? 'fill-red-500! stroke-red-500!' : '',
                 animate ? 'animate-like' : ''
               )}
+              aria-hidden="true"
             />
           </button>
           {showCount && <span>{count}</span>}
@@ -138,14 +168,19 @@ export default function LikeButton({
         <>
           <button
             type="button"
-            onClick={handleLike}
+            onClick={lookupStatus === 'error' ? retryLookup : handleLike}
+            disabled={lookupStatus === 'loading' || isSaving}
+            aria-label={
+              lookupStatus === 'error'
+                ? '좋아요 상태를 확인하지 못했습니다. 다시 시도'
+                : '좋아요'
+            }
+            aria-describedby={ariaDescribedBy}
             className={clsx(
               'group flex items-center text-xs md:text-sm hover:text-gray-800 focus:outline-hidden focus:text-gray-800',
               'dark:hover:text-neutral-200 dark:focus:text-neutral-200',
               liked ? 'text-blue-600 font-medium' : 'text-gray-500 dark:text-neutral-400'
             )}
-            aria-label="좋아요"
-            aria-describedby={ariaDescribedBy}
           >
             <ThumbsUp
               className={clsx(
@@ -153,6 +188,7 @@ export default function LikeButton({
                 'transition-all duration-300',
                 liked ? 'fill-blue-600 stroke-blue-600 text-blue-600' : ''
               )}
+              aria-hidden="true"
             />
           </button>
           {showCount && <span className="inline-block ml-1.5">{count}</span>}

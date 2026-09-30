@@ -39,6 +39,10 @@ export interface PlayerOutletContext {
   onToggleTrack: () => void;
   onPauseSoundCloud: () => void;
   onPlayBookmarkTrack: (track: PlayerTrack) => void;
+
+  playlistStatus: ReturnType<typeof useSoundCloudWidget>['playlistStatus'];
+  widgetError: string | null;
+  retryLoad: () => void;
 }
 
 export default function MainLayout() {
@@ -80,6 +84,10 @@ export default function MainLayout() {
     onToggleTrack: soundCloudWidget.toggle,
     onPauseSoundCloud: soundCloudWidget.pause,
     onPlayBookmarkTrack: soundCloudWidget.playBookmarkTrack,
+
+    playlistStatus: soundCloudWidget.playlistStatus,
+    widgetError: soundCloudWidget.widgetError,
+    retryLoad: soundCloudWidget.retryLoad,
   };
 
   return (
@@ -154,7 +162,7 @@ export default function MainLayout() {
         )}
       >
         {/* setCurrentTrackUrl(track.url) */}
-        {!soundCloudWidget.isReady ? (
+        {!soundCloudWidget.isReady && soundCloudWidget.playlistStatus === 'loading' ? (
           <PlayerBarSkeleton />
         ) : (
           <PlayerBar

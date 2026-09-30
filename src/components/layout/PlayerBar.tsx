@@ -38,6 +38,7 @@ export default function PlayerBar({
 
   const { toggle, seek, toggleMute, rewindToStart, previousTrack, nextTrack, playRandomTrack } =
     soundCloudWidget;
+  const controlsDisabled = Boolean(soundCloudWidget.widgetError);
 
   const { isDarkMode } = useDarkMode();
   const rangeRef = useRef<HTMLInputElement>(null);
@@ -109,13 +110,19 @@ export default function PlayerBar({
             className="w-full h-1 xl:h-1.5 rounded appearance-none"
             style={{ background: '#ddd' }}
             aria-label={currentTrack.title}
+            disabled={controlsDisabled}
           />
         </div>
 
         {/* 컨트롤 버튼 */}
         <div className="flex gap-6 items-center mt-1.5 text-textBase text-xl">
           <Tooltip content="처음으로" className="max-xl:hidden">
-            <button type="button" onClick={rewindToStart} aria-label="재생시간 처음으로">
+            <button
+              type="button"
+              onClick={rewindToStart}
+              aria-label="재생시간 처음으로"
+              disabled={controlsDisabled}
+            >
               <RotateCcw aria-hidden="true" />
             </button>
           </Tooltip>
@@ -125,7 +132,7 @@ export default function PlayerBar({
           >
             <button
               type="button"
-              disabled={isBookmarkMode}
+              disabled={isBookmarkMode || controlsDisabled}
               onClick={previousTrack}
               className="inline-flex items-center justify-center w-11 h-11 p-2.5 disabled:cursor-not-allowed disabled:opacity-30"
               aria-label={
@@ -143,6 +150,7 @@ export default function PlayerBar({
               onClick={toggle}
               className="inline-flex items-center justify-center w-11 h-11 bg-textBase rounded-full"
               aria-label={isPlaying ? '정지' : '재생'}
+              disabled={controlsDisabled}
             >
               {isPlaying ? (
                 <Pause aria-hidden="true" className="fill-background stroke-1 stroke-background" />
@@ -157,7 +165,7 @@ export default function PlayerBar({
           >
             <button
               type="button"
-              disabled={isBookmarkMode}
+              disabled={isBookmarkMode || controlsDisabled}
               onClick={nextTrack}
               className="inline-flex items-center justify-center w-11 h-11 p-2.5 disabled:cursor-not-allowed disabled:opacity-30"
               aria-label={
@@ -172,7 +180,7 @@ export default function PlayerBar({
           <Tooltip content="Shuffle" className="max-xl:hidden">
             <button
               type="button"
-              disabled={isBookmarkMode}
+              disabled={isBookmarkMode || controlsDisabled}
               onClick={playRandomTrack}
               aria-label={
                 isBookmarkMode
@@ -208,8 +216,13 @@ export default function PlayerBar({
         </Tooltip>
         <div className="hidden xl:flex items-center gap-x-3 w-full">
           <Tooltip content={isMuted ? '소리 켬' : '소리 끔'} position="top" className="shrink-0">
-            <button type="button" onClick={toggleMute} aria-label={isMuted ? '소리 켬' : '소리 끔'}>
-              {isMuted ? (
+            <button
+              type="button"
+              onClick={toggleMute}
+              aria-label={isMuted ? '소리 켬' : '소리 끔'}
+              disabled={controlsDisabled}
+            >
+              {isMuted || controlsDisabled ? (
                 <VolumeOff aria-hidden="true" className="size-7" />
               ) : (
                 <Volume2 aria-hidden="true" className="size-7" />

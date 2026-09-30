@@ -2,7 +2,7 @@ import { toHighResArtwork } from '../../utils/image';
 import { formatTime } from '../../utils/format';
 import HeaderButtons from '../layout/HeaderButtons';
 import { AudioEqualizerIcon } from '../icons';
-import { ListMusic, Play } from 'lucide-react';
+import { ListMusic, Play, RotateCcw } from 'lucide-react';
 import noImage from '../../assets/no-image.png';
 import clsx from 'clsx';
 import SoundCloudWidget from '../../features/player/components/SoundCloudWidget';
@@ -139,7 +139,7 @@ export default function PlaylistPanel({
                   </div>
                 </div>
               </>
-            ) : (
+            ) : soundCloudWidget.playlistStatus === 'loading' ? (
               <div
                 className="space-y-2 animate-pulse"
                 role="status"
@@ -150,7 +150,7 @@ export default function PlaylistPanel({
                 <div className="h-3 w-1/3 rounded bg-gray-200 dark:bg-neutral-700" />
                 <div className="mt-4 h-8 w-1/2 rounded bg-gray-200 dark:bg-neutral-700" />
               </div>
-            )}
+            ) : null}
             {tags.length > 0 && (
               <ul className="flex flex-wrap gap-2 mt-3" aria-label="현재 재생곡 태그">
                 {tags.slice(0, 5).map((tag) => (
@@ -175,7 +175,18 @@ export default function PlaylistPanel({
               <ListMusic className="size-5.5" />
             </div>
             <ol className="space-y-4">
-              {soundCloudWidget.isPlaylistLoading ? (
+              {soundCloudWidget.playlistStatus === 'error' ? (
+                <li role="alert" className="text-sm text-textSub text-center">
+                  <p className="text-left">{soundCloudWidget.widgetError ?? '플레이리스트를 불러오지 못했습니다.'}</p>
+                  <button
+                    type="button"
+                    onClick={soundCloudWidget.retryLoad}
+                    className="inline-flex items-center gap-2 mt-2 rounded-lg border border-textThr px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    <RotateCcw className="size-4" aria-hidden="true" /> 다시 시도
+                  </button>
+                </li>
+              ) : soundCloudWidget.playlistStatus === 'loading' ? (
                 <li
                   className="flex items-center gap-2 text-sm text-gray-500"
                   role="status"
@@ -184,7 +195,7 @@ export default function PlaylistPanel({
                   <AudioEqualizerIcon isPlaying={true} className="size-4 text-gray-500" />
                   플레이리스트 불러오는 중...
                 </li>
-              ) : tracks.length > 0 ? (
+              ) : soundCloudWidget.playlistStatus === 'ready' ? (
                 tracks.map((track, index) => {
                   const isActive =
                     isPlaylistMode &&
