@@ -162,7 +162,7 @@ export default function MainLayout() {
         )}
       >
         {/* setCurrentTrackUrl(track.url) */}
-        {!soundCloudWidget.isReady ? (
+        {!soundCloudWidget.isReady && soundCloudWidget.playlistStatus === 'loading' ? (
           <PlayerBarSkeleton />
         ) : (
           <PlayerBar

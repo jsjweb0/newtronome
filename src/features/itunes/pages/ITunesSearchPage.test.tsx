@@ -98,14 +98,21 @@ describe('iTunes preview request order', () => {
     expect(screen.getByRole('button', { name: '둘째 곡 미리듣기 정지' })).toBeTruthy();
   });
 
-  it('ignores a pending play after SoundCloud starts', async () => {
+  it.each(['resolve', 'reject'] as const)('ignores a pending play %s after SoundCloud starts', async (outcome) => {
     const pendingPlay = deferred();
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(() => pendingPlay.promise);
     await showSearchResults();
 
     fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+    const pausesBeforeSoundCloud = vi.mocked(HTMLMediaElement.prototype.pause).mock.calls.length;
     act(() => { usePlayerStore.setState({ isPlaying: true }); });
-    await act(async () => { pendingPlay.resolve(); await pendingPlay.promise; });
+    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalledTimes(pausesBeforeSoundCloud + 1);
+    await act(async () => {
+      if (outcome === 'resolve') pendingPlay.resolve();
+      else pendingPlay.reject(new Error('interrupted'));
+      await pendingPlay.promise.catch(() => undefined);
+    });
+    expect(usePlayerStore.getState().isPlaying).toBe(true);
 
     expect(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' })).toBeTruthy();
     expect(mocks.onPauseSoundCloud).toHaveBeenCalledTimes(1);

@@ -234,7 +234,7 @@ describe('useSoundCloudWidget source switching', () => {
   });
 
   it('applies only the latest selection when several tracks are chosen during loading', () => {
-    const { widget } = createWidgetMock();
+    const { events, listeners, widget } = createWidgetMock();
     const { result } = renderWidgetHook();
     const thirdTrack: PlayerTrack = {
       ...playlistTracks[1],
@@ -270,6 +270,17 @@ describe('useSoundCloudWidget source switching', () => {
     expect(widget.skip).toHaveBeenCalledTimes(1);
     expect(widget.skip).toHaveBeenCalledWith(2);
     expect(usePlayerStore.getState().currentTrack).toEqual(thirdTrack);
+    expect(usePlayerStore.getState().isPlaying).toBe(false);
+    vi.mocked(widget.getCurrentSound).mockImplementation((callback) => callback({
+      id: 3, title: thirdTrack.title, duration: thirdTrack.durationMs,
+    }));
+    vi.mocked(widget.getDuration).mockImplementation((callback) => callback(thirdTrack.durationMs));
+    act(() => listeners.get(events.PLAY)?.());
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTrack: { id: 3 }, isPlaying: true, currentTime: 0, duration: 210,
+    });
+    expect(result.current.widgetTrack?.id).toBe(3);
+    expect(result.current.widgetIsPlaying).toBe(true);
   });
 
   it('ignores an earlier track lookup after a source switch', () => {
@@ -278,11 +289,79 @@ describe('useSoundCloudWidget source switching', () => {
 
     act(() => listeners.get(events.PLAY)?.());
     const previousLookup = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
+    const previousDuration = vi.mocked(widget.getDuration).mock.calls[0][0];
 
     act(() => result.current.playBookmarkTrack(bookmarkTrack));
-    act(() => previousLookup({ id: 1, title: 'Old track' }));
+    act(() => {
+      previousLookup({ id: 1, title: 'Old track' });
+      previousDuration(99_000);
+      listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 99_000, relativePosition: 0.5, loadProgress: 1 });
+    });
 
-    expect(usePlayerStore.getState().currentTrack).toEqual(bookmarkTrack);
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTrack: bookmarkTrack, currentTime: 0, duration: 200,
+    });
+  });
+
+  it('ignores callbacks retained by a replaced Widget instance', () => {
+    const { events, listeners, widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+    act(() => listeners.get(events.PLAY)?.());
+    const oldTrack = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
+    const oldDuration = vi.mocked(widget.getDuration).mock.calls[0][0];
+    const oldProgress = listeners.get(events.PLAY_PROGRESS);
+
+    createWidgetMock();
+    act(() => result.current.iframeRef(document.createElement('iframe')));
+    act(() => usePlayerStore.setState({ currentTrack: playlistTracks[1], currentTime: 7, duration: 210 }));
+    act(() => {
+      oldTrack({ id: 1, title: 'Old track' });
+      oldDuration(99_000);
+      oldProgress?.({ currentPosition: 99_000, relativePosition: 0.5, loadProgress: 1 });
+    });
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTrack: playlistTracks[1], currentTime: 7, duration: 210,
+    });
+  });
+
+  it.each(['select', 'previous', 'next', 'random', 'automatic'] as const)(
+    'ignores earlier track and duration lookups after %s playback', (action) => {
+    const { events, listeners, widget } = createWidgetMock();
+    vi.mocked(widget.getSounds).mockImplementation((callback) => callback([
+      { id: 1, title: 'First track' }, { id: 2, title: 'Second track' },
+    ]));
+    const { result } = renderWidgetHook();
+
+    act(() => listeners.get(events.PLAY)?.());
+    const oldTrack = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
+    const oldDuration = vi.mocked(widget.getDuration).mock.calls[0][0];
+
+    act(() => {
+      if (action === 'select') result.current.selectTrack(1);
+      if (action === 'previous') result.current.previousTrack();
+      if (action === 'next') result.current.nextTrack();
+      if (action === 'random') result.current.playRandomTrack();
+    });
+    act(() => listeners.get(events.PLAY)?.());
+    const latestTrack = vi.mocked(widget.getCurrentSound).mock.calls[1][0];
+    const latestDuration = vi.mocked(widget.getDuration).mock.calls[1][0];
+    act(() => {
+      latestTrack({ id: 2, title: 'Second track', duration: 210_000 });
+      latestDuration(210_000);
+      listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 5_000, relativePosition: 0.02, loadProgress: 1 });
+    });
+    act(() => {
+      oldTrack({ id: 1, title: 'First track' });
+      oldDuration(180_000);
+    });
+
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTrack: { id: 2, title: 'Second track' },
+      isPlaying: true,
+      currentTime: 5,
+      duration: 210,
+    });
+    expect(result.current.widgetTrack?.id).toBe(2);
   });
 
   it('does not let READY or PLAY finish an ongoing source switch', () => {

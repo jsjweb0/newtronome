@@ -139,7 +139,7 @@ export default function PlaylistPanel({
                   </div>
                 </div>
               </>
-            ) : (
+            ) : soundCloudWidget.playlistStatus === 'loading' ? (
               <div
                 className="space-y-2 animate-pulse"
                 role="status"
@@ -150,7 +150,7 @@ export default function PlaylistPanel({
                 <div className="h-3 w-1/3 rounded bg-gray-200 dark:bg-neutral-700" />
                 <div className="mt-4 h-8 w-1/2 rounded bg-gray-200 dark:bg-neutral-700" />
               </div>
-            )}
+            ) : null}
             {tags.length > 0 && (
               <ul className="flex flex-wrap gap-2 mt-3" aria-label="현재 재생곡 태그">
                 {tags.slice(0, 5).map((tag) => (

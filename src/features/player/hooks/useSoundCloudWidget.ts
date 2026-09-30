@@ -41,6 +41,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
   const isSourceSwitchingRef = useRef(false);
   const pendingTrackIndexRef = useRef<number | null>(null);
   const transitionIdRef = useRef(0);
+  const trackRequestIdRef = useRef(0);
   const loadTimerRef = useRef<number | null>(null);
   const retryLoadRef = useRef<(() => void) | null>(null);
 
@@ -83,6 +84,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
       }
 
       if (playbackMode === 'playlist' && !forceLoad) {
+        trackRequestIdRef.current += 1;
         widget.skip(index);
         return;
       }
@@ -165,7 +167,9 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
     const updateDuration = () => {
       const id = transitionIdRef.current;
+      const trackRequestId = trackRequestIdRef.current;
       widget.getDuration((durationMs) => {
+        if (trackRequestIdRef.current !== trackRequestId) return;
         if (widgetRef.current !== widget || transitionIdRef.current !== id || isSourceSwitchingRef.current) return;
         setDuration(durationMs / 1000);
       });
@@ -176,7 +180,9 @@ export function useSoundCloudWidget(playlistUrl: string) {
       updatePlaylistTrack: boolean
     ) => {
       const id = transitionIdRef.current;
+      const trackRequestId = trackRequestIdRef.current;
       widget.getCurrentSound((sound) => {
+        if (trackRequestIdRef.current !== trackRequestId) return;
         if (widgetRef.current !== widget || transitionIdRef.current !== id || isSourceSwitchingRef.current) return;
         const nextTrack = mapSoundCloudWidgetTrack(sound);
 
@@ -246,6 +252,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
       if (widgetRef.current !== widget || isSourceSwitchingRef.current) return;
       const playbackMode = usePlayerStore.getState().playbackMode;
 
+      trackRequestIdRef.current += 1;
       setWidgetIsPlaying(true);
       setPlaying(true);
       updateCurrentTrack(true, playbackMode === 'playlist');
@@ -403,10 +410,12 @@ export function useSoundCloudWidget(playlistUrl: string) {
   }, []);
 
   const previousTrack = useCallback(() => {
+    trackRequestIdRef.current += 1;
     widgetRef.current?.prev();
   }, []);
 
   const nextTrack = useCallback(() => {
+    trackRequestIdRef.current += 1;
     widgetRef.current?.next();
   }, []);
 
@@ -423,6 +432,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
       const randomIndex = Math.floor(Math.random() * sounds.length);
 
+      trackRequestIdRef.current += 1;
       widget.skip(randomIndex);
     });
   }, []);
