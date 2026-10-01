@@ -284,25 +284,51 @@ export function PostsProvider({
 }: PostsProviderProps) {
     const postsByBoardRef = useRef<PostsByBoard>({});
 
+    const boardVersionsRef = useRef<
+        Partial<Record<CommunityBoardType, number>>
+    >({});
+
+    const invalidateBoardCache = useCallback(
+        (boardType: CommunityBoardType) => {
+            const currentVersion =
+                boardVersionsRef.current[boardType] ?? 0;
+
+            boardVersionsRef.current[boardType] =
+                currentVersion + 1;
+
+            delete postsByBoardRef.current[boardType];
+        },
+        []
+    );
+
     const getPosts = useCallback<
         PostsContextValue['getPosts']
     >(async (boardType) => {
-        const cachedPosts =
-            postsByBoardRef.current[boardType];
+        while (true) {
+            const cachedPosts =
+                postsByBoardRef.current[boardType];
 
-        if (cachedPosts) {
-            return cachedPosts;
+            if (cachedPosts !== undefined) {
+                return cachedPosts;
+            }
+
+            const requestVersion =
+                boardVersionsRef.current[boardType] ?? 0;
+
+            const posts =
+                await fetchPostsFromFirestore(boardType);
+
+            const currentVersion =
+                boardVersionsRef.current[boardType] ?? 0;
+
+            if (requestVersion !== currentVersion) {
+                continue;
+            }
+
+            postsByBoardRef.current[boardType] = posts;
+
+            return posts;
         }
-
-        const posts =
-            await fetchPostsFromFirestore(boardType);
-
-        postsByBoardRef.current = {
-            ...postsByBoardRef.current,
-            [boardType]: posts,
-        };
-
-        return posts;
     }, []);
 
     const getPost = useCallback<
@@ -327,16 +353,10 @@ export function PostsProvider({
         const createdPost =
             await createPostInFirestore(boardType, input);
 
-        postsByBoardRef.current = {
-            ...postsByBoardRef.current,
-            [boardType]: [
-                ...(postsByBoardRef.current[boardType] ?? []),
-                createdPost,
-            ],
-        };
+        invalidateBoardCache(boardType);
 
         return createdPost;
-    }, []);
+    }, [invalidateBoardCache]);
 
     const updatePost = useCallback<
         PostsContextValue['updatePost']
@@ -344,31 +364,11 @@ export function PostsProvider({
         await updatePostInFirestore(
             boardType,
             postId,
-            input,
+            input
         );
 
-        const updatedPosts = (
-            postsByBoardRef.current[boardType] ?? []
-        ).map((post) => {
-            if (post.id !== postId) {
-                return post;
-            }
-
-            return {
-                ...post,
-                ...input,
-                updatedAt:
-                    input.updatedAt === undefined
-                        ? post.updatedAt
-                        : convertTimestamp(input.updatedAt),
-            };
-        });
-
-        postsByBoardRef.current = {
-            ...postsByBoardRef.current,
-            [boardType]: updatedPosts,
-        };
-    }, []);
+        invalidateBoardCache(boardType);
+    }, [invalidateBoardCache]);
 
     const updateViewCount = useCallback<
         PostsContextValue['updateViewCount']
@@ -381,20 +381,10 @@ export function PostsProvider({
     const deletePost = useCallback<
         PostsContextValue['deletePost']
     >(async (boardType, postId) => {
-        await deletePostFromFirestore(
-            boardType,
-            postId,
-        );
+        await deletePostFromFirestore(boardType, postId);
 
-        const updatedPosts = (
-            postsByBoardRef.current[boardType] ?? []
-        ).filter((post) => post.id !== postId);
-
-        postsByBoardRef.current = {
-            ...postsByBoardRef.current,
-            [boardType]: updatedPosts,
-        };
-    }, []);
+        invalidateBoardCache(boardType);
+    }, [invalidateBoardCache]);
 
     const contextValue = useMemo<PostsContextValue>(
         () => ({

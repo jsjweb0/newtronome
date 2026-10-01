@@ -34,6 +34,7 @@ const isSavedTrack = (value: unknown): value is SavedTrack => {
     (typeof track.permalinkUrl === 'string' || track.permalinkUrl === null) &&
     typeof track.durationMs === 'number' &&
     Number.isFinite(track.durationMs) &&
+    track.durationMs >= 0 &&
     typeof track.genre === 'string' &&
     Array.isArray(track.tags) &&
     track.tags.every((tag) => typeof tag === 'string') &&
@@ -96,9 +97,14 @@ export function subscribeToSavedTracks(
       const tracks: SavedTrack[] = [];
 
       for (const savedTrackDocument of snapshot.docs) {
-        const savedTrack = savedTrackDocument.data();
+        const savedTrack = savedTrackDocument.data(); // 문서 내부 데이터
 
         if (!isSavedTrack(savedTrack)) {
+          onError(new Error('저장된 트랙 데이터 형식이 올바르지 않습니다.'));
+          return;
+        }
+
+        if (savedTrackDocument.id !== String(savedTrack.id)) {
           onError(new Error('저장된 트랙 데이터 형식이 올바르지 않습니다.'));
           return;
         }
