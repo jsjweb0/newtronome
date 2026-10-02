@@ -1,3 +1,4 @@
+import { isNonNegativeFiniteNumber } from "../../../utils/numberValidation";
 import type { ITunesSearchResponse, ITunesTrack } from "../types/itunes.types";
 
 const isRecord = (
@@ -25,7 +26,7 @@ const isNonNegativeInteger = (
 const isOptionalNonNegativeFiniteNumber = (
     value: unknown
 ): value is number | undefined => {
-    return value === undefined || (typeof value === 'number' && Number.isFinite(value) && value >= 0);
+    return value === undefined || isNonNegativeFiniteNumber(value);
 };
 
 const isOptionalString = (

@@ -5,11 +5,8 @@ import type {
 } from '../types/soundcloud-widget.types';
 import { mapSoundCloudWidgetTrack } from '../utils/mapSoundCloudWidgetTrack';
 import type { PlayerTrack } from '../types/player.types';
-
-const isNonNegativeFiniteNumber = (
-  value: unknown
-): value is number =>
-  typeof value === 'number' && Number.isFinite(value) && value >= 0;
+import { isNonNegativeFiniteNumber } from '../../../utils/numberValidation';
+import { useSoundCloudControls } from './useSoundCloudControls';
 
 const isRecord = (
   value: unknown
@@ -25,24 +22,26 @@ const isPlayerTrack = (track: PlayerTrack | null): track is PlayerTrack => track
 
 export function useSoundCloudWidget(playlistUrl: string) {
   const [iframeElement, setIframeElement] = useState<HTMLIFrameElement | null>(null);
-
   const iframeRef = useCallback((element: HTMLIFrameElement | null) => {
     setIframeElement(element);
   }, []);
 
   const widgetRef = useRef<SoundCloudWidgetInstance | null>(null);
+  const trackRequestIdRef = useRef(0);
+  const controls = useSoundCloudControls({
+    widgetRef,
+    trackRequestIdRef,
+  });
+
   const [isReady, setIsReady] = useState(false);
   const [playlistStatus, setPlaylistStatus] = useState<PlaylistStatus>('loading');
   const [widgetTrack, setWidgetTrack] = useState<PlayerTrack | null>(null);
   const [widgetIsPlaying, setWidgetIsPlaying] = useState(false);
   const [widgetError, setWidgetError] = useState<string | null>(null);
 
-  const isMuted = usePlayerStore((state) => state.isMuted);
-
   const setPlaying = usePlayerStore((state) => state.setPlaying);
   const setCurrentTime = usePlayerStore((state) => state.setCurrentTime);
   const setDuration = usePlayerStore((state) => state.setDuration);
-  const setMuted = usePlayerStore((state) => state.setMuted);
   const setCurrentTrack = usePlayerStore((state) => state.setCurrentTrack);
   const setPlaylist = usePlayerStore((state) => state.setPlaylist);
   const setPlaybackMode = usePlayerStore((state) => state.setPlaybackMode);
@@ -50,7 +49,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
   const isSourceSwitchingRef = useRef(false);
   const pendingTrackIndexRef = useRef<number | null>(null);
   const transitionIdRef = useRef(0);
-  const trackRequestIdRef = useRef(0);
   const loadTimerRef = useRef<number | null>(null);
   const retryLoadRef = useRef<(() => void) | null>(null);
 
@@ -378,14 +376,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
     };
   }, [iframeElement, clearLoadTimer, failLoad, setCurrentTime, setCurrentTrack, setDuration, setPlaying, setPlaylist, startLoadTimer]);
 
-  const play = useCallback(() => {
-    widgetRef.current?.play();
-  }, []);
-
-  const pause = useCallback(() => {
-    widgetRef.current?.pause();
-  }, []);
-
   const playBookmarkTrack = useCallback(
     (track: PlayerTrack) => {
       const widget = widgetRef.current;
@@ -449,58 +439,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
     startLoadTimer(++transitionIdRef.current);
   }, [iframeElement, startLoadTimer, widgetError]);
 
-  const seek = useCallback((seconds: number) => {
-    if (!isNonNegativeFiniteNumber(seconds)) {
-      return;
-    }
-
-    widgetRef.current?.seekTo(seconds * 1000);
-  }, []);
-
-  const toggle = useCallback(() => {
-    widgetRef.current?.toggle();
-  }, []);
-
-  const previousTrack = useCallback(() => {
-    trackRequestIdRef.current += 1;
-    widgetRef.current?.prev();
-  }, []);
-
-  const nextTrack = useCallback(() => {
-    trackRequestIdRef.current += 1;
-    widgetRef.current?.next();
-  }, []);
-
-  const rewindToStart = useCallback(() => {
-    widgetRef.current?.seekTo(0);
-  }, []);
-
-  const playRandomTrack = useCallback(() => {
-    const widget = widgetRef.current;
-    if (!widget) return;
-
-    widget.getSounds((sounds) => {
-      if (!Array.isArray(sounds) || sounds.length === 0) {
-        return;
-      }
-
-      const randomIndex = Math.floor(Math.random() * sounds.length);
-
-      trackRequestIdRef.current += 1;
-      widget.skip(randomIndex);
-    });
-  }, []);
-
-  const toggleMute = useCallback(() => {
-    const widget = widgetRef.current;
-    if (!widget) return;
-
-    const nextMuted = !isMuted;
-
-    widget.setVolume(nextMuted ? 0 : 100);
-    setMuted(nextMuted);
-  }, [isMuted, setMuted]);
-
   return {
     iframeRef,
     widgetRef,
@@ -509,16 +447,8 @@ export function useSoundCloudWidget(playlistUrl: string) {
     isPlaylistLoading: playlistStatus === 'loading',
     widgetError,
     retryLoad,
-    play,
-    pause,
+    ...controls,
     playBookmarkTrack,
-    toggle,
-    seek,
-    previousTrack,
-    nextTrack,
-    rewindToStart,
-    playRandomTrack,
-    toggleMute,
     selectTrack,
     widgetTrack,
     widgetIsPlaying,
