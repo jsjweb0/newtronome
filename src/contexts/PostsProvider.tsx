@@ -25,6 +25,10 @@ import type {
     UpdatePostInput,
 } from './PostsContext';
 
+function isNonNegativeInteger(value: unknown): value is number {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+}
+
 function getPostNumber(
     data: DocumentData,
     documentId: string,
@@ -113,7 +117,7 @@ function convertPostDocument(
         updatedAt: convertTimestamp(data.updatedAt),
 
         likeCount:
-            typeof data.likeCount === 'number'
+            isNonNegativeInteger(data.likeCount)
                 ? data.likeCount
                 : 0,
 
@@ -125,7 +129,7 @@ function convertPostDocument(
             : [],
 
         viewCount:
-            typeof data.viewCount === 'number'
+            isNonNegativeInteger(data.viewCount)
                 ? data.viewCount
                 : 0,
 

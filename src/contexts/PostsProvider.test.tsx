@@ -29,10 +29,16 @@ const input: CreatePostInput = {
   authorUid: 'user-1', email: null, displayName: null, photoURL: null,
 };
 
-function snapshot(...posts: { id: string; title: string }[]): Snapshot {
+function snapshot(...posts: {
+  id: string;
+  title: string;
+  data?: Record<string, unknown>;
+}[]): Snapshot {
   return {
-    docs: posts.map(({ id, title }) => ({
-      id, data: () => ({ title, content: 'Content', authorUid: 'user-1' }),
+    docs: posts.map(({ id, title, data }) => ({
+      id, data: () => ({
+        title, content: 'Content', authorUid: 'user-1', ...data,
+      }),
     })),
   };
 }
@@ -111,4 +117,27 @@ describe('PostsProvider list cache', () => {
     expect(await result.current.getPosts('free')).toEqual([]);
     expect(firestore.getDocs).toHaveBeenCalledTimes(1);
   });
+});
+
+describe('PostsProvider post count validation', () => {
+  it.each([
+    { likeCount: 3, viewCount: 4, expectedLikeCount: 3, expectedViewCount: 4 },
+    { likeCount: -1, viewCount: Infinity, expectedLikeCount: 0, expectedViewCount: 0 },
+    { likeCount: 1.5, viewCount: Number.NaN, expectedLikeCount: 0, expectedViewCount: 0 },
+  ])(
+    'maps likeCount $likeCount and viewCount $viewCount to valid counts',
+    async ({ likeCount, viewCount, expectedLikeCount, expectedViewCount }) => {
+      firestore.getDocs.mockResolvedValue(snapshot({
+        id: 'post-1',
+        title: 'Post',
+        data: { likeCount, viewCount },
+      }));
+      const { result } = renderHook(usePosts, { wrapper: PostsProvider });
+
+      const [post] = await result.current.getPosts('free');
+
+      expect(post.likeCount).toBe(expectedLikeCount);
+      expect(post.viewCount).toBe(expectedViewCount);
+    }
+  );
 });

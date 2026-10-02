@@ -10,16 +10,28 @@ const isRecord = (
     );
 };
 
+const isPositiveSafeInteger = (
+    value: unknown
+): value is number => {
+    return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
+};
+
+const isNonNegativeInteger = (
+    value: unknown
+): value is number => {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+};
+
+const isOptionalNonNegativeFiniteNumber = (
+    value: unknown
+): value is number | undefined => {
+    return value === undefined || (typeof value === 'number' && Number.isFinite(value) && value >= 0);
+};
+
 const isOptionalString = (
     value: unknown
 ): value is string | undefined => {
     return value === undefined || typeof value === 'string';
-};
-
-const isOptionalNumber = (
-    value: unknown
-): value is number | undefined => {
-    return value === undefined || typeof value === 'number';
 };
 
 const isITunesTrack = (
@@ -30,14 +42,14 @@ const isITunesTrack = (
     }
 
     return (
-        typeof value.trackId === 'number' &&
+        isPositiveSafeInteger(value.trackId) &&
         typeof value.trackName === 'string' &&
         typeof value.artistName === 'string' &&
         isOptionalString(value.collectionName) &&
         isOptionalString(value.artworkUrl100) &&
         isOptionalString(value.previewUrl) &&
         isOptionalString(value.trackViewUrl) &&
-        isOptionalNumber(value.trackTimeMillis)
+        isOptionalNonNegativeFiniteNumber(value.trackTimeMillis)
     );
 }
 
@@ -49,7 +61,7 @@ const isITunesSearchResponse = (
     }
 
     return (
-        typeof value.resultCount === 'number' &&
+        isNonNegativeInteger(value.resultCount) &&
         Array.isArray(value.results)
     );
 };
@@ -88,6 +100,11 @@ export async function searchITunesTracks(
         throw new Error('음악 검색 응답 형식이 올바르지 않습니다.');
     }
 
-    return data.results.filter(isITunesTrack);
+    const tracks = data.results.filter(isITunesTrack);
 
+    if (data.results.length > 0 && tracks.length === 0) {
+        throw new Error('음악 검색 응답 형식이 올바르지 않습니다.');
+    }
+
+    return tracks;
 }
