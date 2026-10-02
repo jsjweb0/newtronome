@@ -216,8 +216,17 @@ export function useSoundCloudWidget(playlistUrl: string) {
       });
     };
 
-    const updatePlaylistTracks = (retryCount = 0) => {
-      const id = transitionIdRef.current;
+    const updatePlaylistTracks = (
+      retryCount = 0,
+      id = transitionIdRef.current
+    ) => {
+      if (
+        widgetRef.current !== widget ||
+        transitionIdRef.current !== id ||
+        isSourceSwitchingRef.current
+      ) {
+        return;
+      }
 
       widget.getSounds((sounds) => {
         if (widgetRef.current !== widget) return;
@@ -229,7 +238,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
         if (!Array.isArray(sounds)) {
           if (retryCount < PLAYLIST_LOAD_MAX_RETRIES) {
             playlistRetryTimer = window.setTimeout(
-              () => updatePlaylistTracks(retryCount + 1),
+              () => updatePlaylistTracks(retryCount + 1, id),
               PLAYLIST_LOAD_RETRY_DELAY_MS
             );
             return;
@@ -244,7 +253,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
         if (hasPartialTracks && retryCount < PLAYLIST_LOAD_MAX_RETRIES) {
           playlistRetryTimer = window.setTimeout(
-            () => updatePlaylistTracks(retryCount + 1),
+            () => updatePlaylistTracks(retryCount + 1, id),
             PLAYLIST_LOAD_RETRY_DELAY_MS
           );
           return;

@@ -626,4 +626,19 @@ describe('useSoundCloudWidget source switching', () => {
     expect(result.current.playlistStatus).toBe('error');
     expect(result.current.widgetError).toBeTruthy();
   });
+
+  it('does not let a stale playlist retry replace an error state', () => {
+    vi.useFakeTimers();
+    const { events, listeners, widget } = createWidgetMock();
+    vi.mocked(widget.getSounds).mockImplementation((callback) => callback({}));
+    const { result } = renderWidgetHook();
+
+    act(() => listeners.get(events.READY)?.());
+    act(() => listeners.get(events.ERROR)?.());
+    act(() => vi.advanceTimersByTime(250));
+
+    expect(result.current.playlistStatus).toBe('error');
+    expect(result.current.widgetError).toBeTruthy();
+    expect(widget.getSounds).toHaveBeenCalledTimes(1);
+  });
 });
