@@ -1,22 +1,3 @@
-export interface SoundCloudWidgetTrack {
-  id?: number | string;
-  title?: string;
-  permalink_url?: string;
-  artwork_url?: string | null;
-  duration?: number;
-  genre?: string;
-  tag_list?: string;
-  user?: {
-    username?: string;
-  };
-}
-
-export interface SoundCloudProgressEvent {
-  currentPosition: number;
-  relativePosition: number;
-  loadProgress: number;
-}
-
 export interface SoundCloudWidgetLoadOptions {
   auto_play?: boolean;
   start_track?: number;
@@ -28,7 +9,10 @@ export interface SoundCloudWidgetLoadOptions {
 }
 
 export interface SoundCloudWidgetInstance {
-  bind: (eventName: string, listener: (event?: SoundCloudProgressEvent) => void) => void;
+  bind: (
+    eventName: string,
+    listener: (event?: unknown) => void
+  ) => void;
 
   unbind: (eventName: string) => void;
 
@@ -46,12 +30,16 @@ export interface SoundCloudWidgetInstance {
   setVolume: (volume: number) => void;
 
   getVolume: (callback: (volume: number) => void) => void;
-  getDuration: (callback: (duration: number) => void) => void;
+  getDuration: (
+    callback: (duration: unknown) => void
+  ) => void;
   getPosition: (callback: (position: number) => void) => void;
 
-  getSounds: (callback: (sounds: SoundCloudWidgetTrack[]) => void) => void;
+  getSounds: (
+    callback: (sounds: unknown) => void
+  ) => void;
 
-  getCurrentSound: (callback: (sound: SoundCloudWidgetTrack) => void) => void;
+  getCurrentSound: (callback: (sound: unknown) => void) => void;
 
   getCurrentSoundIndex: (callback: (trackIndex: number) => void) => void;
 
