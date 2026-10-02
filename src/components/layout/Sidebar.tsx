@@ -6,7 +6,6 @@ import {
   Menu,
   X,
   Music,
-  Dog,
   LogIn,
   LogOut,
   Activity,

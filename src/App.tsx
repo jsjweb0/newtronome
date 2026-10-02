@@ -1,23 +1,27 @@
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import { PostsProvider } from './contexts/PostsProvider';
-import LoginPage from './pages/auth/LoginPage';
-import SignupPage from './pages/auth/SignupPage';
-import MyActivity from './pages/user/MyActivity';
-import DynamicBoard from './pages/board/DynamicBoard';
-import PostView from './pages/board/PostView';
-import PostWritePage from './pages/board/PostWritePage';
-import EditPostPage from './pages/board/EditPostPage';
-import PetPostView from './pages/board/PetPostView';
 import NotFoundPage from './pages/NotFoundPage';
 import ScrollToTopSmooth from './components/ui/ScrollToTopSmooth';
-import LikedTracksPage from './features/bookmarks/pages/LikedTracksPage';
 import { lazy } from 'react';
-import ITunesSearchPage from './features/itunes/pages/ITunesSearchPage';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const AccountProfile = lazy(() => import('./pages/user/AccountProfile'));
 const PetBoardPage = lazy(() => import('./pages/board/PetBoardPage'));
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const SignupPage = lazy(() => import('./pages/auth/SignupPage'));
+const MyActivity = lazy(() => import('./pages/user/MyActivity'));
+const DynamicBoard = lazy(() => import('./pages/board/DynamicBoard'));
+const PostView = lazy(() => import('./pages/board/PostView'));
+const PostWritePage = lazy(() => import('./pages/board/PostWritePage'));
+const EditPostPage = lazy(() => import('./pages/board/EditPostPage'));
+const PetPostView = lazy(() => import('./pages/board/PetPostView'));
+const LikedTracksPage = lazy(
+  () => import('./features/bookmarks/pages/LikedTracksPage')
+);
+const ITunesSearchPage = lazy(
+  () => import('./features/itunes/pages/ITunesSearchPage')
+);
 
 function App() {
   return (
