@@ -54,7 +54,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
     { label: 'Likes', path: '/likes', icon: Heart },
     { label: 'Notice', path: '/board/notice', icon: Disc3 },
     { label: 'Free Board', path: '/board/free', icon: Activity },
-    { label: 'Archive', path: '/board/pet', icon: Dog },
+    //{ label: 'Archive', path: '/board/pet', icon: Dog },
     //{label: "About", path: "/about", icon: LogoMoIcon},
     { label: 'My Account', path: '/account', icon: Turntable, requiresAuth: true },
     { label: 'My Activity', path: '/mypage', icon: MusicLibrary, requiresAuth: true },
