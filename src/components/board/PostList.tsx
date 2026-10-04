@@ -12,6 +12,7 @@ type PostListProps = {
     searchKeyword: string;
     boardType: CommunityBoardType;
     currentPage: number;
+    selectedCategory: string;
     dateSort: boolean;
     deletePost: (postId: Post['id']) => Promise<void>;
 }
@@ -23,6 +24,7 @@ export default function PostList({
     searchKeyword,
     boardType,
     currentPage,
+    selectedCategory,
     dateSort,
     deletePost
 }: PostListProps) {
@@ -46,6 +48,7 @@ export default function PostList({
                         searchKeyword={searchKeyword}
                         boardType={boardType}
                         currentPage={currentPage}
+                        selectedCategory={selectedCategory}
                         dateSort={dateSort}
                         deletePost={deletePost}
                     />

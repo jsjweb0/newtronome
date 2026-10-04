@@ -1,4 +1,4 @@
-import { useNavigate, useParams, Navigate } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams, } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
   isCommunityBoardType,
@@ -13,6 +13,7 @@ import PostForm, {
   type PostFormValues,
 } from '../../components/board/PostForm';
 import { getUserRole } from '../../utils/role';
+import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
 
 export default function EditPostPage() {
   const { boardType, id } = useParams();
@@ -25,6 +26,21 @@ export default function EditPostPage() {
   const { addNotification } = useNotifications();
   const { user } = useAuth();
   const role = getUserRole(user);
+
+  const [searchParams] = useSearchParams();
+  const pageFromQuery = Number.parseInt(searchParams.get('page') ?? '', 10);
+  const page = Number.isSafeInteger(pageFromQuery) && pageFromQuery > 0 ? pageFromQuery : 1;
+  const keyword = searchParams.get('keyword') ?? '';
+  const category = searchParams.get('category') ?? '';
+  const sort = searchParams.get('sort') === 'asc' ? 'asc' : 'desc';
+
+  const boardSearch = createBoardListSearch({
+    page,
+    keyword,
+    category,
+    sort,
+  });
+
 
   useEffect(() => {
     if (!id || !isCommunityBoardType(boardType)) {
@@ -89,7 +105,7 @@ export default function EditPostPage() {
         message: '게시글이 수정되었습니다',
       });
 
-      navigate(`/board/${boardType}`);
+      navigate(`/board/${boardType}${boardSearch}`);
     } catch (error) {
       console.error('게시글 수정 실패:', error);
 

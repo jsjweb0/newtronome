@@ -12,6 +12,7 @@ import type {
   Post,
 } from '../../contexts/PostsContext';
 import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
+import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
 
 type PostItemProps = {
   post: Post;
@@ -19,15 +20,32 @@ type PostItemProps = {
   setPosts: Dispatch<SetStateAction<Post[]>>;
   boardType: CommunityBoardType;
   currentPage: number;
+  selectedCategory: string;
   dateSort: boolean;
   deletePost: (postId: Post['id']) => Promise<void>;
 }
 
-function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateSort, deletePost
+function PostItem({
+  post,
+  searchKeyword,
+  setPosts,
+  boardType,
+  currentPage,
+  selectedCategory,
+  dateSort,
+  deletePost
 }: PostItemProps) {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const [commentCount, setCommentCount] = useState(0);
+
+  const sort = dateSort ? 'asc' : 'desc';
+  const boardSearch = createBoardListSearch({
+    page: currentPage,
+    keyword: searchKeyword,
+    category: selectedCategory,
+    sort,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -120,13 +138,8 @@ function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateS
       </div>
       <div className="flex items-start md:items-center flex-col md:flex-row gap-2 md:col-span-7 text-left">
         <Link
-          to={`/board/${boardType}/${post.id}?page=${currentPage}&keyword=${searchKeyword}&sort=${dateSort ? 'asc' : 'desc'}`}
+          to={`/board/${boardType}/${post.id}${boardSearch}`}
           className="overflow-hidden inline-flex items-center max-w-full py-2 font-medium text-gray-900 dark:text-white"
-          state={{
-            page: currentPage,
-            sort: dateSort,
-            keyword: searchKeyword,
-          }}
         >
           {post.category && categoryLabel && (
             <span
@@ -149,7 +162,7 @@ function PostItem({ post, searchKeyword, setPosts, boardType, currentPage, dateS
           <div className="shrink-0 flex justify-start md:justify-center items-center gap-1">
             <BaseButton
               as="link"
-              to={`/board/${boardType}/edit/${post.id}`}
+              to={`/board/${boardType}/edit/${post.id}${boardSearch}`}
               className="px-3! py-2! md:text-sm"
               variant="cancel"
             >
