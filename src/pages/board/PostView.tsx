@@ -1,5 +1,4 @@
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import {
@@ -27,37 +26,39 @@ import Tooltip from '../../components/ui/Tooltip';
 import { formatDate } from '../../utils/format';
 import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
 import { normalizeLegacyPostContent } from '../../utils/postContent';
-
-type BoardLocationState = {
-  page?: number;
-  keyword?: string;
-  sort?: 'asc' | 'desc';
-};
+import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
 
 export default function PostView() {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const { boardType, id } = useParams();
-  const { getPosts, updateViewCount, deletePost } = usePosts();
+  const { getPosts, getPost, updateViewCount, deletePost } = usePosts();
   const [postsState, setPostsState] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
   const [loadError, setLoadError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
 
-  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const locationState = location.state as BoardLocationState | null;
-  const pageFromQuery = Number.parseInt(searchParams.get('page') ?? '', 10);
-  const page = locationState?.page ?? (Number.isNaN(pageFromQuery) ? 1 : pageFromQuery);
-  const keyword = locationState?.keyword ?? searchParams.get('keyword') ?? '';
-  const sortFromQuery = searchParams.get('sort');
-  const sort = locationState?.sort ?? (sortFromQuery === 'asc' ? 'asc' : 'desc');
 
-  const currentIndex = postsState.findIndex((p) => String(p.id) === id);
-  const prevPost = postsState[currentIndex - 1];
-  const nextPost = postsState[currentIndex + 1];
+  const pageFromQuery = Number.parseInt(searchParams.get('page') ?? '', 10);
+  const page = Number.isSafeInteger(pageFromQuery) && pageFromQuery > 0 ? pageFromQuery : 1;
+  const keyword = searchParams.get('keyword') ?? '';
+  const category = searchParams.get('category') ?? '';
+  const sort = searchParams.get('sort') === 'asc' ? 'asc' : 'desc';
+
+  const boardSearch = createBoardListSearch({
+    page,
+    keyword,
+    category,
+    sort,
+  });
+
+  const currentIndex = postsState.findIndex((post) => String(post.id) === id);
+  const prevPost = currentIndex > 0 ? postsState[currentIndex - 1] : undefined;
+  const nextPost = currentIndex >= 0 ? postsState[currentIndex + 1] : undefined;
+
   const pagerBtnClasses =
     'shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 group-hover:bg-gray-50 group-focus:outline-hidden group-focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:group-hover:bg-neutral-700 dark:focus:bg-neutral-700';
   const pagerClasses =
@@ -65,6 +66,7 @@ export default function PostView() {
 
   const [commentCount, setCommentCount] = useState(0);
 
+  // 상세 본문
   useEffect(() => {
     if (!id || !isCommunityBoardType(boardType)) {
       setCurrentPost(null);
@@ -74,19 +76,15 @@ export default function PostView() {
 
     let ignore = false;
 
-    const fetchPost = async () => {
+    const fetchCurrentPost = async () => {
       setLoading(true);
       setLoadError('');
       setCurrentPost(null);
 
       try {
-        const posts = await getPosts(boardType);
+        const post = await getPost(boardType, id);
+
         if (ignore) return;
-
-        setPostsState(posts);
-
-        const post = posts.find((item) => String(item.id) === id);
-        if (!post) return;
 
         setCurrentPost(post);
         setLoading(false);
@@ -94,19 +92,14 @@ export default function PostView() {
         if (!post.__viewed) {
           try {
             await updateViewCount(boardType, id);
+
             if (ignore) return;
 
-            const viewedPost = {
+            setCurrentPost({
               ...post,
               viewCount: post.viewCount + 1,
               __viewed: true,
-            };
-            setPostsState((currentPosts) =>
-              currentPosts.map((item) =>
-                item.id === post.id ? viewedPost : item
-              )
-            );
-            setCurrentPost(viewedPost);
+            });
           } catch (error) {
             if (!ignore) {
               console.error('조회수 기록 실패:', error);
@@ -119,16 +112,54 @@ export default function PostView() {
           setLoadError('게시글을 불러오지 못했습니다.');
         }
       } finally {
-        if (!ignore) setLoading(false);
+        if (!ignore) {
+          setLoading(false);
+        }
       }
     };
 
-    void fetchPost();
+    void fetchCurrentPost();
 
     return () => {
       ignore = true;
     };
-  }, [boardType, id, getPosts, updateViewCount, retryCount]);
+  }, [
+    boardType,
+    id,
+    getPost,
+    updateViewCount,
+    retryCount,
+  ]);
+
+  // 이전·다음 글
+  useEffect(() => {
+    if (!isCommunityBoardType(boardType)) {
+      setPostsState([]);
+      return;
+    }
+
+    let ignore = false;
+
+    const fetchNavigationPosts = async () => {
+      try {
+        const posts = await getPosts(boardType);
+
+        if (!ignore) {
+          setPostsState(posts);
+        }
+      } catch {
+        if (!ignore) {
+          setPostsState([]);
+        }
+      }
+    };
+
+    void fetchNavigationPosts();
+
+    return () => {
+      ignore = true;
+    };
+  }, [boardType, getPosts]);
 
   useEffect(() => {
     if (isCommunityBoardType(boardType) && currentPost?.id) {
@@ -182,9 +213,7 @@ export default function PostView() {
       showToast({ message: notification.message });
       addNotification(notification);
 
-      navigate(
-        `/board/${boardType}?page=${page || 1}&keyword=${keyword || ''}&sort=${sort || 'desc'}`
-      );
+      navigate(`/board/${boardType}${boardSearch}`);
     } catch (err) {
       console.error(err);
       showToast({ message: notificationErr.message });
@@ -226,7 +255,7 @@ export default function PostView() {
         <AuthAccess allow={['admin']} ownerUid={currentPost.authorUid}>
           <div className="flex gap-2 justify-center md:justify-start mb-8">
             <Link
-              to={`/board/${boardType}/edit/${currentPost.id}`}
+              to={`/board/${boardType}/edit/${currentPost.id}${boardSearch}`}
               className="flex items-center gap-1 text-xs md:text-sm text-gray-600 dark:text-white/60"
             >
               <SquarePen className="shrink-0 size-4 dark:text-white/60" />
@@ -286,7 +315,7 @@ export default function PostView() {
         <div className="max-md:hidden w-[40%]">
           {prevPost ? (
             <Link
-              to={`/board/${boardType}/${prevPost.id}?page=${page}&keyword=${keyword}&sort=${sort}`}
+              to={`/board/${boardType}/${prevPost.id}${boardSearch}`}
               className="group overflow-hidden flex items-center gap-3 text-gray-500 dark:text-white/60"
             >
               <i className="sr-only">이전글</i>
@@ -304,23 +333,7 @@ export default function PostView() {
             <li>
               <BaseButton
                 onClick={() => {
-                  const query = new URLSearchParams();
-                  query.set('page', page.toString());
-                  if (keyword) query.set('keyword', keyword);
-                  query.set('sort', sort || 'desc');
-                  navigate(
-                    {
-                      pathname: `/board/${boardType}`,
-                      search: `?${query.toString()}`,
-                    },
-                    {
-                      state: {
-                        page: page || 1,
-                        keyword: keyword || '',
-                        sort: sort || 'desc',
-                      },
-                    }
-                  );
+                  navigate(`/board/${boardType}${boardSearch}`);
                 }}
                 variant="outline"
               >
@@ -333,7 +346,7 @@ export default function PostView() {
         <div className="max-md:hidden w-[40%] text-right">
           {nextPost ? (
             <Link
-              to={`/board/${boardType}/${nextPost.id}?page=${page}&keyword=${keyword}&sort=${sort}`}
+              to={`/board/${boardType}/${nextPost.id}${boardSearch}`}
               className="group flex items-center justify-end gap-3 text-gray-500 dark:text-white/60"
             >
               <i className="sr-only">다음글</i>

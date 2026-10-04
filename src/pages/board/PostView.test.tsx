@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PostsContext, type Post, type PostsContextValue } from '../../contexts/PostsContext';
 import PostView from './PostView';
@@ -43,10 +43,15 @@ const post: Post = {
   isNotice: false,
 };
 
+function NavigationControl() {
+  const navigate = useNavigate();
+  return <button onClick={() => navigate('/board/free/post-2')}>다른 글 열기</button>;
+}
+
 function renderPostView(overrides: Partial<PostsContextValue> = {}) {
   const context: PostsContextValue = {
     getPosts: vi.fn().mockResolvedValue([post]),
-    getPost: vi.fn(),
+    getPost: vi.fn().mockResolvedValue(post),
     getMyPosts: vi.fn(),
     createPost: vi.fn(),
     updatePost: vi.fn(),
@@ -58,6 +63,7 @@ function renderPostView(overrides: Partial<PostsContextValue> = {}) {
   const view = render(
     <PostsContext.Provider value={context}>
       <MemoryRouter initialEntries={['/board/free/post-1']}>
+        <NavigationControl />
         <Routes>
           <Route path="/board/:boardType/:id" element={<PostView />} />
         </Routes>
@@ -90,16 +96,18 @@ describe('PostView request state', () => {
 
   it('ends loading on a failed read and recovers when retried', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const getPosts = vi.fn()
+    const getPost = vi.fn()
       .mockRejectedValueOnce(new Error('offline'))
-      .mockResolvedValueOnce([post]);
-    renderPostView({ getPosts });
+      .mockResolvedValueOnce(post);
+    const { context } = renderPostView({ getPost });
 
     expect((await screen.findByRole('alert')).textContent).toContain('게시글을 불러오지 못했습니다.');
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
 
     expect(await screen.findByText('본문을 표시해야 하는 글')).toBeTruthy();
-    expect(getPosts).toHaveBeenCalledTimes(2);
+    expect(getPost).toHaveBeenCalledTimes(2);
+    expect(getPost).toHaveBeenLastCalledWith('free', 'post-1');
+    expect(context.getPosts).toHaveBeenCalledTimes(1);
   });
 
   it('renders stored HTML as text while preserving legacy line breaks', async () => {
@@ -108,7 +116,7 @@ describe('PostView request state', () => {
       content: '첫 줄<br><img src=x onerror=alert(1)><script>alert(1)</script>둘째 줄',
     };
     const { container } = renderPostView({
-      getPosts: vi.fn().mockResolvedValue([unsafePost]),
+      getPost: vi.fn().mockResolvedValue(unsafePost),
     });
 
     expect(await screen.findByText('본문을 표시해야 하는 글')).toBeTruthy();
@@ -118,4 +126,45 @@ describe('PostView request state', () => {
     expect(container.querySelector('pre img')).toBeNull();
     expect(container.querySelector('pre script')).toBeNull();
   });
+});
+
+describe('PostView independent requests', () => {
+  it('renders the directly fetched post even if the navigation list fails', async () => {
+    const { context } = renderPostView({
+      getPosts: vi.fn().mockRejectedValue(new Error('offline')),
+    });
+    expect(await screen.findByText('게시글 본문')).toBeTruthy();
+    expect(context.getPost).toHaveBeenCalledWith('free', 'post-1');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it.each(['success', 'failure'] as const)(
+    'ignores an old detail request that finishes with %s',
+    async (outcome) => {
+      let resolve!: (post: Post) => void;
+      let reject!: (error: Error) => void;
+      const oldRequest = new Promise<Post>((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+      });
+      const currentPost = { ...post, id: 'post-2', title: '현재 글', content: '현재 본문' };
+      const getPost = vi.fn<PostsContextValue['getPost']>()
+        .mockReturnValueOnce(oldRequest)
+        .mockResolvedValueOnce(currentPost);
+      const { context } = renderPostView({ getPost });
+      fireEvent.click(screen.getByRole('button', { name: '다른 글 열기' }));
+      await screen.findByText('현재 본문');
+
+      await act(async () => {
+        if (outcome === 'success') resolve(post);
+        else reject(new Error('old request failed'));
+      });
+
+      expect(screen.getByText('현재 본문')).toBeTruthy();
+      expect(screen.queryByText('게시글 본문')).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(context.updateViewCount).toHaveBeenCalledTimes(1);
+      expect(context.updateViewCount).toHaveBeenCalledWith('free', 'post-2');
+    }
+  );
 });

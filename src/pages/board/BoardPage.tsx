@@ -206,6 +206,7 @@ export default function BoardPage() {
         searchKeyword={searchKeyword}
         boardType={boardType}
         currentPage={currentPage}
+        selectedCategory={selectedCategory}
         dateSort={dateSort}
         deletePost={(postId) => deletePost(boardType, postId)}
       />
