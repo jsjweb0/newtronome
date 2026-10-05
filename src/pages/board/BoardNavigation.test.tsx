@@ -179,7 +179,15 @@ describe('Board list conditions across routes', () => {
     fireEvent.click(link);
     await screen.findByText('본문 11');
     fireEvent.click(screen.getByRole('link', { name: '수정' }));
-    await screen.findByPlaceholderText('제목을 입력해주세요');
+    await waitFor(() => {
+      expect(
+        screen.getByPlaceholderText<HTMLInputElement>('제목을 입력해주세요').value
+      ).toBe(`${keyword} 11`);
+      expect(
+        screen.getByPlaceholderText<HTMLTextAreaElement>('내용을 입력해주세요.').value
+      ).toBe('본문 11');
+      expect(screen.getByTitle<HTMLSelectElement>('카테고리').value).toBe('question');
+    });
     expectConditions(currentUrl(), '/board/free/edit/post-11', expected);
     fireEvent.click(screen.getByRole('button', { name: '수정' }));
     await screen.findByRole('textbox', { name: '검색어' });

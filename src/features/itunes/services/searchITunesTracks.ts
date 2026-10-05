@@ -1,13 +1,11 @@
-import { isNonNegativeFiniteNumber } from "../../../utils/numberValidation";
+import { isNonNegativeFiniteNumber, isNonNegativeInteger } from "../../../utils/numberValidation";
 import type { ITunesSearchResponse, ITunesTrack } from "../types/itunes.types";
 
 const isRecord = (
     value: unknown
 ): value is Record<string, unknown> => {
     return (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
+        typeof value === 'object' && value !== null && !Array.isArray(value)
     );
 };
 
@@ -15,12 +13,6 @@ const isPositiveSafeInteger = (
     value: unknown
 ): value is number => {
     return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
-};
-
-const isNonNegativeInteger = (
-    value: unknown
-): value is number => {
-    return typeof value === 'number' && Number.isInteger(value) && value >= 0;
 };
 
 const isOptionalNonNegativeFiniteNumber = (
