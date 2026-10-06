@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { searchITunesTracks } from './searchITunesTracks';
 
 const validTrack = {
+  artistId: 100,
   trackId: 1,
   trackName: 'Track',
   artistName: 'Artist',

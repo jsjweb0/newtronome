@@ -1,5 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+import { getArtistTracks } from '../services/getArtistTracks';
 import ITunesSearchPage from './ITunesSearchPage';
 import { searchITunesTracks } from '../services/searchITunesTracks';
 import { usePlayerStore } from '../../player/stores/usePlayerStore';
@@ -11,21 +14,25 @@ vi.mock('react-router-dom', () => ({
   useOutletContext: () => ({ onPauseSoundCloud: mocks.onPauseSoundCloud }),
 }));
 vi.mock('../services/searchITunesTracks', () => ({ searchITunesTracks: vi.fn() }));
+vi.mock('../services/getArtistTracks', () => ({ getArtistTracks: vi.fn() }));
 vi.mock('../../../components/track/TrackItem', () => ({
-  default: ({ onTrackClick, ariaLabel, track }: {
+  default: ({ onTrackClick, ariaLabel, track, footerActions }: {
     onTrackClick: () => void;
     ariaLabel: string;
     track: { title: string };
-  }) => <button type="button" aria-label={ariaLabel} onClick={onTrackClick}>{track.title}</button>,
+    footerActions?: ReactNode;
+  }) => <><button type="button" aria-label={ariaLabel} onClick={onTrackClick}>{track.title}</button>{footerActions}</>,
 }));
 vi.mock('../../../components/ui/Tooltip', () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 const tracks: ITunesTrack[] = [
-  { trackId: 1, trackName: '첫 곡', artistName: '가수', previewUrl: 'https://example.com/first.m4a' },
-  { trackId: 2, trackName: '둘째 곡', artistName: '가수', previewUrl: 'https://example.com/second.m4a' },
+  { artistId: 100, trackId: 1, trackName: '첫 곡', artistName: '가수', previewUrl: 'https://example.com/first.m4a' },
+  { artistId: 100, trackId: 2, trackName: '둘째 곡', artistName: '가수', previewUrl: 'https://example.com/second.m4a' },
 ];
+
+let queryClient: QueryClient;
 
 function deferred() {
   let resolve!: () => void;
@@ -38,7 +45,11 @@ function deferred() {
 }
 
 async function showSearchResults() {
-  render(<ITunesSearchPage />);
+  render(
+    <QueryClientProvider client={queryClient}>
+      <ITunesSearchPage />
+    </QueryClientProvider>
+  );
   fireEvent.change(screen.getByRole('searchbox', { name: '검색어' }), {
     target: { value: 'test' },
   });
@@ -47,7 +58,9 @@ async function showSearchResults() {
 }
 
 beforeEach(() => {
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   vi.clearAllMocks();
+  vi.mocked(getArtistTracks).mockReset();
   localStorage.clear();
   usePlayerStore.setState({ tracks: [], isPlaying: false });
   vi.mocked(searchITunesTracks).mockResolvedValue(tracks);
@@ -57,7 +70,38 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  queryClient.clear();
   vi.restoreAllMocks();
+});
+
+describe('artist panel cache', () => {
+  it('reuses cached songs after closing and reopening the panel and after a new search', async () => {
+    vi.mocked(getArtistTracks).mockResolvedValue([
+      { ...tracks[0], trackId: 10, trackName: '아티스트 추가 곡' },
+    ]);
+    await showSearchResults();
+    expect(getArtistTracks).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getAllByRole('button', { name: '다른 곡 보기' })[0]);
+    expect(await screen.findByRole('button', { name: '아티스트 추가 곡 미리듣기 재생' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '아티스트 곡 패널 닫기' }));
+    expect(screen.queryByRole('heading', { name: '가수의 최신곡' })).toBeNull();
+
+    fireEvent.click(screen.getAllByRole('button', { name: '다른 곡 보기' })[1]);
+    expect(await screen.findByRole('button', { name: '아티스트 추가 곡 미리듣기 재생' })).toBeTruthy();
+    expect(getArtistTracks).toHaveBeenCalledTimes(1);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: '검색어' }), {
+      target: { value: '새 검색어' },
+    });
+    fireEvent.submit(screen.getByRole('searchbox', { name: '검색어' }).closest('form')!);
+    await screen.findByRole('button', { name: '첫 곡 30초 미리듣기' });
+    expect(screen.queryByRole('heading', { name: '가수의 최신곡' })).toBeNull();
+
+    fireEvent.click(screen.getAllByRole('button', { name: '다른 곡 보기' })[0]);
+    expect(await screen.findByRole('button', { name: '아티스트 추가 곡 미리듣기 재생' })).toBeTruthy();
+    expect(getArtistTracks).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('iTunes preview request order', () => {
