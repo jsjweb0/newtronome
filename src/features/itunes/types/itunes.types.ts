@@ -1,4 +1,5 @@
 export interface ITunesTrack {
+    artistId: number;
     trackId: number;
     trackName: string;
     artistName: string;
