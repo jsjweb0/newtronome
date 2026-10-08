@@ -42,7 +42,7 @@ export default function ArtistTracksPanel({
     >
       <DialogPanel
         className={clsx(
-          'fixed bottom-22.5 lg:bottom-34 left-3 w-full max-w-[calc(100%-1.5rem)] lg:max-w-sm border',
+          'fixed bottom-22.5 xl:bottom-34 left-3 w-full max-w-[calc(100%-1.5rem)] lg:max-w-sm border',
           'border-textBase/15 backdrop-blur-md rounded-tl-3xl rounded-tr-3xl',
           'transition-[left,transform,opacity] duration-300 ease-out',
           'data-closed:translate-y-4 data-closed:opacity-0',
