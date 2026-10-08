@@ -34,6 +34,8 @@ const PLAYLIST_URLS = [
 ];
 
 export interface PlayerOutletContext {
+  isSidebarCollapsed: boolean;
+
   playlistUrl: string;
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
@@ -79,6 +81,8 @@ export default function MainLayout() {
   }, []);
 
   const outletContext: PlayerOutletContext = {
+    isSidebarCollapsed,
+
     playlistUrl,
     onSelectTrack: soundCloudWidget.selectTrack,
     onToggleTrack: soundCloudWidget.toggle,

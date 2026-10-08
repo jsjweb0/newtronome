@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ITunesTrack } from "../types/itunes.types";
 import type { PlayerTrack } from '../../player/types/player.types';
 import { searchITunesTracks } from "../services/searchITunesTracks";
-import { Music, Search as SearchIcon, CircleX, Music2, Clock3, ChevronRight, X as XIcon, Plus as PlusIcon, RotateCcw } from "lucide-react";
+import { Music, Search as SearchIcon, CircleX, ChevronRight, Plus as PlusIcon } from "lucide-react";
 import clsx from "clsx";
 import { AudioEqualizerIcon } from '../../../components/icons';
 import TrackItemSkeleton from "../../../components/track/TrackItemSkeleton";
@@ -12,9 +12,8 @@ import TrackItem from "../../../components/track/TrackItem";
 import { useOutletContext } from "react-router-dom";
 import type { PlayerOutletContext } from "../../../layouts/MainLayout";
 import { usePlayerStore } from "../../player/stores/usePlayerStore";
-import { useArtistTracks } from "../hooks/useArtistTracks";
-import noImage from '../../../assets/no-image.png';
-import { PauseRound, PlayRound } from '../../../components/icons';
+import ArtistTracksPanel from "../components/ArtistTracksPanel";
+import SearchSuggestions from "../components/SearchSuggestions";
 
 const getLargeArtworkUrl = (artworkUrl: string) => {
   return artworkUrl.replace(
@@ -49,7 +48,7 @@ interface SelectedArtist {
 }
 
 export default function ITunesSearchPage() {
-  const { onPauseSoundCloud } = useOutletContext<PlayerOutletContext>();
+  const { onPauseSoundCloud, isSidebarCollapsed } = useOutletContext<PlayerOutletContext>();
 
   const [keyword, setKeyword] = useState('');
   const [tracks, setTracks] = useState<ITunesTrack[]>([]);
@@ -74,7 +73,6 @@ export default function ITunesSearchPage() {
 
   const [selectedArtist, setSelectedArtist] = useState<SelectedArtist | null>(null);
   const [isArtistPanelOpen, setIsArtistPanelOpen] = useState(false);
-  const artistTracksQuery = useArtistTracks(selectedArtist?.id ?? null);
 
   // 최근 검색어
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
@@ -339,78 +337,12 @@ export default function ITunesSearchPage() {
       </form>
 
       {/* 검색어 목록 */}
-      <div
-        className={clsx(
-          'flex lg:flex-wrap flex-col lg:flex-row gap-4 lg:mt-5 rounded-xl',
-          'max-lg:mt-1 max-lg:p-4 max-lg:bg-background max-lg:shadow-md'
-        )}
-      >
-        {/* 최근 검색어 */}
-        {recentSearches.length > 0 && (
-          <div className="flex flex-col lg:flex-row gap-2 items-start lg:items-center max-lg:pb-3 max-lg:border-b max-lg:border-b-textThr">
-            <p className="text-sm text-textSub">최근 검색어</p>
-            <ul className="flex flex-wrap gap-2 max-lg:w-full max-lg:flex-col">
-              {recentSearches.map((searchTerm) => (
-                <li
-                  key={searchTerm}
-                  className="flex items-center gap-x-px lg:bg-textThr rounded-full hover:bg-primary/10"
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleRecentSearch(searchTerm)}
-                    className={clsx(
-                      'group inline-flex items-center gap-x-1 lg:px-2 py-1.5',
-                      'text-xs lg:text-sm hover:text-primary',
-                      'max-lg:grow max-lg:pl-1'
-                    )}
-                  >
-                    <Clock3 aria-hidden="true" className="size-4 text-textSub group-hover:text-primary" />
-                    {searchTerm}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeRecentSearch(searchTerm)}
-                    onMouseDown={(e) => e.preventDefault()}
-                    className="group shrink-0 inline-flex px-2 py-1 max-lg:py-px hover:text-primary"
-                    aria-label={`${searchTerm} 최근 검색어 삭제`}
-                  >
-                    <XIcon aria-hidden="true" className="size-4 text-textSub group-hover:text-primary" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* 추천 검색어 */}
-        <div className={clsx('flex flex-col lg:flex-row gap-2 items-start lg:items-center')}>
-          <p className="text-sm text-textSub">추천 검색어</p>
-          {recommendedArtists.length > 0 && (
-            <ul className="flex flex-wrap gap-2 max-lg:w-full max-lg:flex-col">
-              {recommendedArtists.map((artist) => (
-                <li
-                  key={artist}
-                  className="inline-flex items-center gap-x-2 lg:bg-textThr rounded-full text-textBase hover:bg-primary/10"
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleRecentSearch(artist)}
-                    className={clsx(
-                      'group inline-flex items-center gap-x-1 relative lg:pl-3 lg:pr-4 py-1.5 text-xs lg:text-sm hover:text-primary',
-                      'max-lg:w-full max-lg:pl-1'
-                    )}
-                  >
-                    <Music2 aria-hidden="true" className="size-3 text-textSub group-hover:text-primary" />
-                    {artist}
-                    <ChevronRight aria-hidden="true" className="block lg:hidden size-3 absolute top-1/2 right-1.5 -translate-y-1/2 text-textSub group-hover:text-primary" />
-                  </button>
-                </li>
-
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+      <SearchSuggestions
+        recentSearches={recentSearches}
+        recommendedArtists={recommendedArtists}
+        onSelect={handleRecentSearch}
+        onRemoveRecent={removeRecentSearch}
+      />
       {/* //검색어 목록 */}
 
       <section className="mt-6" aria-labelledby="search-results-title">
@@ -547,126 +479,20 @@ export default function ITunesSearchPage() {
                 </button>
               </div>
             )}
-
           </>
         )}
-              <article aria-labelledby="artist-tracks-title"
-                className={clsx(
-                  'artist-panel',
-                  'fixed bottom-22.5 lg:bottom-35 max-lg:left-3 w-full max-w-[calc(100%-1.5rem)] lg:max-w-sm border',
-                  'border-textBase/15 backdrop-blur-md rounded-tl-3xl rounded-tr-3xl',
-                  { 'is-open': isArtistPanelOpen }
 
-                )}
-                inert={!isArtistPanelOpen}
-                aria-hidden={!isArtistPanelOpen}
-              >
-                <div className="artist-panel__inner">
-                <div className="flex justify-between items-center py-6 px-6">
-                  <h2 id="artist-tracks-title" className="font-normal">
-                    <b className="font-bold">{selectedArtist?.name}</b>의 최신곡
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setIsArtistPanelOpen(false)}
-                    aria-label="아티스트 곡 패널 닫기"
-                    className="rounded-full p-2 hover:bg-gray-500/50 focus-visible:bg-gray-500/50 transition-all"
-                  >
-                    <XIcon aria-hidden="true" /><span className="sr-only">닫기</span>
-                  </button>
-                </div>
+        {/* 다른 곡 보기 */}
+        <ArtistTracksPanel
+          artist={selectedArtist}
+          isOpen={isArtistPanelOpen}
+          isSidebarCollapsed={isSidebarCollapsed}
+          playingTrackId={playingPreviewTrackId}
+          onClose={() => setIsArtistPanelOpen(false)}
+          onPreview={handlePreview}
+        />
+        {/* // 다른 곡 보기 */}
 
-                <div className="px-6 mb-4">
-                  {artistTracksQuery.isPending && (
-                    <div className="flex items-center gap-2">
-                      <span className="animate-spin inline-block size-4 border-3 border-current border-t-transparent text-primary rounded-full"
-                        aria-hidden="true"
-                      >
-                      </span>
-                      <p role="status" className="text-textSub">아티스트의 곡을 불러오는 중입니다.</p>
-                    </div>
-                  )}
-
-                  {artistTracksQuery.isError && (
-                    <div role="alert">
-                      <p className="text-textSub">아티스트의 곡을 불러오지 못했습니다.</p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          artistTracksQuery.refetch()
-                        }
-                        className="inline-flex items-center gap-2 mt-1 rounded-lg border border-textThr px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
-                      >
-                        <RotateCcw className="size-4" aria-hidden="true" /> 다시 시도
-                      </button>
-                    </div>
-                  )}
-
-                  {artistTracksQuery.isSuccess &&
-                    artistTracksQuery.data.length === 0 && (
-                      <p className="text-textSub">표시할 곡이 없습니다.</p>
-                    )}
-
-                  {artistTracksQuery.isSuccess && artistTracksQuery.data.length > 0 && (
-                    <ul className="space-y-3">
-                      {artistTracksQuery.data.map((track) => {
-                        const isPlaying = playingPreviewTrackId === track.trackId;
-
-                        const PlaybackIcon = isPlaying ? PauseRound : PlayRound;
-
-                        return (
-                          <li key={track.trackId}>
-                            <button
-                              type="button"
-                              onClick={() => handlePreview(track)}
-                              disabled={!track.previewUrl}
-                              aria-label={
-                                !track.previewUrl
-                                  ? `${track.trackName} 미리듣기 없음`
-                                  : isPlaying
-                                    ? `${track.trackName} 미리듣기 정지`
-                                    : `${track.trackName} 미리듣기 재생`
-                              }
-                              className="group grid grid-cols-[3rem_1fr_30px] grid-rows-2 gap-x-2.5 items-center w-full text-left hover:text-primary backdrop-blur-3xl"
-                            >
-                              <span className="row-span-2 overflow-hidden flex relative size-12 rounded-lg">
-                                <img
-                                  src={track.artworkUrl100 || noImage}
-                                  alt=""
-                                  className="size-full object-cover"
-                                  onError={(event) => {
-                                    event.currentTarget.src = noImage;
-                                    event.currentTarget.onerror = null;
-                                  }}
-                                />
-                              </span>
-                              <span
-                                className="col-start-2 block w-full text-sm text-textBase truncate group-hover:text-primary"
-                              >
-                                {track.trackName}
-                              </span>
-                              <span
-                                className="col-start-2 self-start block text-[11px] text-textSub truncate group-hover:text-primary"
-                              >
-                                {track.artistName}
-                              </span>
-                              <span
-                                aria-hidden="true"
-                                className="col-start-3 row-span-2 row-start-1 flex justify-center font-inter text-[11px] font-light text-textSub group-hover:text-primary"
-                              >
-                                <PlaybackIcon
-                                  className="fade-in fill-black size-6 lg:size-8 transition-all duration-300 dark:fill-white"
-                                />
-                              </span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-                </div>
-              </article>
         {/* audio */}
         <audio
           ref={audioRef}

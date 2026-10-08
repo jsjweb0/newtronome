@@ -14,6 +14,7 @@ type PlaylistStatus = 'loading' | 'ready' | 'empty' | 'error';
 function renderHomePage(status: PlaylistStatus) {
   const retryLoad = vi.fn();
   const context = {
+    isSidebarCollapsed: false,
     playlistUrl: 'https://soundcloud.com/example/sets/playlist',
     onSelectTrack: vi.fn(),
     onToggleTrack: vi.fn(),
