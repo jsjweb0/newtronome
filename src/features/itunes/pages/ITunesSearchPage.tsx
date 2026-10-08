@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ITunesTrack } from "../types/itunes.types";
 import type { PlayerTrack } from '../../player/types/player.types';
-import { searchITunesTracks } from "../services/searchITunesTracks";
+import { useITunesSearch } from "../hooks/useITunesSearch";
 import { Music, Search as SearchIcon, CircleX, ChevronRight, Plus as PlusIcon } from "lucide-react";
 import clsx from "clsx";
 import { AudioEqualizerIcon } from '../../../components/icons';
@@ -51,16 +51,18 @@ export default function ITunesSearchPage() {
   const { onPauseSoundCloud, isSidebarCollapsed } = useOutletContext<PlayerOutletContext>();
 
   const [keyword, setKeyword] = useState('');
-  const [tracks, setTracks] = useState<ITunesTrack[]>([]);
+  const [searchKeyword, setSearchKeyword] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+
+  const searchQuery = useITunesSearch(searchKeyword);
+
+  const tracks = searchQuery.data ?? [];
+  const isLoading = searchQuery.isFetching;
+  const hasSearched = searchKeyword !== null;
+  const errorMessage = searchQuery.isError ? '검색 결과를 불러오지 못했습니다.' : '';
 
   const visibleTracks = tracks.slice(0, visibleCount);
   const hasMoreTracks = visibleCount < tracks.length;
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [hasSearched, setHasSearched] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -95,7 +97,7 @@ export default function ITunesSearchPage() {
     }
   });
 
-  const saveRecentSearch = (searchTerm: string) => {
+  const saveRecentSearch = useCallback((searchTerm: string) => {
     const trimmedSearchTerm = searchTerm.trim();
 
     if (!trimmedSearchTerm) {
@@ -111,7 +113,15 @@ export default function ITunesSearchPage() {
         ),
       ].slice(0, MAX_RECENT_SEARCHES)
     );
-  };
+  }, []);
+
+  useEffect(() => {
+    if (searchKeyword === null || searchQuery.dataUpdatedAt === 0) {
+      return;
+    }
+
+    saveRecentSearch(searchKeyword);
+  }, [searchKeyword, searchQuery.dataUpdatedAt, saveRecentSearch]);
 
   const removeRecentSearch = (searchTerm: string) => {
     setRecentSearches((previousSearches) =>
@@ -160,71 +170,37 @@ export default function ITunesSearchPage() {
     setRecommendedArtists(shuffledArtists.slice(0, 5));
   }, [playlistTracks]);
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const runSearch = async (searchTerm: string) => {
+  const runSearch = (searchTerm: string) => {
     const trimmedKeyword = searchTerm.trim();
 
     if (!trimmedKeyword) return;
 
-    // 진행 중인 이전 검색 요청과 미리듣기 취소
-    abortControllerRef.current?.abort();
     stopPreview();
     setIsArtistPanelOpen(false);
     setVisibleCount(INITIAL_VISIBLE_COUNT);
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    // input이 이후 변경되어도 검색 당시 검색어를 보존
-    setSearchKeyword(trimmedKeyword);
-    setHasSearched(true);
-    setIsLoading(true);
-    setErrorMessage('');
-
-    try {
-      const searchResults = await searchITunesTracks(
-        trimmedKeyword,
-        controller.signal
-      );
-
-      saveRecentSearch(trimmedKeyword);
-      setTracks(searchResults);
-    } catch (error: unknown) {
-      if (
-        error instanceof DOMException &&
-        error.name === 'AbortError'
-      ) {
-        return;
-      }
-
-      setTracks([]);
-      setErrorMessage('검색 결과를 불러오지 못했습니다.');
-    } finally {
-      // 이전 요청이 새 요청의 로딩 상태를 끄지 않도록 확인
-      if (abortControllerRef.current === controller) {
-        abortControllerRef.current = null;
-        setIsLoading(false);
-      }
+    if (trimmedKeyword === searchKeyword) {
+      void searchQuery.refetch();
+      return;
     }
+
+    setSearchKeyword(trimmedKeyword);
   };
 
-  const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void runSearch(keyword);
+    runSearch(keyword);
   };
 
   const handleRecentSearch = (searchTerm: string) => {
     setKeyword(searchTerm);
-    void runSearch(searchTerm);
+    runSearch(searchTerm);
   }
 
   useEffect(() => {
     const audio = audioRef.current;
 
     return () => {
-      abortControllerRef.current?.abort();
-
       if (audio) {
         audio.pause();
         audio.removeAttribute('src');
