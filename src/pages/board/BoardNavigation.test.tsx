@@ -2,10 +2,23 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PostsContext, type Post, type PostsContextValue } from '../../contexts/PostsContext';
+import {
+  fetchPostsFromFirestore,
+  fetchPostFromFirestore,
+  updatePostInFirestore,
+} from '../../features/board/services/postsService';
 import BoardPage from './BoardPage';
 import PostView from './PostView';
 import EditPostPage from './EditPostPage';
+
+vi.mock('../../features/board/services/postsService', () => ({
+  fetchPostsFromFirestore: vi.fn(),
+  fetchPostFromFirestore: vi.fn(),
+  updatePostInFirestore: vi.fn(),
+  deletePostFromFirestore: vi.fn(),
+}));
 
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -81,17 +94,23 @@ function renderBoardRoute(url: string, overrides: Partial<PostsContextValue> = {
     deletePost: vi.fn(),
     ...overrides,
   };
+  vi.mocked(fetchPostsFromFirestore).mockImplementation(context.getPosts);
+  vi.mocked(fetchPostFromFirestore).mockImplementation(context.getPost);
+  vi.mocked(updatePostInFirestore).mockImplementation(context.updatePost);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <PostsContext.Provider value={context}>
-      <MemoryRouter initialEntries={[url]}>
-        <LocationDisplay />
-        <Routes>
-          <Route path="/board/:boardType" element={<BoardPage />} />
-          <Route path="/board/:boardType/:id" element={<PostView />} />
-          <Route path="/board/:boardType/edit/:id" element={<EditPostPage />} />
-        </Routes>
-      </MemoryRouter>
-    </PostsContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <PostsContext.Provider value={context}>
+        <MemoryRouter initialEntries={[url]}>
+          <LocationDisplay />
+          <Routes>
+            <Route path="/board/:boardType" element={<BoardPage />} />
+            <Route path="/board/:boardType/:id" element={<PostView />} />
+            <Route path="/board/:boardType/edit/:id" element={<EditPostPage />} />
+          </Routes>
+        </MemoryRouter>
+      </PostsContext.Provider>
+    </QueryClientProvider>
   );
   return context;
 }

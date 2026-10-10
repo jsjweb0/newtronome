@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react';
 import type {
     CommunityBoardType,
     Post,
@@ -8,7 +7,6 @@ import PostItem from "./PostItem";
 type PostListProps = {
     posts: Post[];
     filteredPosts: Post[];
-    setPosts: Dispatch<SetStateAction<Post[]>>;
     searchKeyword: string;
     boardType: CommunityBoardType;
     currentPage: number;
@@ -20,7 +18,6 @@ type PostListProps = {
 export default function PostList({
     posts,
     filteredPosts,
-    setPosts,
     searchKeyword,
     boardType,
     currentPage,
@@ -44,7 +41,6 @@ export default function PostList({
                     <PostItem
                         key={post.id}
                         post={post}
-                        setPosts={setPosts}
                         searchKeyword={searchKeyword}
                         boardType={boardType}
                         currentPage={currentPage}

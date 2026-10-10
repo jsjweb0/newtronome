@@ -19,7 +19,6 @@ type MyPostsListProps = {
   setCurrentPage: Dispatch<SetStateAction<number>>;
   searchKeyword: string;
   posts: Post[];
-  setPosts: Dispatch<SetStateAction<Post[]>>;
   deletePost: (
     boardType: CommunityBoardType,
     postId: Post['id']
@@ -32,7 +31,6 @@ export default function MyPostsList({
   setCurrentPage,
   searchKeyword,
   posts,
-  setPosts,
   deletePost,
 }: MyPostsListProps) {
   const { showToast } = useToast();
@@ -67,25 +65,20 @@ export default function MyPostsList({
   ): Promise<void> => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
 
-    await deletePost(boardType, postId);
+    try {
+      await deletePost(boardType, postId);
 
-    setPosts((previousPosts) =>
-      previousPosts.filter(
-        (post) =>
-          !(
-            post.id === postId &&
-            post.boardType === boardType
-          )
-      )
-    );
-
-    showToast({
-      message: '게시글이 삭제되었습니다.',
-      type: 'success',
-    });
+      showToast({
+        message: '게시글이 삭제되었습니다.',
+        type: 'success',
+      });
+    } catch {
+      showToast({
+        message: '삭제에 실패했습니다.',
+        type: 'error',
+      });
+    }
   };
-
-  //if (loadingPosts) return <p>로딩 중…</p>;
 
   if (!filteredPosts.length) {
     return (

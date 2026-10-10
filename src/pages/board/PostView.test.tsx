@@ -2,8 +2,15 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PostsContext, type Post, type PostsContextValue } from '../../contexts/PostsContext';
+import { fetchPostFromFirestore } from '../../features/board/services/postsService';
 import PostView from './PostView';
+
+vi.mock('../../features/board/services/postsService', () => ({
+  fetchPostFromFirestore: vi.fn(),
+  deletePostFromFirestore: vi.fn(),
+}));
 
 vi.mock('../../contexts/ToastContext', () => ({
   useToast: () => ({ showToast: vi.fn() }),
@@ -59,16 +66,20 @@ function renderPostView(overrides: Partial<PostsContextValue> = {}) {
     deletePost: vi.fn(),
     ...overrides,
   };
+  vi.mocked(fetchPostFromFirestore).mockImplementation(context.getPost);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   const view = render(
-    <PostsContext.Provider value={context}>
-      <MemoryRouter initialEntries={['/board/free/post-1']}>
-        <NavigationControl />
-        <Routes>
-          <Route path="/board/:boardType/:id" element={<PostView />} />
-        </Routes>
-      </MemoryRouter>
-    </PostsContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <PostsContext.Provider value={context}>
+        <MemoryRouter initialEntries={['/board/free/post-1']}>
+          <NavigationControl />
+          <Routes>
+            <Route path="/board/:boardType/:id" element={<PostView />} />
+          </Routes>
+        </MemoryRouter>
+      </PostsContext.Provider>
+    </QueryClientProvider>
   );
 
   return { context, ...view };
