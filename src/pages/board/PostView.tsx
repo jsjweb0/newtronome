@@ -3,10 +3,12 @@ import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import {
   isCommunityBoardType,
+  type CommunityBoardType,
   type Post,
   usePosts,
 } from '../../contexts/PostsContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthAccess } from '../../components/auth/AuthAccess';
 import { BaseButton } from '../../components/ui/BaseButton';
 import {
@@ -16,6 +18,7 @@ import {
   SquarePen,
   Trash2,
   MessageCircle,
+  RotateCcw,
 } from 'lucide-react';
 import LikeButton from '../../components/ui/LikeButton';
 import PostCommentSection from '../../components/board/PostCommentSection';
@@ -27,17 +30,37 @@ import { formatDate } from '../../utils/format';
 import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
 import { normalizeLegacyPostContent } from '../../utils/postContent';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
+import { useDeletePost } from '../../features/board/hooks/useDeletePost';
+import { useBoardPost } from '../../features/board/hooks/useBoardPost';
+import { postQueryKeys } from '../../features/board/queries/postQueryKeys';
 
 export default function PostView() {
+  const { boardType, id } = useParams();
+
+  if (!id || !isCommunityBoardType(boardType)) {
+    return <div className="text-center mt-10 font-bold">존재하지 않는 게시판입니다.</div>;
+  }
+
+  return <PostViewContent boardType={boardType} postId={id} />;
+}
+
+function PostViewContent({ boardType, postId }: {
+  boardType: CommunityBoardType;
+  postId: Post['id'];
+}) {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
-  const { boardType, id } = useParams();
-  const { getPosts, getPost, updateViewCount, deletePost } = usePosts();
+  const { getPosts, updateViewCount } = usePosts();
+  const { mutateAsync: deletePost } = useDeletePost(boardType);
+  const queryClient = useQueryClient();
+  const viewedPostRef = useRef<Set<string>>(new Set());
+  const {
+    data: currentPost,
+    isPending: loading,
+    isError,
+    refetch,
+  } = useBoardPost(boardType, postId);
   const [postsState, setPostsState] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPost, setCurrentPost] = useState<Post | null>(null);
-  const [loadError, setLoadError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -55,7 +78,7 @@ export default function PostView() {
     sort,
   });
 
-  const currentIndex = postsState.findIndex((post) => String(post.id) === id);
+  const currentIndex = postsState.findIndex((post) => String(post.id) === postId);
   const prevPost = currentIndex > 0 ? postsState[currentIndex - 1] : undefined;
   const nextPost = currentIndex >= 0 ? postsState[currentIndex + 1] : undefined;
 
@@ -66,78 +89,25 @@ export default function PostView() {
 
   const [commentCount, setCommentCount] = useState(0);
 
-  // 상세 본문
   useEffect(() => {
-    if (!id || !isCommunityBoardType(boardType)) {
-      setCurrentPost(null);
-      setLoading(false);
-      return;
-    }
+    const viewKey = `${boardType}/${postId}`;
+    if (!currentPost || currentPost.__viewed || viewedPostRef.current.has(viewKey)) return;
 
-    let ignore = false;
-
-    const fetchCurrentPost = async () => {
-      setLoading(true);
-      setLoadError('');
-      setCurrentPost(null);
-
-      try {
-        const post = await getPost(boardType, id);
-
-        if (ignore) return;
-
-        setCurrentPost(post);
-        setLoading(false);
-
-        if (!post.__viewed) {
-          try {
-            await updateViewCount(boardType, id);
-
-            if (ignore) return;
-
-            setCurrentPost({
-              ...post,
-              viewCount: post.viewCount + 1,
-              __viewed: true,
-            });
-          } catch (error) {
-            if (!ignore) {
-              console.error('조회수 기록 실패:', error);
-            }
-          }
-        }
-      } catch (error) {
-        if (!ignore) {
-          console.error('게시글 조회 실패:', error);
-          setLoadError('게시글을 불러오지 못했습니다.');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
-    void fetchCurrentPost();
-
-    return () => {
-      ignore = true;
-    };
-  }, [
-    boardType,
-    id,
-    getPost,
-    updateViewCount,
-    retryCount,
-  ]);
+    viewedPostRef.current.add(viewKey);
+    void updateViewCount(boardType, postId)
+      .then(() => {
+        queryClient.setQueryData<Post>(
+          postQueryKeys.detail(boardType, postId),
+          (post) => post ? { ...post, viewCount: post.viewCount + 1, __viewed: true } : post,
+        );
+      })
+      .catch((error: unknown) => {
+        console.error('조회수 기록 실패:', error);
+      });
+  }, [boardType, postId, currentPost, updateViewCount, queryClient]);
 
   // 이전·다음 글
   useEffect(() => {
-    if (!isCommunityBoardType(boardType)) {
-      setPostsState([]);
-      return;
-    }
-
     let ignore = false;
 
     const fetchNavigationPosts = async () => {
@@ -162,7 +132,7 @@ export default function PostView() {
   }, [boardType, getPosts]);
 
   useEffect(() => {
-    if (isCommunityBoardType(boardType) && currentPost?.id) {
+    if (currentPost?.id) {
       let mounted = true;
       getCommentCountFromDB(boardType, currentPost.id)
         .then((count) => {
@@ -175,19 +145,16 @@ export default function PostView() {
         mounted = false;
       };
     }
-  }, [boardType, currentPost]);
-
-  if (!id || !isCommunityBoardType(boardType)) {
-    return <div className="text-center mt-10 font-bold">존재하지 않는 게시판입니다.</div>;
-  }
+  }, [boardType, currentPost?.id]);
 
   if (loading) return <PostViewSkeleton />;
-  if (loadError) {
+
+  if (isError) {
     return (
       <div className="mt-10 text-center" role="alert">
-        <p className="font-bold">{loadError}</p>
-        <BaseButton className="mt-4" onClick={() => setRetryCount((count) => count + 1)}>
-          다시 시도
+        <p className="font-bold">게시글을 불러오지 못했습니다.</p>
+        <BaseButton className="mt-4" onClick={() => { void refetch(); }}>
+          <RotateCcw aria-hidden="true" />  다시 시도
         </BaseButton>
       </div>
     );
@@ -199,9 +166,7 @@ export default function PostView() {
     ? FREE_BOARD_CATEGORY_LABELS[currentPost.category] ?? currentPost.category
     : null;
 
-  const deletePosts = async (targetId: Post['id']) => {
-    if (!isCommunityBoardType(boardType)) return;
-
+  const deletePosts = async (postId: Post['id']) => {
     if (!window.confirm('삭제하시겠습니까?')) return;
 
     const id = Date.now();
@@ -209,7 +174,7 @@ export default function PostView() {
     const notificationErr = { id, message: '삭제에 실패했습니다.' };
 
     try {
-      await deletePost(boardType, targetId);
+      await deletePost(postId);
       showToast({ message: notification.message });
       addNotification(notification);
 

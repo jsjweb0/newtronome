@@ -54,7 +54,7 @@ TypeScript 타입은 런타임 값의 형태까지 보장하지 않으므로 iTu
 
 ### 게시판 데이터 계층 분리
 
-기존 `PostsProvider`는 Firestore 데이터 접근과 React 캐시 관리를 함께 담당했습니다. Firestore 호출과 데이터 변환을 서비스 계층으로 옮겨 Provider는 상태와 캐시 관리만 맡도록 역할을 나눴습니다. 조회 상태 관리 방식을 바꾸더라도 서비스 함수는 그대로 사용할 수 있습니다.
+기존 `PostsProvider`는 Firestore 데이터 접근과 React 캐시 관리를 함께 담당했습니다. Firestore 호출과 데이터 변환을 서비스 계층으로 옮겼습니다. 게시판 목록과 게시글 상세·수정 페이지의 조회는 TanStack Query가 관리하며, 이전·다음 글 목록과 아직 전환하지 않은 화면에는 Provider가 남아 있습니다.
 
 일부 페이지를 지연 로딩하고, Preline에서 필요한 Dropdown 모듈만 불러오도록 구성했습니다.
 

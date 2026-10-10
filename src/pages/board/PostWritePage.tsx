@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { usePosts } from '../../contexts/PostsContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -10,56 +8,50 @@ import PostForm, {
 
 import {
   isCommunityBoardType,
+  type CommunityBoardType,
   type CreatePostInput,
 } from '../../contexts/PostsContext';
+import { useCreatePost } from '../../features/board/hooks/useCreatePost';
+import { useBoardPosts } from '../../features/board/hooks/useBoardPosts';
+import { RotateCcw } from 'lucide-react';
 
 export default function PostWritePage() {
   const { boardType } = useParams();
-  const { getPosts, createPost } = usePosts();
+
+  if (!isCommunityBoardType(boardType)) {
+    return <Navigate to="/board/free" replace />;
+  }
+
+  return <PostWriteContent boardType={boardType} />;
+}
+
+function PostWriteContent({
+  boardType,
+}: {
+  boardType: CommunityBoardType;
+}) {
+  const {
+    data: posts = [],
+    isPending,
+    isError,
+    refetch,
+  } = useBoardPosts(boardType);
+
+  const { mutateAsync: createPost } = useCreatePost();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [nextPostNo, setNextPostNo] = useState(1);
-  const [isPreparing, setIsPreparing] = useState(true);
-  const [prepareError, setPrepareError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
+  const postNumbers = posts
+    .map((post) => Number(post.postNo))
+    .filter((postNo) => Number.isFinite(postNo));
 
-  useEffect(() => {
-    if (!isCommunityBoardType(boardType)) return;
+  const maxPostNo = postNumbers.length
+    ? Math.max(...postNumbers)
+    : 0;
 
-    let ignore = false;
-
-    const fetchPosts = async () => {
-      setIsPreparing(true);
-      setPrepareError('');
-
-      try {
-        const data = await getPosts(boardType);
-        if (ignore) return;
-
-        const postNumbers = data
-          .map((post) => Number(post.postNo))
-          .filter((postNo) => Number.isFinite(postNo));
-
-        const maxPostNo = postNumbers.length ? Math.max(...postNumbers) : 0;
-        setNextPostNo(maxPostNo + 1);
-      } catch (error) {
-        if (!ignore) {
-          console.error('게시글 번호 조회 실패:', error);
-          setPrepareError('글쓰기 정보를 불러오지 못했습니다.');
-        }
-      } finally {
-        if (!ignore) setIsPreparing(false);
-      }
-    };
-
-    void fetchPosts();
-    return () => {
-      ignore = true;
-    };
-  }, [boardType, getPosts, retryCount]);
+  const nextPostNo = maxPostNo + 1;
 
   const handleSubmit = async (
     formData: PostFormValues
@@ -78,7 +70,10 @@ export default function PostWritePage() {
     };
 
     try {
-      await createPost(boardType, newPost);
+      await createPost({
+        boardType,
+        input: newPost,
+      });
 
       showToast({ message: '게시글이 등록되었습니다!' });
       addNotification({
@@ -107,14 +102,18 @@ export default function PostWritePage() {
     return <Navigate to="/board/free" replace />;
   }
 
-  if (isPreparing) return <p className="mt-10 text-center">글쓰기 정보를 불러오는 중입니다.</p>;
+  if (isPending) return <p className="mt-10 text-center">글쓰기 정보를 불러오는 중입니다.</p>;
 
-  if (prepareError) {
+  if (isError) {
     return (
       <div className="mt-10 text-center" role="alert">
-        <p>{prepareError}</p>
-        <button type="button" className="mt-4 text-primary" onClick={() => setRetryCount((count) => count + 1)}>
-          다시 시도
+        <p>글쓰기 정보를 불러오지 못했습니다.</p>
+        <button
+          type="button"
+          className="inline-flex gap-2"
+          onClick={() => { void refetch(); }}
+        >
+          <RotateCcw aria-hidden="true" /> 다시 시도
         </button>
       </div>
     );

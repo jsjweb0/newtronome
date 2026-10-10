@@ -1,10 +1,9 @@
 import { Navigate, useNavigate, useParams, useSearchParams, } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import {
   isCommunityBoardType,
+  type CommunityBoardType,
   type Post,
   type UpdatePostInput,
-  usePosts
 } from '../../contexts/PostsContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,13 +13,26 @@ import PostForm, {
 } from '../../components/board/PostForm';
 import { getUserRole } from '../../utils/role';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
+import { useUpdatePost } from '../../features/board/hooks/useUpdatePost';
+import { useBoardPost } from '../../features/board/hooks/useBoardPost';
+import { RotateCcw } from 'lucide-react';
 
 export default function EditPostPage() {
   const { boardType, id } = useParams();
-  const { getPosts, updatePost } = usePosts();
-  const [post, setPost] = useState<Post | null | undefined>(null);
-  const [loadError, setLoadError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
+
+  if (!isCommunityBoardType(boardType) || !id) {
+    return <Navigate to="/board/free" replace />;
+  }
+
+  return <EditPostContent boardType={boardType} postId={id} />;
+}
+
+function EditPostContent({ boardType, postId }: {
+  boardType: CommunityBoardType;
+  postId: Post['id'];
+}) {
+  const { mutateAsync: updatePost } = useUpdatePost();
+  const { data: post, isPending, isError, error, refetch } = useBoardPost(boardType, postId);
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
@@ -42,45 +54,12 @@ export default function EditPostPage() {
   });
 
 
-  useEffect(() => {
-    if (!id || !isCommunityBoardType(boardType)) {
-      return;
-    }
-
-    let ignore = false;
-
-    const fetchPost = async () => {
-      setPost(null);
-      setLoadError('');
-
-      try {
-        const posts = await getPosts(boardType);
-        if (ignore) return;
-
-        const found = posts.find((item) => String(item.id) === id);
-        setPost(found);
-      } catch (error) {
-        if (!ignore) {
-          console.error('게시글 조회 실패:', error);
-          setLoadError('게시글을 불러오지 못했습니다.');
-        }
-      }
-    };
-
-    void fetchPost();
-
-    return () => {
-      ignore = true;
-    };
-  }, [boardType, id, getPosts, retryCount]);
-
   const handleEdit = async (
     updatedPost: PostFormValues
   ): Promise<void> => {
     if (
       !user ||
-      !id ||
-      !isCommunityBoardType(boardType)
+      !postId
     ) {
       return;
     }
@@ -97,7 +76,11 @@ export default function EditPostPage() {
     }
 
     try {
-      await updatePost(boardType, id, changedFields);
+      await updatePost({
+        boardType,
+        postId,
+        input: changedFields
+      });
 
       showToast({ message: '게시글이 수정되었습니다.' });
       addNotification({
@@ -123,26 +106,20 @@ export default function EditPostPage() {
     }
   };
 
-  if (!isCommunityBoardType(boardType) || !id) {
-    return <Navigate to="/board/free" replace />;
-  }
+  if (isPending) return <p>게시글을 불러오는 중입니다.</p>;
 
-  if (post === null) {
-    if (loadError) {
-      return (
-        <div className="mt-10 text-center" role="alert">
-          <p>{loadError}</p>
-          <button type="button" className="mt-4 text-primary" onClick={() => setRetryCount((count) => count + 1)}>
-            다시 시도
-          </button>
-        </div>
-      );
+  if (isError) {
+    if (error.message === '해당 문서가 없습니다.') {
+      return <p>게시글이 존재하지 않습니다.</p>;
     }
-    return <p>게시글을 불러오는 중입니다.</p>;
-  }
-
-  if (post === undefined) {
-    return <p>게시글이 존재하지 않습니다.</p>;
+    return (
+      <div className="mt-10 text-center" role="alert">
+        <p>게시글을 불러오지 못했습니다.</p>
+        <button type="button" className="mt-4 text-primary" onClick={() => { void refetch(); }}>
+          <RotateCcw aria-hidden="true" />  다시 시도
+        </button>
+      </div>
+    );
   }
 
   const canEdit =

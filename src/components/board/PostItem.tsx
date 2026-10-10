@@ -6,7 +6,6 @@ import { BaseButton } from '../ui/BaseButton';
 import { useEffect, useState } from 'react';
 import { formatDate } from '../../utils/format';
 import { useNotifications } from '../../contexts/NotificationContext';
-import type { Dispatch, SetStateAction } from 'react';
 import type {
   CommunityBoardType,
   Post,
@@ -17,7 +16,6 @@ import { createBoardListSearch } from '../../features/board/utils/boardListSearc
 type PostItemProps = {
   post: Post;
   searchKeyword: string;
-  setPosts: Dispatch<SetStateAction<Post[]>>;
   boardType: CommunityBoardType;
   currentPage: number;
   selectedCategory: string;
@@ -28,7 +26,6 @@ type PostItemProps = {
 function PostItem({
   post,
   searchKeyword,
-  setPosts,
   boardType,
   currentPage,
   selectedCategory,
@@ -104,10 +101,6 @@ function PostItem({
 
     try {
       await deletePost(targetId);
-
-      setPosts((previousPosts) =>
-        previousPosts.filter((post) => post.id !== targetId)
-      );
 
       showToast({
         message: '게시글이 삭제되었습니다.',
