@@ -12,6 +12,7 @@ import type { SavedTrack } from '../types/saved-track.types';
 import { selectCurrentTrack, usePlayerStore } from '../../player/stores/usePlayerStore';
 import type { PlayerOutletContext } from '../../../layouts/MainLayout';
 import type { PlayerTrack } from '../../player/types/player.types';
+import RetryErrorState from '../../../components/ui/RetryErrorState';
 
 export default function LikedTracksPage() {
   const { user, loading: isAuthLoading } = useAuth();
@@ -143,19 +144,13 @@ export default function LikedTracksPage() {
           저장한 트랙을 불러오고 있습니다.
         </div>
       ) : errorMessage ? (
-        <div
-          className="rounded-xl border border-red-300 bg-red-50 px-4 py-10 text-center text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
-          role="alert"
-        >
-          <p>{errorMessage}</p>
-          <button
-            type="button"
-            className="mt-4 font-medium underline"
-            onClick={() => setRetryCount((count) => count + 1)}
-          >
-            다시 시도
-          </button>
-        </div>
+        <RetryErrorState
+          message={errorMessage}
+          onRetry={() => {
+            setIsLoading(true);
+            setRetryCount((count) => count + 1);
+          }}
+        />
       ) : tracks.length === 0 ? (
         <div className="rounded-xl border border-textThr px-4 py-16 text-center">
           <Heart aria-hidden="true" className="mx-auto mb-3 size-8 text-textSub" />

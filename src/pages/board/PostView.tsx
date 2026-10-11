@@ -5,10 +5,8 @@ import {
   isCommunityBoardType,
   type CommunityBoardType,
   type Post,
-  usePosts,
-} from '../../contexts/PostsContext';
+} from '../../features/board/types/post';
 import { useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { AuthAccess } from '../../components/auth/AuthAccess';
 import { BaseButton } from '../../components/ui/BaseButton';
 import {
@@ -18,7 +16,6 @@ import {
   SquarePen,
   Trash2,
   MessageCircle,
-  RotateCcw,
 } from 'lucide-react';
 import LikeButton from '../../components/ui/LikeButton';
 import PostCommentSection from '../../components/board/PostCommentSection';
@@ -32,7 +29,9 @@ import { normalizeLegacyPostContent } from '../../utils/postContent';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
 import { useDeletePost } from '../../features/board/hooks/useDeletePost';
 import { useBoardPost } from '../../features/board/hooks/useBoardPost';
-import { postQueryKeys } from '../../features/board/queries/postQueryKeys';
+import { useBoardPosts } from '../../features/board/hooks/useBoardPosts';
+import { useIncrementPostViewCount } from '../../features/board/hooks/useIncrementPostViewCount';
+import RetryErrorState from '../../components/ui/RetryErrorState';
 
 export default function PostView() {
   const { boardType, id } = useParams();
@@ -50,17 +49,19 @@ function PostViewContent({ boardType, postId }: {
 }) {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
-  const { getPosts, updateViewCount } = usePosts();
   const { mutateAsync: deletePost } = useDeletePost(boardType);
-  const queryClient = useQueryClient();
   const viewedPostRef = useRef<Set<string>>(new Set());
   const {
     data: currentPost,
     isPending: loading,
     isError,
+    isFetching,
     refetch,
   } = useBoardPost(boardType, postId);
-  const [postsState, setPostsState] = useState<Post[]>([]);
+  const postsQuery = useBoardPosts(boardType);
+  const posts = postsQuery.data ?? [];
+
+  const { mutateAsync: incrementViewCount } = useIncrementPostViewCount(boardType, postId)
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -78,9 +79,9 @@ function PostViewContent({ boardType, postId }: {
     sort,
   });
 
-  const currentIndex = postsState.findIndex((post) => String(post.id) === postId);
-  const prevPost = currentIndex > 0 ? postsState[currentIndex - 1] : undefined;
-  const nextPost = currentIndex >= 0 ? postsState[currentIndex + 1] : undefined;
+  const currentIndex = posts.findIndex((post) => String(post.id) === postId);
+  const prevPost = currentIndex > 0 ? posts[currentIndex - 1] : undefined;
+  const nextPost = currentIndex >= 0 ? posts[currentIndex + 1] : undefined;
 
   const pagerBtnClasses =
     'shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 group-hover:bg-gray-50 group-focus:outline-hidden group-focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:group-hover:bg-neutral-700 dark:focus:bg-neutral-700';
@@ -91,45 +92,21 @@ function PostViewContent({ boardType, postId }: {
 
   useEffect(() => {
     const viewKey = `${boardType}/${postId}`;
-    if (!currentPost || currentPost.__viewed || viewedPostRef.current.has(viewKey)) return;
+
+    if (
+      !currentPost ||
+      currentPost.__viewed ||
+      viewedPostRef.current.has(viewKey)
+    ) {
+      return;
+    }
 
     viewedPostRef.current.add(viewKey);
-    void updateViewCount(boardType, postId)
-      .then(() => {
-        queryClient.setQueryData<Post>(
-          postQueryKeys.detail(boardType, postId),
-          (post) => post ? { ...post, viewCount: post.viewCount + 1, __viewed: true } : post,
-        );
-      })
-      .catch((error: unknown) => {
-        console.error('조회수 기록 실패:', error);
-      });
-  }, [boardType, postId, currentPost, updateViewCount, queryClient]);
 
-  // 이전·다음 글
-  useEffect(() => {
-    let ignore = false;
-
-    const fetchNavigationPosts = async () => {
-      try {
-        const posts = await getPosts(boardType);
-
-        if (!ignore) {
-          setPostsState(posts);
-        }
-      } catch {
-        if (!ignore) {
-          setPostsState([]);
-        }
-      }
-    };
-
-    void fetchNavigationPosts();
-
-    return () => {
-      ignore = true;
-    };
-  }, [boardType, getPosts]);
+    void incrementViewCount().catch((error: unknown) => {
+      console.error('조회수 기록 실패:', error);
+    });
+  }, [boardType, postId, currentPost, incrementViewCount]);
 
   useEffect(() => {
     if (currentPost?.id) {
@@ -147,20 +124,28 @@ function PostViewContent({ boardType, postId }: {
     }
   }, [boardType, currentPost?.id]);
 
-  if (loading) return <PostViewSkeleton />;
-
-  if (isError) {
+  if (loading) {
     return (
-      <div className="mt-10 text-center" role="alert">
-        <p className="font-bold">게시글을 불러오지 못했습니다.</p>
-        <BaseButton className="mt-4" onClick={() => { void refetch(); }}>
-          <RotateCcw aria-hidden="true" />  다시 시도
-        </BaseButton>
+      <div role="status">
+        <span className="sr-only">게시글을 불러오는 중입니다.</span>
+        <PostViewSkeleton />
       </div>
     );
   }
+
+  if (isError) {
+    return (
+      <RetryErrorState
+        message="게시글을 불러오지 못했습니다."
+        isRetrying={isFetching}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
+    );
+  }
   if (!currentPost)
-    return <div className="text-center mt-10 font-bold">존재하지 않는 게시글입니다.</div>;
+    return <p role="status" className="mt-10 text-center text-sm text-textSub">존재하지 않는 게시글입니다.</p>;
 
   const categoryLabel = currentPost.category
     ? FREE_BOARD_CATEGORY_LABELS[currentPost.category] ?? currentPost.category

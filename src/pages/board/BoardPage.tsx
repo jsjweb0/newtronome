@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   isCommunityBoardType,
   type CommunityBoardType,
-} from '../../contexts/PostsContext';
+} from '../../features/board/types/post';
 import { useBoardPosts } from '../../features/board/hooks/useBoardPosts';
 import { useDeletePost } from '../../features/board/hooks/useDeletePost';
 import SearchBar from '../../components/board/SearchBar';
@@ -17,7 +17,7 @@ import CategoryFilter, {
   type CategoryFilterValue,
 } from '../../components/board/CategoryFilter';
 import { isFreeBoardCategoryValue } from '../../constants/freeBoardCategories';
-import { RotateCcw } from 'lucide-react';
+import RetryErrorState from '../../components/ui/RetryErrorState';
 
 export default function BoardPage() {
   const { boardType } = useParams();
@@ -158,37 +158,26 @@ function BoardContent({
         <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
           {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
         </h2>
-        <PostListSkeleton />
+        <div role="status">
+          <span className="sr-only">게시글을 불러오는 중입니다.</span>
+          <PostListSkeleton />
+        </div>
       </div>
     );
   }
 
   const queryError = isError ? (
-    <div className="my-4 text-center">
-      <p role="alert">
-        {data === undefined
+    <RetryErrorState
+      message={
+        data === undefined
           ? '게시글을 불러오지 못했습니다.'
-          : '최신 목록을 불러오지 못했습니다. 이전 목록을 표시합니다.'}
-      </p>
-
-      <button
-        type="button"
-        disabled={isFetching}
-        onClick={() => {
-          void refetch();
-        }}
-        className="inline-flex gap-2 mt-3 text-primary disabled:opacity-50"
-      >
-        {isFetching ? (
-          '다시 불러오는 중…'
-        ) : (
-          <>
-            <RotateCcw aria-hidden="true" />
-            다시 시도
-          </>
-        )}
-      </button>
-    </div>
+          : '최신 목록을 불러오지 못했습니다. 이전 목록을 표시합니다.'
+      }
+      isRetrying={isFetching}
+      onRetry={() => {
+        void refetch();
+      }}
+    />
   ) : null;
 
   if (isError && data === undefined) {

@@ -1,7 +1,4 @@
-import type {
-    CommunityBoardType,
-    Post,
-} from '../../contexts/PostsContext';
+import type { CommunityBoardType, Post } from '../../features/board/types/post';
 import PostItem from "./PostItem";
 
 type PostListProps = {

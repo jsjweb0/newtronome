@@ -2,8 +2,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PostsContext, type Post, type PostsContextValue } from '../../contexts/PostsContext';
 import { fetchPostsFromFirestore } from '../../features/board/services/postsService';
+import type { Post } from '../../features/board/types/post';
 import BoardPage from './BoardPage';
 import { postQueryKeys } from '../../features/board/queries/postQueryKeys';
 
@@ -67,28 +67,20 @@ function currentSearch() {
   return screen.getByTestId('location').textContent ?? '';
 }
 
-function renderBoardWithQuery(getPosts: PostsContextValue['getPosts'], url = '/board/free') {
+function renderBoardWithQuery(
+  getPosts: typeof fetchPostsFromFirestore,
+  url = '/board/free',
+) {
   vi.mocked(fetchPostsFromFirestore).mockImplementation(getPosts);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const context: PostsContextValue = {
-    getPosts,
-    getPost: vi.fn(),
-    getMyPosts: vi.fn(),
-    createPost: vi.fn(),
-    updatePost: vi.fn(),
-    updateViewCount: vi.fn(),
-    deletePost: vi.fn(),
-  };
   render(
     <QueryClientProvider client={queryClient}>
-      <PostsContext.Provider value={context}>
-        <MemoryRouter initialEntries={[url]}>
-          <HistoryControls />
-          <Routes>
-            <Route path="/board/:boardType" element={<BoardPage />} />
-          </Routes>
-        </MemoryRouter>
-      </PostsContext.Provider>
+      <MemoryRouter initialEntries={[url]}>
+        <HistoryControls />
+        <Routes>
+          <Route path="/board/:boardType" element={<BoardPage />} />
+        </Routes>
+      </MemoryRouter>
     </QueryClientProvider>
   );
 
@@ -224,7 +216,7 @@ describe('BoardPage URL navigation', () => {
 describe('BoardPage request failures and stale responses', () => {
   it('distinguishes a failed query from an empty board and recovers on retry', async () => {
     const retryRequest = createPendingPostsRequest();
-    const getPosts = vi.fn<PostsContextValue['getPosts']>()
+    const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
       .mockRejectedValueOnce(new Error('조회 실패'))
       .mockReturnValueOnce(retryRequest.promise);
     renderBoardWithQuery(getPosts);
@@ -248,7 +240,7 @@ describe('BoardPage request failures and stale responses', () => {
   });
 
   it('allows another retry after a repeated failure and shows a successful empty result', async () => {
-    const getPosts = vi.fn<PostsContextValue['getPosts']>()
+    const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
       .mockRejectedValueOnce(new Error('첫 번째 실패'))
       .mockRejectedValueOnce(new Error('두 번째 실패'))
       .mockResolvedValueOnce([]);
@@ -272,7 +264,7 @@ describe('BoardPage request failures and stale responses', () => {
     async (outcome) => {
       const oldRequest = createPendingPostsRequest();
       const currentRequest = createPendingPostsRequest();
-      const getPosts = vi.fn<PostsContextValue['getPosts']>()
+      const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
         .mockReturnValueOnce(oldRequest.promise)
         .mockReturnValueOnce(currentRequest.promise);
       renderBoardWithQuery(getPosts);
@@ -291,8 +283,8 @@ describe('BoardPage request failures and stale responses', () => {
       expect(visiblePostTitles()).toHaveLength(0);
 
       await act(async () => { currentRequest.resolve([]); });
-      expect((await screen.findByRole('status')).textContent)
-        .toBe('아직 등록된 게시글이 없습니다.');
+      const emptyState = await screen.findByText('아직 등록된 게시글이 없습니다.');
+      expect(emptyState.getAttribute('role')).toBe('status');
       expect(screen.queryByRole('alert')).toBeNull();
     }
   );
@@ -304,7 +296,7 @@ describe('BoardPage request failures and stale responses', () => {
       const noticePost: Post = {
         ...posts[0], id: 'notice-post', boardType: 'notice', title: '현재 공지사항',
       };
-      const getPosts = vi.fn<PostsContextValue['getPosts']>()
+      const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
         .mockReturnValueOnce(oldRequest.promise)
         .mockResolvedValueOnce([noticePost]);
       renderBoardWithQuery(getPosts);
@@ -328,7 +320,7 @@ describe('BoardPage request failures and stale responses', () => {
   it('재조회 실패 시 기존 목록을 유지하고 재시도로 복구한다', async () => {
     const retryRequest = createPendingPostsRequest();
 
-    const getPosts = vi.fn<PostsContextValue['getPosts']>()
+    const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
       .mockResolvedValueOnce(posts)
       .mockRejectedValueOnce(new Error('재조회 실패'))
       .mockReturnValueOnce(retryRequest.promise);

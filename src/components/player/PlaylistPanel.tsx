@@ -2,7 +2,7 @@ import { toHighResArtwork } from '../../utils/image';
 import { formatTime } from '../../utils/format';
 import HeaderButtons from '../layout/HeaderButtons';
 import { AudioEqualizerIcon } from '../icons';
-import { ListMusic, Play, RotateCcw } from 'lucide-react';
+import { ListMusic, Play, } from 'lucide-react';
 import noImage from '../../assets/no-image.png';
 import clsx from 'clsx';
 import SoundCloudWidget from '../../features/player/components/SoundCloudWidget';
@@ -12,6 +12,7 @@ import Tooltip from '../ui/Tooltip';
 import type { PlayerTrack } from '../../features/player/types/player.types';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
+import RetryErrorState from '../ui/RetryErrorState';
 
 interface PlaylistPanelProps {
   playlistUrl: string;
@@ -176,15 +177,14 @@ export default function PlaylistPanel({
             </div>
             <ol className="space-y-4">
               {soundCloudWidget.playlistStatus === 'error' ? (
-                <li role="alert" className="text-sm text-textSub text-center">
-                  <p className="text-left">{soundCloudWidget.widgetError ?? '플레이리스트를 불러오지 못했습니다.'}</p>
-                  <button
-                    type="button"
-                    onClick={soundCloudWidget.retryLoad}
-                    className="inline-flex items-center gap-2 mt-2 rounded-lg border border-textThr px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
-                  >
-                    <RotateCcw className="size-4" aria-hidden="true" /> 다시 시도
-                  </button>
+                <li>
+                  <RetryErrorState
+                    message={
+                      soundCloudWidget.widgetError ??
+                      '플레이리스트를 불러오지 못했습니다.'
+                    }
+                    onRetry={soundCloudWidget.retryLoad}
+                  />
                 </li>
               ) : soundCloudWidget.playlistStatus === 'loading' ? (
                 <li

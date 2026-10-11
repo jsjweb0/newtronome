@@ -1,9 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type {
-  CommunityBoardType,
-  Post,
-} from '../../contexts/PostsContext';
+import type { CommunityBoardType, Post } from '../../features/board/types/post';
 import { useToast } from '../../contexts/ToastContext';
 import Pagination from './Pagination';
 import MyPostItem from './MyPostItem';
@@ -82,7 +79,7 @@ export default function MyPostsList({
 
   if (!filteredPosts.length) {
     return (
-      <p className="mt-4 p-4 text-center text-gray-500 text-xs md:text-base">
+      <p role="status" className="mt-4 py-10 text-center text-sm text-textSub">
         작성한 글이 없습니다.
       </p>
     );

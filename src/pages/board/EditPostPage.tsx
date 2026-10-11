@@ -4,7 +4,7 @@ import {
   type CommunityBoardType,
   type Post,
   type UpdatePostInput,
-} from '../../contexts/PostsContext';
+} from '../../features/board/types/post';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -15,7 +15,7 @@ import { getUserRole } from '../../utils/role';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
 import { useUpdatePost } from '../../features/board/hooks/useUpdatePost';
 import { useBoardPost } from '../../features/board/hooks/useBoardPost';
-import { RotateCcw } from 'lucide-react';
+import RetryErrorState from '../../components/ui/RetryErrorState';
 
 export default function EditPostPage() {
   const { boardType, id } = useParams();
@@ -32,7 +32,7 @@ function EditPostContent({ boardType, postId }: {
   postId: Post['id'];
 }) {
   const { mutateAsync: updatePost } = useUpdatePost();
-  const { data: post, isPending, isError, error, refetch } = useBoardPost(boardType, postId);
+  const { data: post, isPending, isError, error, isFetching, refetch } = useBoardPost(boardType, postId);
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
@@ -52,7 +52,6 @@ function EditPostContent({ boardType, postId }: {
     category,
     sort,
   });
-
 
   const handleEdit = async (
     updatedPost: PostFormValues
@@ -106,19 +105,20 @@ function EditPostContent({ boardType, postId }: {
     }
   };
 
-  if (isPending) return <p>게시글을 불러오는 중입니다.</p>;
+  if (isPending) return <p role="status" className="mt-10 text-center text-sm text-textSub">게시글을 불러오는 중입니다.</p>;
 
   if (isError) {
     if (error.message === '해당 문서가 없습니다.') {
-      return <p>게시글이 존재하지 않습니다.</p>;
+      return <p role="status" className="mt-10 text-center text-sm text-textSub">게시글이 존재하지 않습니다.</p>;
     }
     return (
-      <div className="mt-10 text-center" role="alert">
-        <p>게시글을 불러오지 못했습니다.</p>
-        <button type="button" className="mt-4 text-primary" onClick={() => { void refetch(); }}>
-          <RotateCcw aria-hidden="true" />  다시 시도
-        </button>
-      </div>
+      <RetryErrorState
+        message="게시글을 불러오지 못했습니다."
+        isRetrying={isFetching}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 

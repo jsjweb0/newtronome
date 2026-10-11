@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getCommentCountFromDB } from "../../utils/comment";
 import { BaseButton } from "../ui/BaseButton";
 import { formatDate } from "../../utils/format";
-import type { Post } from "../../contexts/PostsContext";
+import type { Post } from "../../features/board/types/post";
 
 type MyPostItemProps = {
     post: Post;

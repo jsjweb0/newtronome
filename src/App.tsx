@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
-import { PostsProvider } from './contexts/PostsProvider';
 import NotFoundPage from './pages/NotFoundPage';
 import ScrollToTopSmooth from './components/ui/ScrollToTopSmooth';
 import { lazy } from 'react';
@@ -38,45 +37,25 @@ function App() {
           <Route path="/search" element={<ITunesSearchPage />} />
           <Route
             path="/mypage"
-            element={
-              <PostsProvider>
-                <MyActivity />
-              </PostsProvider>
-            }
+            element={<MyActivity />}
           />
 
           {/* 게시판 */}
           <Route
             path="/board/:boardType"
-            element={
-              <PostsProvider>
-                <DynamicBoard />
-              </PostsProvider>
-            }
+            element={<DynamicBoard />}
           />
           <Route
             path="/board/:boardType/:id"
-            element={
-              <PostsProvider>
-                <PostView />
-              </PostsProvider>
-            }
+            element={<PostView />}
           />
           <Route
             path="/board/:boardType/write"
-            element={
-              <PostsProvider>
-                <PostWritePage />
-              </PostsProvider>
-            }
+            element={<PostWritePage />}
           />
           <Route
             path="/board/:boardType/edit/:id"
-            element={
-              <PostsProvider>
-                <EditPostPage />
-              </PostsProvider>
-            }
+            element={<EditPostPage />}
           />
           <Route path="/board/pet" element={<PetBoardPage />} />
           <Route path="/board/pet/:id" element={<PetPostView />} />

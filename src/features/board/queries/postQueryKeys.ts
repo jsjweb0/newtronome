@@ -1,7 +1,7 @@
 import type {
     CommunityBoardType,
     Post,
-} from '../../../contexts/PostsContext';
+} from '../types/post';
 
 export const postQueryKeys = {
     all: ['posts'] as const,

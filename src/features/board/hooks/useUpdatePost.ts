@@ -6,7 +6,7 @@ import type {
     CommunityBoardType,
     Post,
     UpdatePostInput,
-} from '../../../contexts/PostsContext';
+} from '../types/post';
 import { updatePostInFirestore } from '../services/postsService';
 import { postQueryKeys } from '../queries/postQueryKeys';
 

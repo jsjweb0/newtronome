@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CommunityBoardType, Post, } from "../../../contexts/PostsContext";
+import type { CommunityBoardType, Post, } from "../types/post";
 import { deletePostFromFirestore } from "../services/postsService";
 import { postQueryKeys } from '../queries/postQueryKeys';
 

@@ -13,6 +13,7 @@ import {
   type Comment as CommentData,
 } from '../../utils/comment';
 import type { SubmitEvent } from 'react';
+import RetryErrorState from '../ui/RetryErrorState';
 
 dayjs.locale('ko');
 dayjs.extend(relativeTime);
@@ -124,17 +125,18 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
   };
 
   if (loading) {
-    return <p className="my-4 text-center text-gray-400 text-sm">댓글 불러오는 중...</p>;
+    return <p role="status" className="my-4 text-center text-sm text-textSub">댓글을 불러오는 중입니다.</p>;
   }
 
   if (loadError) {
     return (
-      <div className="my-4 text-center" role="alert">
-        <p className="text-sm text-red-600">{loadError}</p>
-        <BaseButton className="mt-3" variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
-          다시 시도
-        </BaseButton>
-      </div>
+      <RetryErrorState
+        message={loadError}
+        onRetry={() => {
+          setLoading(true);
+          setRetryCount((count) => count + 1);
+        }}
+      />
     );
   }
 

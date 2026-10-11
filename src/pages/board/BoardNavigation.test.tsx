@@ -3,10 +3,11 @@ import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PostsContext, type Post, type PostsContextValue } from '../../contexts/PostsContext';
+import type { Post } from '../../features/board/types/post';
 import {
   fetchPostsFromFirestore,
   fetchPostFromFirestore,
+  incrementPostViewCount,
   updatePostInFirestore,
 } from '../../features/board/services/postsService';
 import BoardPage from './BoardPage';
@@ -16,6 +17,7 @@ import EditPostPage from './EditPostPage';
 vi.mock('../../features/board/services/postsService', () => ({
   fetchPostsFromFirestore: vi.fn(),
   fetchPostFromFirestore: vi.fn(),
+  incrementPostViewCount: vi.fn(),
   updatePostInFirestore: vi.fn(),
   deletePostFromFirestore: vi.fn(),
 }));
@@ -79,40 +81,42 @@ function expectConditions(url: string, pathname: string, expected: Record<string
   expect(Object.fromEntries(parsed.searchParams)).toEqual(expected);
 }
 
-function renderBoardRoute(url: string, overrides: Partial<PostsContextValue> = {}) {
-  const context: PostsContextValue = {
-    getPosts: vi.fn().mockResolvedValue(posts),
-    getPost: vi.fn<PostsContextValue['getPost']>().mockImplementation(async (_board, id) => {
+type RenderBoardRouteOptions = {
+  getPosts?: typeof fetchPostsFromFirestore;
+  getPost?: typeof fetchPostFromFirestore;
+  updatePost?: typeof updatePostInFirestore;
+};
+
+function renderBoardRoute(url: string, options: RenderBoardRouteOptions = {}) {
+  const getPosts = options.getPosts ?? vi.fn<typeof fetchPostsFromFirestore>()
+    .mockResolvedValue(posts);
+  const getPost = options.getPost ?? vi.fn<typeof fetchPostFromFirestore>()
+    .mockImplementation(async (_board, id) => {
       const post = posts.find((item) => item.id === id);
       if (!post) throw new Error('Post not found');
       return post;
-    }),
-    getMyPosts: vi.fn(),
-    createPost: vi.fn(),
-    updatePost: vi.fn().mockResolvedValue(undefined),
-    updateViewCount: vi.fn().mockResolvedValue(undefined),
-    deletePost: vi.fn(),
-    ...overrides,
-  };
-  vi.mocked(fetchPostsFromFirestore).mockImplementation(context.getPosts);
-  vi.mocked(fetchPostFromFirestore).mockImplementation(context.getPost);
-  vi.mocked(updatePostInFirestore).mockImplementation(context.updatePost);
+    });
+  const updatePost = options.updatePost ?? vi.fn<typeof updatePostInFirestore>()
+    .mockResolvedValue(undefined);
+
+  vi.mocked(fetchPostsFromFirestore).mockImplementation(getPosts);
+  vi.mocked(fetchPostFromFirestore).mockImplementation(getPost);
+  vi.mocked(incrementPostViewCount).mockResolvedValue(undefined);
+  vi.mocked(updatePostInFirestore).mockImplementation(updatePost);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <PostsContext.Provider value={context}>
-        <MemoryRouter initialEntries={[url]}>
-          <LocationDisplay />
-          <Routes>
-            <Route path="/board/:boardType" element={<BoardPage />} />
-            <Route path="/board/:boardType/:id" element={<PostView />} />
-            <Route path="/board/:boardType/edit/:id" element={<EditPostPage />} />
-          </Routes>
-        </MemoryRouter>
-      </PostsContext.Provider>
+      <MemoryRouter initialEntries={[url]}>
+        <LocationDisplay />
+        <Routes>
+          <Route path="/board/:boardType" element={<BoardPage />} />
+          <Route path="/board/:boardType/:id" element={<PostView />} />
+          <Route path="/board/:boardType/edit/:id" element={<EditPostPage />} />
+        </Routes>
+      </MemoryRouter>
     </QueryClientProvider>
   );
-  return context;
+  return { getPosts, getPost, updatePost };
 }
 
 afterEach(() => {
@@ -155,7 +159,9 @@ describe('Board list conditions across routes', () => {
   it.each(['list', 'detail'] as const)(
     'preserves conditions when entering edit from %s and returning after save',
     async (source) => {
-      const context = renderBoardRoute(`/board/free${source === 'detail' ? '/post-11' : ''}${search}`);
+      const { updatePost } = renderBoardRoute(
+        `/board/free${source === 'detail' ? '/post-11' : ''}${search}`,
+      );
       const links = await screen.findAllByRole('link', { name: '수정' });
       expectConditions(links[0].getAttribute('href') ?? '', '/board/free/edit/post-11');
       fireEvent.click(links[0]);
@@ -165,7 +171,7 @@ describe('Board list conditions across routes', () => {
       fireEvent.click(screen.getByRole('button', { name: '수정' }));
       await screen.findByRole('textbox', { name: '검색어' });
       expectConditions(currentUrl(), '/board/free');
-      expect(context.updatePost).toHaveBeenCalledWith('free', 'post-11', expect.objectContaining({
+      expect(updatePost).toHaveBeenCalledWith('free', 'post-11', expect.objectContaining({
         title: `${keyword} 수정`, content: '본문 11', category: 'question',
       }));
     }
@@ -173,8 +179,10 @@ describe('Board list conditions across routes', () => {
 
   it('keeps edited inputs and URL conditions when saving fails', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const context = renderBoardRoute(`/board/free/edit/post-11${search}`, {
-      updatePost: vi.fn().mockRejectedValue(new Error('permission denied')),
+    const updatePost = vi.fn<typeof updatePostInFirestore>()
+      .mockRejectedValue(new Error('permission denied'));
+    renderBoardRoute(`/board/free/edit/post-11${search}`, {
+      updatePost,
     });
     const title = await screen.findByPlaceholderText<HTMLInputElement>('제목을 입력해주세요');
     const content = screen.getByPlaceholderText<HTMLTextAreaElement>('내용을 입력해주세요.');
@@ -183,7 +191,7 @@ describe('Board list conditions across routes', () => {
     fireEvent.change(screen.getByTitle('카테고리'), { target: { value: 'chat' } });
     fireEvent.click(screen.getByRole('button', { name: '수정' }));
     await waitFor(() => expect(screen.getByRole<HTMLButtonElement>('button', { name: '수정' }).disabled).toBe(false));
-    expect(context.updatePost).toHaveBeenCalledTimes(1);
+    expect(updatePost).toHaveBeenCalledTimes(1);
     expect(title.value).toBe('수정한 제목');
     expect(content.value).toBe('수정한 본문');
     expect(screen.getByTitle<HTMLSelectElement>('카테고리').value).toBe('chat');

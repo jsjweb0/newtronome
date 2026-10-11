@@ -5,7 +5,7 @@ import {
 import type {
     CommunityBoardType,
     CreatePostInput,
-} from '../../../contexts/PostsContext';
+} from '../types/post';
 import { createPostInFirestore } from '../services/postsService';
 import { postQueryKeys } from '../queries/postQueryKeys';
 

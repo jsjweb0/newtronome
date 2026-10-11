@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { CommunityBoardType } from '../../../contexts/PostsContext';
+import type { CommunityBoardType } from '../types/post';
 import { auth } from '../../../firebase';
 import { fetchMyPostsFromFirestore } from '../services/postsService';
 import { postQueryKeys } from '../queries/postQueryKeys';

@@ -6,10 +6,7 @@ import { BaseButton } from '../ui/BaseButton';
 import { useEffect, useState } from 'react';
 import { formatDate } from '../../utils/format';
 import { useNotifications } from '../../contexts/NotificationContext';
-import type {
-  CommunityBoardType,
-  Post,
-} from '../../contexts/PostsContext';
+import type { CommunityBoardType, Post } from '../../features/board/types/post';
 import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
 

@@ -1,6 +1,6 @@
 export default function PostViewSkeleton() {
     return (
-        <div className="max-w-[85rem] mx-auto px-4 animate-pulse">
+        <div className="max-w-[85rem] mx-auto px-4 py-10 animate-pulse">
             <div className="flex flex-row max-md:flex-col items-center justify-between gap-2 px-4 py-5 border-y border-gray-300">
                 <div className="h-6 w-2/3 bg-gray-200 rounded-md dark:bg-neutral-700" />
                 <div className="shrink-0 flex divide-x divide-gray-300 dark:divide-neutral-700">

@@ -3,19 +3,20 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import MyPostsList from '../../components/board/MyPostsList';
 import MyCommentSection from '../../components/board/MyCommentSection';
-import { MessageSquareText, NotebookPen, RotateCcw } from 'lucide-react';
-import type { CommunityBoardType, Post } from '../../contexts/PostsContext';
+import { MessageSquareText, NotebookPen } from 'lucide-react';
+import type { CommunityBoardType, Post } from '../../features/board/types/post';
 import type { Comment as CommentData } from '../../utils/comment';
 import SearchBar from '../../components/board/SearchBar';
 import PostListSkeleton from '../../components/board/PostListSkeleton';
 import { useMyBoardPosts } from '../../features/board/hooks/useMyBoardPosts';
 import { useDeletePost } from '../../features/board/hooks/useDeletePost';
+import RetryErrorState from '../../components/ui/RetryErrorState';
 
 export default function MyActivity() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <p className="mt-10 text-center">로그인 확인 중입니다.</p>;
+    return <p role="status" className="mt-10 text-center text-sm text-textSub">로그인 상태를 확인하고 있습니다.</p>;
   }
 
   if (!user) {
@@ -32,17 +33,20 @@ function MyActivityContent({ userId }: { userId: string }) {
     ...(noticeQuery.data ?? []),
     ...(freeQuery.data ?? []),
   ];
-  const loadingPosts = noticeQuery.isPending || freeQuery.isPending;
-  const postsError = noticeQuery.isError || freeQuery.isError;
+
+  const hasPostsData = noticeQuery.data !== undefined && freeQuery.data !== undefined;
+  const isInitialLoading = !hasPostsData && (noticeQuery.isPending || freeQuery.isPending);
+  const hasPostsError = noticeQuery.isError || freeQuery.isError;
+  const isInitialError = !hasPostsData && hasPostsError;
+  const isBackgroundError = hasPostsData && hasPostsError;
+  const isFetchingPosts = noticeQuery.isFetching || freeQuery.isFetching;
+
   const retryPosts = async () => {
     await Promise.all([
       noticeQuery.refetch(),
       freeQuery.refetch(),
     ]);
   };
-
-  const hasPostsData = noticeQuery.data !== undefined && freeQuery.data !== undefined;
-  const isFetchingPosts = noticeQuery.isFetching || freeQuery.isFetching;
 
   const noticeDelete = useDeletePost('notice');
   const freeDelete = useDeletePost('free');
@@ -143,29 +147,41 @@ function MyActivityContent({ userId }: { userId: string }) {
       <SearchBar searchKeyword={searchKeyword} setSearchKeyword={setSearchKeyword} />
 
       <h3 className="mb-4">나의 게시물</h3>
-      {loadingPosts ? (
-        <PostListSkeleton />
-      ) : postsError ? (
-        <div className="mb-8 p-4 text-center" role="alert">
-          <p>내 게시글을 불러오지 못했습니다.</p>
-          <button
-            type="button"
-            className="inline-flex gap-2"
-            disabled={isFetchingPosts}
-            onClick={() => { void retryPosts(); }}
-          >
-            <RotateCcw aria-hidden="true" /> 다시 시도
-          </button>
+
+      {isInitialLoading ? (
+        <div role="status">
+          <span className="sr-only">내 게시글을 불러오는 중입니다.</span>
+          <PostListSkeleton />
         </div>
-      ) : (
-        <MyPostsList
-          currentPage={postPage}
-          setCurrentPage={setPostPage}
-          searchKeyword={searchKeyword}
-          deletePost={deletePost}
-          posts={posts}
-          handlePageChange={handlePostPageChange}
+      ) : isInitialError ? (
+        <RetryErrorState
+          message="내 게시글을 불러오지 못했습니다."
+          isRetrying={isFetchingPosts}
+          onRetry={() => {
+            void retryPosts();
+          }}
         />
+      ) : (
+        <>
+          {isBackgroundError && (
+            <RetryErrorState
+              message="최신 게시글을 불러오지 못했습니다. 이전 목록을 표시합니다."
+              isRetrying={isFetchingPosts}
+              onRetry={() => {
+                void retryPosts();
+              }}
+            />
+          )}
+
+          <MyPostsList
+            currentPage={postPage}
+            setCurrentPage={setPostPage}
+            searchKeyword={searchKeyword}
+            deletePost={deletePost}
+            posts={posts}
+            handlePageChange={handlePostPageChange}
+          />
+        </>
       )}
 
       <h3 className="mb-4">내가 쓴 댓글</h3>

@@ -13,6 +13,7 @@ import { useToast } from '../../contexts/ToastContext';
 import Pagination from './Pagination';
 import { formatDate } from '../../utils/format';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
+import RetryErrorState from '../ui/RetryErrorState';
 
 interface MyCommentSectionProps {
   searchKeyword: string;
@@ -109,23 +110,24 @@ export default function MyCommentSection({
   };
 
   if (loading) {
-    return <p className="mt-4 p-4 text-center text-gray-500">댓글을 불러오는 중입니다.</p>;
+    return <p role="status" className="mt-4 text-center text-sm text-textSub">댓글을 불러오는 중입니다.</p>;
   }
 
   if (loadError) {
     return (
-      <div className="mt-4 p-4 text-center" role="alert">
-        <p>{loadError}</p>
-        <button type="button" className="mt-3 text-primary" onClick={() => setRetryCount((count) => count + 1)}>
-          다시 시도
-        </button>
-      </div>
+      <RetryErrorState
+        message={loadError}
+        onRetry={() => {
+          setLoading(true);
+          setRetryCount((count) => count + 1);
+        }}
+      />
     );
   }
 
   if (!filteredComments.length) {
     return (
-      <p className="mt-4 p-4 text-center text-gray-500 text-xs md:text-base">
+      <p role="status" className="mt-4 py-10 text-center text-sm text-textSub">
         작성한 댓글이 없습니다.
       </p>
     );
