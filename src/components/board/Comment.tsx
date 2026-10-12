@@ -8,18 +8,17 @@ import { Ellipsis, PenLine, Trash2 } from 'lucide-react';
 import { AuthAccess } from '../auth/AuthAccess';
 import LikeButton from '../ui/LikeButton';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import {
-  deleteCommentFromDB,
-  updateCommentInDB,
-  type Comment as CommentData,
-} from '../../utils/comment';
+import type { Comment as CommentData } from '../../features/board/types/comment';
+import { useQueryClient } from '@tanstack/react-query';
+import { commentQueryKeys } from '../../features/board/queries/commentQueryKeys';
+import { CommunityBoardType } from '../../features/board/types/post';
+import { deleteCommentFromFirestore, updateCommentInFirestore } from '../../features/board/services/commentsService';
 
 interface CommentProps {
   idx: number;
   data: CommentData;
-  boardType: string;
+  boardType: CommunityBoardType;
   postId: string;
-  setComments: Dispatch<SetStateAction<CommentData[]>>;
   openDropdownId: string | null;
   setOpenDropdownId: Dispatch<SetStateAction<string | null>>;
 }
@@ -29,10 +28,11 @@ export default function Comment({
   data,
   boardType,
   postId,
-  setComments,
   openDropdownId,
   setOpenDropdownId,
 }: CommentProps) {
+  const queryClient = useQueryClient();
+
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -74,13 +74,26 @@ export default function Comment({
 
     try {
       const nextContent = editText.trim();
-      await updateCommentInDB(boardType, postId, data.id, nextContent);
 
-      setComments((currentComments) =>
-        currentComments.map((comment) =>
-          comment.id === data.id ? { ...comment, content: nextContent } : comment
-        )
+      await updateCommentInFirestore(
+        boardType,
+        postId,
+        data.id,
+        nextContent,
       );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: commentQueryKeys.post(
+            boardType,
+            postId,
+          ),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: commentQueryKeys.mineRoot(),
+        }),
+      ]);
+
       setIsEditing(null);
       showToast({ message: notification.message });
       addNotification(notification);
@@ -109,8 +122,23 @@ export default function Comment({
     const notificationErr = { notificationId, message: '삭제에 실패했습니다.' };
 
     try {
-      await deleteCommentFromDB(data.boardType, data.postId, data.id);
-      setComments((currentComments) => currentComments.filter((comment) => comment.id !== id));
+      await deleteCommentFromFirestore(
+        data.boardType,
+        data.postId,
+        data.id,
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: commentQueryKeys.post(
+            data.boardType,
+            data.postId,
+          ),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: commentQueryKeys.mineRoot(),
+        }),
+      ]);
 
       showToast({ message: notification.message });
       addNotification(notification);

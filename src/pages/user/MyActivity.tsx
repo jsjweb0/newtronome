@@ -5,12 +5,12 @@ import MyPostsList from '../../components/board/MyPostsList';
 import MyCommentSection from '../../components/board/MyCommentSection';
 import { MessageSquareText, NotebookPen } from 'lucide-react';
 import type { CommunityBoardType, Post } from '../../features/board/types/post';
-import type { Comment as CommentData } from '../../utils/comment';
 import SearchBar from '../../components/board/SearchBar';
 import PostListSkeleton from '../../components/board/PostListSkeleton';
 import { useMyBoardPosts } from '../../features/board/hooks/useMyBoardPosts';
 import { useDeletePost } from '../../features/board/hooks/useDeletePost';
 import RetryErrorState from '../../components/ui/RetryErrorState';
+import { useMyCommentsQuery } from '../../features/board/hooks/useMyCommentsQuery';
 
 export default function MyActivity() {
   const { user, loading } = useAuth();
@@ -62,7 +62,8 @@ function MyActivityContent({ userId }: { userId: string }) {
     }
   };
 
-  const [comments, setComments] = useState<CommentData[]>([]);
+  const commentsQuery = useMyCommentsQuery(userId);
+  const comments = commentsQuery.data ?? [];
 
   const [searchParams, setSearchParams] = useSearchParams();
   const pageParam = Number.parseInt(searchParams.get('page') ?? '', 10) || 1;
@@ -134,7 +135,9 @@ function MyActivityContent({ userId }: { userId: string }) {
               </div>
               <div className="mt-1 flex items-center gap-x-2">
                 <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
-                  {comments.length}
+                  {commentsQuery.data !== undefined
+                    ? comments.length
+                    : '—'}
                 </h3>
               </div>
             </div>
@@ -191,7 +194,18 @@ function MyActivityContent({ userId }: { userId: string }) {
         setCurrentPage={setCommentPage}
         searchKeyword={searchKeyword}
         comments={comments}
-        setComments={setComments}
+        isPending={
+          commentsQuery.data === undefined &&
+          commentsQuery.isPending
+        }
+        isError={
+          commentsQuery.data === undefined &&
+          commentsQuery.isError
+        }
+        isFetching={commentsQuery.isFetching}
+        onRetry={() => {
+          void commentsQuery.refetch();
+        }}
         handlePageChange={handleCommentPageChange}
       />
     </div>
