@@ -1,11 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import {
-  deleteCommentFromDB,
-  getMyCommentsFromDB,
-  type Comment as CommentData,
-} from '../../utils/comment';
 import { Link } from 'react-router-dom';
 import { ThumbsUp } from 'lucide-react';
 import { BaseButton } from '../ui/BaseButton';
@@ -13,64 +7,34 @@ import { useToast } from '../../contexts/ToastContext';
 import Pagination from './Pagination';
 import { formatDate } from '../../utils/format';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
+import RetryErrorState from '../ui/RetryErrorState';
+import type { Comment as CommentData } from '../../features/board/types/comment';
+import { useDeleteComment } from '../../features/board/hooks/useDeleteComment';
 
 interface MyCommentSectionProps {
   searchKeyword: string;
   comments: CommentData[];
-  setComments: Dispatch<SetStateAction<CommentData[]>>;
   currentPage: number;
   setCurrentPage: Dispatch<SetStateAction<number>>;
   handlePageChange: (page: number) => void;
+  isPending: boolean;
+  isError: boolean;
+  isFetching: boolean;
+  onRetry: () => void;
 }
 
 export default function MyCommentSection({
   searchKeyword,
   comments,
-  setComments,
   currentPage,
   setCurrentPage,
   handlePageChange,
+  isPending,
+  isError,
+  isFetching,
+  onRetry,
 }: MyCommentSectionProps) {
-  const { user, loading: authLoading } = useAuth();
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-
-  // 1) 마이 코멘트 로드
-  useEffect(() => {
-    if (authLoading) return;
-
-    if (!user?.uid) {
-      setComments([]);
-      setLoading(false);
-      return;
-    }
-
-    let ignore = false;
-    setComments([]);
-    setLoading(true);
-    setLoadError('');
-
-    getMyCommentsFromDB(user.uid)
-      .then((data) => {
-        if (!ignore) setComments(data);
-      })
-      .catch((err) => {
-        if (!ignore) {
-          console.error('내 댓글 조회 에러:', err);
-          setLoadError('내 댓글을 불러오지 못했습니다.');
-          showToast({ message: '댓글 로딩 중 오류가 발생했습니다.', type: 'error' });
-        }
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [authLoading, user?.uid, setComments, showToast, retryCount]);
 
   // 2) 필터 & 정렬
   const filteredComments = useMemo(() => {
@@ -79,53 +43,81 @@ export default function MyCommentSection({
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }, [comments, searchKeyword]);
 
-  // 3) 페이징 계산
   const totalItems = filteredComments.length;
   const pageSize = 10;
   const totalPages = getTotalPages(totalItems, pageSize);
 
   // currentPage가 범위를 벗어나면 조정
   useEffect(() => {
+    if (isPending || isError) return;
+
     if (currentPage > totalPages) {
       setCurrentPage(totalPages || 1);
     }
-  }, [totalPages, currentPage, setCurrentPage]);
+  }, [
+    isPending,
+    isError,
+    totalPages,
+    currentPage,
+    setCurrentPage,
+  ]);
 
   const currentComments = useMemo(
     () => getCurrentPageItems(filteredComments, currentPage, pageSize),
     [filteredComments, currentPage]
   );
 
+  const deleteComment = useDeleteComment();
+  const deletingRef = useRef(false);
+
   const handleDelete = async (comment: CommentData) => {
+    if (deletingRef.current) return;
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
+
+    deletingRef.current = true;
+
     try {
-      await deleteCommentFromDB(comment.boardType, comment.postId, comment.id);
-      setComments((prev) => prev.filter((item) => item.id !== comment.id));
+      await deleteComment.mutateAsync({
+        boardType: comment.boardType,
+        postId: comment.postId,
+        commentId: comment.id,
+      });
+
       showToast({ message: '댓글이 삭제되었습니다.' });
-    } catch (err) {
-      console.error('삭제 에러:', err);
-      showToast({ message: '삭제에 실패했습니다.', type: 'error' });
+    } catch {
+      showToast({
+        message: '삭제에 실패했습니다.',
+        type: 'error',
+      });
+    } finally {
+      deletingRef.current = false;
     }
   };
 
-  if (loading) {
-    return <p className="mt-4 p-4 text-center text-gray-500">댓글을 불러오는 중입니다.</p>;
+  if (isPending) {
+    return (
+      <p
+        role="status"
+        className="mt-4 text-center text-sm text-textSub"
+      >
+        댓글을 불러오는 중입니다.
+      </p>
+    );
   }
 
-  if (loadError) {
+  if (isError) {
     return (
-      <div className="mt-4 p-4 text-center" role="alert">
-        <p>{loadError}</p>
-        <button type="button" className="mt-3 text-primary" onClick={() => setRetryCount((count) => count + 1)}>
-          다시 시도
-        </button>
-      </div>
+      <RetryErrorState
+        message="내 댓글을 불러오지 못했습니다."
+        isRetrying={isFetching}
+        onRetry={onRetry}
+      />
     );
   }
 
   if (!filteredComments.length) {
     return (
-      <p className="mt-4 p-4 text-center text-gray-500 text-xs md:text-base">
+      <p role="status" className="mt-4 py-10 text-center text-sm text-textSub">
         작성한 댓글이 없습니다.
       </p>
     );
@@ -159,7 +151,12 @@ export default function MyCommentSection({
               {c.likeCount ?? 0}
             </div>
             <div className="max-md:mt-2">
-              <BaseButton variant="cancel" className="px-3! py-1!" onClick={() => handleDelete(c)}>
+              <BaseButton
+                variant="cancel"
+                className="px-3! py-1!"
+                onClick={() => handleDelete(c)}
+                disabled={deleteComment.isPending}
+              >
                 삭제
               </BaseButton>
             </div>

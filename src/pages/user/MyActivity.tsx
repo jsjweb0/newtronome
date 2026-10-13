@@ -1,29 +1,70 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import MyPostsList from '../../components/board/MyPostsList';
 import MyCommentSection from '../../components/board/MyCommentSection';
 import { MessageSquareText, NotebookPen } from 'lucide-react';
-import { usePosts } from '../../contexts/PostsContext';
-import type { CommunityBoardType, Post } from '../../contexts/PostsContext';
-import type { Comment as CommentData } from '../../utils/comment';
+import type { CommunityBoardType, Post } from '../../features/board/types/post';
 import SearchBar from '../../components/board/SearchBar';
 import PostListSkeleton from '../../components/board/PostListSkeleton';
-
-const BOARD_TYPES: CommunityBoardType[] = ['notice', 'free'];
+import { useMyBoardPosts } from '../../features/board/hooks/useMyBoardPosts';
+import { useDeletePost } from '../../features/board/hooks/useDeletePost';
+import RetryErrorState from '../../components/ui/RetryErrorState';
+import { useMyCommentsQuery } from '../../features/board/hooks/useMyCommentsQuery';
 
 export default function MyActivity() {
-  const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const userUid = user?.uid;
-  const { getMyPosts, deletePost } = usePosts();
 
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [comments, setComments] = useState<CommentData[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
-  const [postsError, setPostsError] = useState('');
-  const [postsRetryCount, setPostsRetryCount] = useState(0);
-  // URL 쿼리 & 로컬 상태
+  if (loading) {
+    return <p role="status" className="mt-10 text-center text-sm text-textSub">로그인 상태를 확인하고 있습니다.</p>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <MyActivityContent key={user.uid} userId={user.uid} />;
+}
+
+function MyActivityContent({ userId }: { userId: string }) {
+  const noticeQuery = useMyBoardPosts(userId, 'notice');
+  const freeQuery = useMyBoardPosts(userId, 'free');
+  const posts = [
+    ...(noticeQuery.data ?? []),
+    ...(freeQuery.data ?? []),
+  ];
+
+  const hasPostsData = noticeQuery.data !== undefined && freeQuery.data !== undefined;
+  const isInitialLoading = !hasPostsData && (noticeQuery.isPending || freeQuery.isPending);
+  const hasPostsError = noticeQuery.isError || freeQuery.isError;
+  const isInitialError = !hasPostsData && hasPostsError;
+  const isBackgroundError = hasPostsData && hasPostsError;
+  const isFetchingPosts = noticeQuery.isFetching || freeQuery.isFetching;
+
+  const retryPosts = async () => {
+    await Promise.all([
+      noticeQuery.refetch(),
+      freeQuery.refetch(),
+    ]);
+  };
+
+  const noticeDelete = useDeletePost('notice');
+  const freeDelete = useDeletePost('free');
+
+  const deletePost = async (
+    boardType: CommunityBoardType,
+    postId: Post['id'],
+  ): Promise<void> => {
+    if (boardType === 'notice') {
+      await noticeDelete.mutateAsync(postId);
+    } else {
+      await freeDelete.mutateAsync(postId);
+    }
+  };
+
+  const commentsQuery = useMyCommentsQuery(userId);
+  const comments = commentsQuery.data ?? [];
+
   const [searchParams, setSearchParams] = useSearchParams();
   const pageParam = Number.parseInt(searchParams.get('page') ?? '', 10) || 1;
   const keywordParam = searchParams.get('keyword') || '';
@@ -31,50 +72,6 @@ export default function MyActivity() {
   const [commentPage, setCommentPage] = useState(pageParam);
   const [searchKeyword, setSearchKeyword] = useState(keywordParam);
 
-  // 1. 각각의 페이지 번호를 관리할 state
-  useEffect(() => {
-    if (loading) return;
-    if (!userUid) {
-      void navigate('/login', { replace: true });
-    }
-  }, [loading, userUid, navigate]);
-
-  // 1) “내 글” 로드
-  useEffect(() => {
-    if (loading) return;
-    if (!userUid) {
-      setPosts([]);
-      setLoadingPosts(false);
-      return;
-    }
-
-    let ignore = false;
-    setPosts([]);
-
-    const fetchMyPosts = async () => {
-      setLoadingPosts(true);
-      setPostsError('');
-
-      try {
-        const result = await Promise.all(BOARD_TYPES.map((type) => getMyPosts(type)));
-        if (!ignore) setPosts(result.flat());
-      } catch (error) {
-        if (!ignore) {
-          console.error('내 게시글 조회 실패:', error);
-          setPostsError('내 게시글을 불러오지 못했습니다.');
-        }
-      } finally {
-        if (!ignore) setLoadingPosts(false);
-      }
-    };
-
-    void fetchMyPosts();
-    return () => {
-      ignore = true;
-    };
-  }, [loading, userUid, getMyPosts, postsRetryCount]);
-
-  // 2) URL → state 동기화
   useEffect(() => {
     const p = Number.parseInt(searchParams.get('page') ?? '', 10);
     const kw = searchParams.get('keyword') || '';
@@ -83,7 +80,6 @@ export default function MyActivity() {
     setSearchKeyword(kw);
   }, [searchParams]);
 
-  // 5) 검색어 변경 시 URL 리셋
   useEffect(() => {
     setSearchParams((previousParams) => {
       const nextParams = new URLSearchParams(previousParams);
@@ -95,12 +91,10 @@ export default function MyActivity() {
 
   const handlePostPageChange = (page: number) => {
     setPostPage(page);
-    // URL 동기화도 따로 해주려면 searchParams.set('postPage', page)…
   };
 
   const handleCommentPageChange = (page: number) => {
     setCommentPage(page);
-    // searchParams.set('commentPage', page)
   };
 
   return (
@@ -120,7 +114,7 @@ export default function MyActivity() {
               </div>
               <div className="mt-1 flex items-center gap-x-2">
                 <h3 className="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
-                  {posts.length}
+                  {hasPostsData ? posts.length : '—'}
                 </h3>
               </div>
             </div>
@@ -141,7 +135,9 @@ export default function MyActivity() {
               </div>
               <div className="mt-1 flex items-center gap-x-2">
                 <h3 className="text-xl font-medium text-gray-800 dark:text-neutral-200">
-                  {comments.length}
+                  {commentsQuery.data !== undefined
+                    ? comments.length
+                    : '—'}
                 </h3>
               </div>
             </div>
@@ -154,34 +150,62 @@ export default function MyActivity() {
       <SearchBar searchKeyword={searchKeyword} setSearchKeyword={setSearchKeyword} />
 
       <h3 className="mb-4">나의 게시물</h3>
-      {loadingPosts ? (
-        <PostListSkeleton />
-      ) : postsError ? (
-        <div className="mb-8 p-4 text-center" role="alert">
-          <p>{postsError}</p>
-          <button type="button" className="mt-3 text-primary" onClick={() => setPostsRetryCount((count) => count + 1)}>
-            다시 시도
-          </button>
+
+      {isInitialLoading ? (
+        <div role="status">
+          <span className="sr-only">내 게시글을 불러오는 중입니다.</span>
+          <PostListSkeleton />
         </div>
-      ) : (
-        <MyPostsList
-          currentPage={postPage}
-          setCurrentPage={setPostPage}
-          searchKeyword={searchKeyword}
-          deletePost={deletePost}
-          posts={posts}
-          setPosts={setPosts}
-          handlePageChange={handlePostPageChange}
+      ) : isInitialError ? (
+        <RetryErrorState
+          message="내 게시글을 불러오지 못했습니다."
+          isRetrying={isFetchingPosts}
+          onRetry={() => {
+            void retryPosts();
+          }}
         />
+      ) : (
+        <>
+          {isBackgroundError && (
+            <RetryErrorState
+              message="최신 게시글을 불러오지 못했습니다. 이전 목록을 표시합니다."
+              isRetrying={isFetchingPosts}
+              onRetry={() => {
+                void retryPosts();
+              }}
+            />
+          )}
+
+          <MyPostsList
+            currentPage={postPage}
+            setCurrentPage={setPostPage}
+            searchKeyword={searchKeyword}
+            deletePost={deletePost}
+            posts={posts}
+            handlePageChange={handlePostPageChange}
+          />
+        </>
       )}
 
       <h3 className="mb-4">내가 쓴 댓글</h3>
+
       <MyCommentSection
         currentPage={commentPage}
         setCurrentPage={setCommentPage}
         searchKeyword={searchKeyword}
         comments={comments}
-        setComments={setComments}
+        isPending={
+          commentsQuery.data === undefined &&
+          commentsQuery.isPending
+        }
+        isError={
+          commentsQuery.data === undefined &&
+          commentsQuery.isError
+        }
+        isFetching={commentsQuery.isFetching}
+        onRetry={() => {
+          void commentsQuery.refetch();
+        }}
         handlePageChange={handleCommentPageChange}
       />
     </div>

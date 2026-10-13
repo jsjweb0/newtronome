@@ -11,10 +11,7 @@ import FormInput from '../ui/FormInput';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthAccess } from '../auth/AuthAccess';
 import FormTextarea from '../ui/FormTextarea';
-import type {
-  CommunityBoardType,
-  Post,
-} from '../../contexts/PostsContext';
+import type { CommunityBoardType, Post } from '../../features/board/types/post';
 import { FREE_BOARD_CATEGORIES, LEGACY_FREE_BOARD_CATEGORY_VALUES, } from '../../constants/freeBoardCategories';
 import { normalizeLegacyPostContent } from '../../utils/postContent';
 

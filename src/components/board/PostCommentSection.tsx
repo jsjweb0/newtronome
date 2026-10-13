@@ -1,39 +1,51 @@
+import { useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useEffect, useRef, useState } from 'react';
 import { BaseButton } from '../ui/BaseButton';
 import { useNotifications } from '../../contexts/NotificationContext';
 import Comment from './Comment';
-import {
-  createCommentInDB,
-  getCommentsFromDB,
-  type Comment as CommentData,
-} from '../../utils/comment';
 import type { SubmitEvent } from 'react';
+import RetryErrorState from '../ui/RetryErrorState';
+import type { CommunityBoardType } from '../../features/board/types/post';
+import { useCommentsQuery } from '../../features/board/hooks/useCommentsQuery';
+import { useCreateComment } from '../../features/board/hooks/useCreateComment';
 
 dayjs.locale('ko');
 dayjs.extend(relativeTime);
 
 interface PostCommentSectionProps {
-  boardType: string;
+  boardType: CommunityBoardType;
   postId: string;
-  onCommentChange?: (count: number) => void;
 }
 
-export default function PostCommentSection({ boardType, postId, onCommentChange }: PostCommentSectionProps) {
+export default function PostCommentSection({
+  boardType,
+  postId,
+}: PostCommentSectionProps) {
+  const { user, avatarUrl, nicknameUrl } = useAuth();
+
+  const commentsQuery = useCommentsQuery(
+    boardType,
+    postId,
+    user?.uid,
+  );
+
+  const comments = commentsQuery.data ?? [];
+  const hasCommentsData = commentsQuery.data !== undefined;
+  const isInitialLoading = !hasCommentsData && commentsQuery.isPending;
+  const isInitialError = !hasCommentsData && commentsQuery.isError;
+  const isBackgroundError = hasCommentsData && commentsQuery.isError;
+
+  const createComment = useCreateComment();
+  const isSubmitting = createComment.isPending;
+
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
-  const { user, avatarUrl, nicknameUrl } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState<CommentData[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -49,43 +61,16 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
     return avatarUrl;
   };
 
-  useEffect(() => {
-    let ignore = false;
-
-    setLoading(true);
-    setLoadError('');
-    getCommentsFromDB(boardType, postId, user?.uid)
-      .then((data) => {
-        if (!ignore) setComments(data);
-      })
-      .catch((error) => {
-        if (!ignore) {
-          console.error('댓글 조회 실패:', error);
-          setLoadError('댓글을 불러오지 못했습니다.');
-        }
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [boardType, postId, user?.uid, retryCount]);
-
-  useEffect(() => {
-    if (typeof onCommentChange === 'function') {
-      onCommentChange(comments.length);
-    }
-  }, [comments, onCommentChange]);
-
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     if (submittingRef.current) return;
 
-    if (!comment.trim()) {
+    const content = comment.trim();
+
+    if (!content) {
       textareaRef.current?.focus();
-      showToast({ message: '내용을 입력해주세요!', type: 'error' });
+      showToast({ message: '내용을 입력해주세요!', type: 'warning' });
       return;
     }
 
@@ -98,48 +83,60 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
     }
 
     submittingRef.current = true;
-    setIsSubmitting(true);
 
     try {
-      const newCommentForLocal = await createCommentInDB(boardType, postId, {
-        content: comment.trim(),
-        writerUid: user.uid,
-        writerEmail: user.email,
-        displayName: user.displayName || null,
-        photoURL: user.photoURL || null,
+      await createComment.mutateAsync({
+        boardType,
+        postId,
+        input: {
+          content,
+          writerUid: user.uid,
+          writerEmail: user.email,
+          displayName: user.displayName || null,
+          photoURL: user.photoURL || null,
+        },
       });
 
-      const notification = { notificationId: Date.now(), message: '댓글이 등록되었습니다.' };
-      setComments((previousComments) => [newCommentForLocal, ...previousComments]);
       setComment('');
+
+      const notification = { notificationId: Date.now(), message: '댓글이 등록되었습니다.' };
+
       showToast({ message: notification.message });
       addNotification(notification);
-    } catch (error) {
-      console.error('댓글 등록 실패:', error);
+    } catch {
       showToast({ message: '댓글 등록에 실패했습니다.', type: 'error' });
     } finally {
       submittingRef.current = false;
-      setIsSubmitting(false);
     }
   };
 
-  if (loading) {
-    return <p className="my-4 text-center text-gray-400 text-sm">댓글 불러오는 중...</p>;
+  if (isInitialLoading) {
+    return <p role="status" className="my-4 text-center text-sm text-textSub">댓글을 불러오는 중입니다.</p>;
   }
 
-  if (loadError) {
+  if (isInitialError) {
     return (
-      <div className="my-4 text-center" role="alert">
-        <p className="text-sm text-red-600">{loadError}</p>
-        <BaseButton className="mt-3" variant="outline" onClick={() => setRetryCount((count) => count + 1)}>
-          다시 시도
-        </BaseButton>
-      </div>
+      <RetryErrorState
+        message="댓글을 불러오지 못했습니다."
+        isRetrying={commentsQuery.isFetching}
+        onRetry={() => {
+          void commentsQuery.refetch();
+        }}
+      />
     );
   }
-
   return (
     <div className="mt-6 md:mt-12">
+      {isBackgroundError && (
+        <RetryErrorState
+          message="최신 댓글을 불러오지 못했습니다. 이전 댓글을 표시합니다."
+          isRetrying={commentsQuery.isFetching}
+          onRetry={() => {
+            void commentsQuery.refetch();
+          }}
+        />
+      )}
+
       <div className="flex items-start gap-2">
         <h3 className="flex gap-1 text-gray-700 font-medium text-sm md:text-base dark:text-neutral-300">
           Comments
@@ -163,11 +160,12 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
                 className="resize-none block w-full pt-5 pr-5 pb-12 pl-21 border-gray-200 rounded-lg text-xs md:text-base focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="내용을 입력해주세요."
+                disabled={isSubmitting}
                 ref={textareaRef}
+                placeholder="내용을 입력해주세요."
               />
               <div className="absolute bottom-0 right-0 p-2">
-                <BaseButton type="submit" className="py-2!" disabled={isSubmitting}>
+                <BaseButton type="submit" disabled={isSubmitting} className="py-2!">
                   {isSubmitting ? '작성 중...' : '작성'}
                 </BaseButton>
               </div>
@@ -189,7 +187,6 @@ export default function PostCommentSection({ boardType, postId, onCommentChange 
             data={commentData}
             boardType={boardType}
             postId={postId}
-            setComments={setComments}
             openDropdownId={openDropdownId}
             setOpenDropdownId={setOpenDropdownId}
           />

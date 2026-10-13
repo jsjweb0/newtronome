@@ -1,9 +1,25 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PostsContext, type Post, type PostsContextValue } from '../../contexts/PostsContext';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Post } from '../../features/board/types/post';
+import {
+  fetchPostFromFirestore,
+  fetchPostsFromFirestore,
+  incrementPostViewCount,
+} from '../../features/board/services/postsService';
 import PostView from './PostView';
+import { fetchComments } from '../../features/board/services/commentsService';
+import { commentQueryKeys } from '../../features/board/queries/commentQueryKeys';
+import type { Comment } from '../../features/board/types/comment';
+
+vi.mock('../../features/board/services/postsService', () => ({
+  fetchPostFromFirestore: vi.fn(),
+  fetchPostsFromFirestore: vi.fn(),
+  incrementPostViewCount: vi.fn(),
+  deletePostFromFirestore: vi.fn(),
+}));
 
 vi.mock('../../contexts/ToastContext', () => ({
   useToast: () => ({ showToast: vi.fn() }),
@@ -20,8 +36,11 @@ vi.mock('../../components/board/ShareButton', () => ({ default: () => null }));
 vi.mock('../../components/ui/Tooltip', () => ({
   default: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock('../../utils/comment', () => ({
-  getCommentCountFromDB: vi.fn().mockResolvedValue(0),
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: null }),
+}));
+vi.mock('../../features/board/services/commentsService', () => ({
+  fetchComments: vi.fn(),
 }));
 
 const post: Post = {
@@ -48,31 +67,31 @@ function NavigationControl() {
   return <button onClick={() => navigate('/board/free/post-2')}>다른 글 열기</button>;
 }
 
-function renderPostView(overrides: Partial<PostsContextValue> = {}) {
-  const context: PostsContextValue = {
-    getPosts: vi.fn().mockResolvedValue([post]),
-    getPost: vi.fn().mockResolvedValue(post),
-    getMyPosts: vi.fn(),
-    createPost: vi.fn(),
-    updatePost: vi.fn(),
-    updateViewCount: vi.fn().mockResolvedValue(undefined),
-    deletePost: vi.fn(),
-    ...overrides,
-  };
+function renderPostView(
+  getPost = vi.fn<typeof fetchPostFromFirestore>().mockResolvedValue(post),
+) {
+  vi.mocked(fetchPostFromFirestore).mockImplementation(getPost);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   const view = render(
-    <PostsContext.Provider value={context}>
+    <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/board/free/post-1']}>
         <NavigationControl />
         <Routes>
           <Route path="/board/:boardType/:id" element={<PostView />} />
         </Routes>
       </MemoryRouter>
-    </PostsContext.Provider>
+    </QueryClientProvider>
   );
 
-  return { context, ...view };
+  return { getPost, queryClient, ...view };
 }
+
+beforeEach(() => {
+  vi.mocked(fetchPostsFromFirestore).mockResolvedValue([post]);
+  vi.mocked(fetchComments).mockResolvedValue([]);
+  vi.mocked(incrementPostViewCount).mockResolvedValue(undefined);
+});
 
 afterEach(() => {
   cleanup();
@@ -85,11 +104,16 @@ afterEach(() => {
 describe('PostView request state', () => {
   it('renders the post even when recording the view count fails', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    renderPostView({
-      updateViewCount: vi.fn().mockRejectedValue(new Error('permission denied')),
-    });
 
-    expect(await screen.findByText('본문을 표시해야 하는 글')).toBeTruthy();
+    vi.mocked(incrementPostViewCount)
+      .mockRejectedValueOnce(new Error('permission denied'));
+
+    renderPostView();
+
+    expect(
+      await screen.findByText('본문을 표시해야 하는 글'),
+    ).toBeTruthy();
+
     expect(screen.getByText('게시글 본문')).toBeTruthy();
     expect(screen.getByText('조회수 3')).toBeTruthy();
   });
@@ -99,7 +123,7 @@ describe('PostView request state', () => {
     const getPost = vi.fn()
       .mockRejectedValueOnce(new Error('offline'))
       .mockResolvedValueOnce(post);
-    const { context } = renderPostView({ getPost });
+    renderPostView(getPost);
 
     expect((await screen.findByRole('alert')).textContent).toContain('게시글을 불러오지 못했습니다.');
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
@@ -107,7 +131,8 @@ describe('PostView request state', () => {
     expect(await screen.findByText('본문을 표시해야 하는 글')).toBeTruthy();
     expect(getPost).toHaveBeenCalledTimes(2);
     expect(getPost).toHaveBeenLastCalledWith('free', 'post-1');
-    expect(context.getPosts).toHaveBeenCalledTimes(1);
+    expect(fetchPostsFromFirestore).toHaveBeenCalledTimes(1);
+    expect(fetchPostsFromFirestore).toHaveBeenCalledWith('free');
   });
 
   it('renders stored HTML as text while preserving legacy line breaks', async () => {
@@ -115,9 +140,9 @@ describe('PostView request state', () => {
       ...post,
       content: '첫 줄<br><img src=x onerror=alert(1)><script>alert(1)</script>둘째 줄',
     };
-    const { container } = renderPostView({
-      getPost: vi.fn().mockResolvedValue(unsafePost),
-    });
+    const { container } = renderPostView(
+      vi.fn<typeof fetchPostFromFirestore>().mockResolvedValue(unsafePost),
+    );
 
     expect(await screen.findByText('본문을 표시해야 하는 글')).toBeTruthy();
     expect(container.querySelector('pre')?.textContent).toBe(
@@ -130,11 +155,10 @@ describe('PostView request state', () => {
 
 describe('PostView independent requests', () => {
   it('renders the directly fetched post even if the navigation list fails', async () => {
-    const { context } = renderPostView({
-      getPosts: vi.fn().mockRejectedValue(new Error('offline')),
-    });
+    vi.mocked(fetchPostsFromFirestore).mockRejectedValueOnce(new Error('offline'));
+    const { getPost } = renderPostView();
     expect(await screen.findByText('게시글 본문')).toBeTruthy();
-    expect(context.getPost).toHaveBeenCalledWith('free', 'post-1');
+    expect(getPost).toHaveBeenCalledWith('free', 'post-1');
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -148,10 +172,10 @@ describe('PostView independent requests', () => {
         reject = rejectPromise;
       });
       const currentPost = { ...post, id: 'post-2', title: '현재 글', content: '현재 본문' };
-      const getPost = vi.fn<PostsContextValue['getPost']>()
+      const getPost = vi.fn<typeof fetchPostFromFirestore>()
         .mockReturnValueOnce(oldRequest)
         .mockResolvedValueOnce(currentPost);
-      const { context } = renderPostView({ getPost });
+      renderPostView(getPost);
       fireEvent.click(screen.getByRole('button', { name: '다른 글 열기' }));
       await screen.findByText('현재 본문');
 
@@ -163,8 +187,40 @@ describe('PostView independent requests', () => {
       expect(screen.getByText('현재 본문')).toBeTruthy();
       expect(screen.queryByText('게시글 본문')).toBeNull();
       expect(screen.queryByRole('alert')).toBeNull();
-      expect(context.updateViewCount).toHaveBeenCalledTimes(1);
-      expect(context.updateViewCount).toHaveBeenCalledWith('free', 'post-2');
+      expect(incrementPostViewCount).toHaveBeenCalledTimes(1);
+      expect(incrementPostViewCount).toHaveBeenCalledWith('free', 'post-2');
     }
   );
+
+  it('조회수 증가 성공 후 상세 캐시를 갱신한다', async () => {
+    renderPostView();
+
+    expect(await screen.findByText('조회수 4')).toBeTruthy();
+
+    expect(incrementPostViewCount)
+      .toHaveBeenCalledTimes(1);
+
+    expect(incrementPostViewCount)
+      .toHaveBeenCalledWith('free', 'post-1');
+  });
+
+  it('댓글 목록 캐시가 바뀌면 상세 댓글 개수도 갱신한다', async () => {
+    const comment: Comment = {
+      id: 'comment-1', boardType: 'free', postId: post.id,
+      content: '댓글', createdAt: new Date(), likeCount: 0, liked: false,
+      writerUid: null, writerEmail: null, displayName: null, photoURL: null,
+    };
+    const { queryClient } = renderPostView();
+    await screen.findByText('게시글 본문');
+    const countElement = screen.getByRole('tooltip', { name: 'Comment', hidden: true }).parentElement;
+    expect(countElement?.textContent).toContain('0');
+    act(() => {
+      queryClient.setQueryData(
+        commentQueryKeys.postForViewer('free', post.id), [comment, { ...comment, id: 'comment-2' }],
+      );
+    });
+    expect(await screen.findByText('2', { exact: true })).toBeTruthy();
+    expect(fetchComments).toHaveBeenCalledWith('free', post.id, undefined);
+  });
+
 });

@@ -5,6 +5,9 @@ import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import clsx from 'clsx';
+import { useQueryClient } from '@tanstack/react-query';
+import { commentQueryKeys } from '../../features/board/queries/commentQueryKeys';
+import { isCommunityBoardType } from '../../features/board/types/post';
 
 interface LikeButtonProps {
   type?: 'heart' | 'thumb';
@@ -30,6 +33,8 @@ export default function LikeButton({
   'aria-describedby': ariaDescribedBy,
 }: LikeButtonProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
   const [lookupStatus, setLookupStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [isSaving, setIsSaving] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -122,8 +127,27 @@ export default function LikeButton({
         { merge: true }
       );
 
+      if (
+        subCollection === 'comments' &&
+        parentId !== undefined &&
+        isCommunityBoardType(collection)
+      ) {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: commentQueryKeys.post(
+              collection,
+              String(parentId),
+            ),
+          }),
+          queryClient.invalidateQueries({
+            queryKey: commentQueryKeys.mineRoot(),
+          }),
+        ])
+      }
+
       setAnimate(true);
       window.setTimeout(() => setAnimate(false), 400);
+
       showToast({
         message: newLiked ? '좋아요를 눌렀습니다!' : '좋아요를 취소했습니다.',
       });

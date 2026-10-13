@@ -10,7 +10,7 @@ import type {
     CreatePostInput,
     Post,
     UpdatePostInput,
-} from '../../../contexts/PostsContext';
+} from '../types/post';
 import { isNonNegativeInteger } from '../../../utils/numberValidation';
 
 function getPostNumber(

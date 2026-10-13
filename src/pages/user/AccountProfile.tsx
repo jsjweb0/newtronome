@@ -19,6 +19,7 @@ import FormInput from '../../components/ui/FormInput';
 import { formatDate } from '../../utils/format';
 import { LogOut, Mail, Calendar } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import RetryErrorState from '../../components/ui/RetryErrorState';
 
 export default function AccountProfile() {
   const { user, logout, loading, avatarUrl, nicknameUrl } = useAuth();
@@ -260,12 +261,13 @@ export default function AccountProfile() {
           {profileLoading ? (
             <p role="status">프로필을 불러오는 중입니다.</p>
           ) : profileError ? (
-            <div role="alert">
-              <p>{profileError}</p>
-              <button type="button" onClick={() => setRetryCount((count) => count + 1)}>
-                다시 시도
-              </button>
-            </div>
+            <RetryErrorState
+              message={profileError}
+              onRetry={() => {
+                setProfileLoading(true);
+                setRetryCount((count) => count + 1);
+              }}
+            />
           ) : (
             <form onSubmit={handleSave}>
               <div className="grid gap-y-5">

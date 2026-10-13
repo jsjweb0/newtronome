@@ -1,8 +1,16 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PostsContext, type Post, type PostsContextValue } from '../../contexts/PostsContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fetchPostsFromFirestore } from '../../features/board/services/postsService';
+import type { Post } from '../../features/board/types/post';
 import BoardPage from './BoardPage';
+import { postQueryKeys } from '../../features/board/queries/postQueryKeys';
+
+vi.mock('../../features/board/services/postsService', () => ({
+  fetchPostsFromFirestore: vi.fn(),
+  deletePostFromFirestore: vi.fn(),
+}));
 
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: null, loading: false }),
@@ -16,8 +24,8 @@ vi.mock('../../contexts/NotificationContext', () => ({
   useNotifications: () => ({ addNotification: vi.fn() }),
 }));
 
-vi.mock('../../utils/comment', () => ({
-  getCommentCountFromDB: vi.fn().mockResolvedValue(0),
+vi.mock('../../features/board/services/commentsService', () => ({
+  fetchCommentCount: vi.fn().mockResolvedValue(0),
 }));
 
 const posts: Post[] = Array.from({ length: 12 }, (_, index) => {
@@ -59,26 +67,24 @@ function currentSearch() {
   return screen.getByTestId('location').textContent ?? '';
 }
 
-function renderBoardWithQuery(getPosts: PostsContextValue['getPosts'], url = '/board/free') {
-  const context: PostsContextValue = {
-    getPosts,
-    getPost: vi.fn(),
-    getMyPosts: vi.fn(),
-    createPost: vi.fn(),
-    updatePost: vi.fn(),
-    updateViewCount: vi.fn(),
-    deletePost: vi.fn(),
-  };
+function renderBoardWithQuery(
+  getPosts: typeof fetchPostsFromFirestore,
+  url = '/board/free',
+) {
+  vi.mocked(fetchPostsFromFirestore).mockImplementation(getPosts);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <PostsContext.Provider value={context}>
+    <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[url]}>
         <HistoryControls />
         <Routes>
           <Route path="/board/:boardType" element={<BoardPage />} />
         </Routes>
       </MemoryRouter>
-    </PostsContext.Provider>
+    </QueryClientProvider>
   );
+
+  return queryClient;
 }
 
 async function renderBoard(url = '/board/free', boardPosts = posts) {
@@ -88,7 +94,11 @@ async function renderBoard(url = '/board/free', boardPosts = posts) {
 }
 
 function visiblePostTitles() {
-  return screen.queryAllByRole('link').map((link) => link.textContent);
+  // 제목·카테고리만 비교하고 비동기로 변하는 댓글 개수 표시는 제외한다.
+  return screen.queryAllByRole('link').map((link) =>
+    Array.from(link.querySelectorAll(':scope > span.inline-block'))
+      .map((element) => element.textContent).join(''),
+  );
 }
 
 // 실제 네트워크나 타이머 없이 요청의 완료 시점과 순서를 제어한다.
@@ -210,7 +220,7 @@ describe('BoardPage URL navigation', () => {
 describe('BoardPage request failures and stale responses', () => {
   it('distinguishes a failed query from an empty board and recovers on retry', async () => {
     const retryRequest = createPendingPostsRequest();
-    const getPosts = vi.fn<PostsContextValue['getPosts']>()
+    const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
       .mockRejectedValueOnce(new Error('조회 실패'))
       .mockReturnValueOnce(retryRequest.promise);
     renderBoardWithQuery(getPosts);
@@ -224,18 +234,17 @@ describe('BoardPage request failures and stale responses', () => {
     expect(getPosts).toHaveBeenCalledTimes(2);
     expect(getPosts).toHaveBeenNthCalledWith(1, 'free');
     expect(getPosts).toHaveBeenNthCalledWith(2, 'free');
-    expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.queryByRole('button', { name: '다시 시도' })).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('게시글을 불러오지 못했습니다.');
     expect(screen.queryByRole('textbox', { name: '검색어' })).toBeNull();
 
     await act(async () => { retryRequest.resolve(posts); });
-    expect(screen.queryByRole('textbox', { name: '검색어' })).not.toBeNull();
+    expect(await screen.findByRole('textbox', { name: '검색어' })).not.toBeNull();
     expect(visiblePostTitles()).toHaveLength(10);
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('allows another retry after a repeated failure and shows a successful empty result', async () => {
-    const getPosts = vi.fn<PostsContextValue['getPosts']>()
+    const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
       .mockRejectedValueOnce(new Error('첫 번째 실패'))
       .mockRejectedValueOnce(new Error('두 번째 실패'))
       .mockResolvedValueOnce([]);
@@ -259,7 +268,7 @@ describe('BoardPage request failures and stale responses', () => {
     async (outcome) => {
       const oldRequest = createPendingPostsRequest();
       const currentRequest = createPendingPostsRequest();
-      const getPosts = vi.fn<PostsContextValue['getPosts']>()
+      const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
         .mockReturnValueOnce(oldRequest.promise)
         .mockReturnValueOnce(currentRequest.promise);
       renderBoardWithQuery(getPosts);
@@ -278,8 +287,8 @@ describe('BoardPage request failures and stale responses', () => {
       expect(visiblePostTitles()).toHaveLength(0);
 
       await act(async () => { currentRequest.resolve([]); });
-      expect(screen.getByRole('status').textContent)
-        .toBe('아직 등록된 게시글이 없습니다.');
+      const emptyState = await screen.findByText('아직 등록된 게시글이 없습니다.');
+      expect(emptyState.getAttribute('role')).toBe('status');
       expect(screen.queryByRole('alert')).toBeNull();
     }
   );
@@ -291,7 +300,7 @@ describe('BoardPage request failures and stale responses', () => {
       const noticePost: Post = {
         ...posts[0], id: 'notice-post', boardType: 'notice', title: '현재 공지사항',
       };
-      const getPosts = vi.fn<PostsContextValue['getPosts']>()
+      const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
         .mockReturnValueOnce(oldRequest.promise)
         .mockResolvedValueOnce([noticePost]);
       renderBoardWithQuery(getPosts);
@@ -311,6 +320,60 @@ describe('BoardPage request failures and stale responses', () => {
       expect(screen.queryByRole('heading', { name: '공지사항' })).not.toBeNull();
     }
   );
+
+  it('재조회 실패 시 기존 목록을 유지하고 재시도로 복구한다', async () => {
+    const retryRequest = createPendingPostsRequest();
+
+    const getPosts = vi.fn<typeof fetchPostsFromFirestore>()
+      .mockResolvedValueOnce(posts)
+      .mockRejectedValueOnce(new Error('재조회 실패'))
+      .mockReturnValueOnce(retryRequest.promise);
+
+    const queryClient = renderBoardWithQuery(getPosts);
+
+    // 처음에는 목록을 정상적으로 표시합니다.
+    await screen.findByRole('textbox', { name: '검색어' });
+    const originalTitles = visiblePostTitles();
+
+    // 캐시를 무효화해 재조회를 실행합니다.
+    await act(async () => {
+      await queryClient.invalidateQueries({
+        queryKey: postQueryKeys.list('free'),
+      });
+    });
+
+    // 재조회가 실패해도 기존 목록은 남아 있어야 합니다.
+    expect((await screen.findByRole('alert')).textContent)
+      .toBe('최신 목록을 불러오지 못했습니다. 이전 목록을 표시합니다.');
+
+    expect(visiblePostTitles()).toEqual(originalTitles);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: '다시 시도' }),
+    );
+
+    // 재시도 중에는 중복 클릭을 막습니다.
+    const retryButton = await screen.findByRole<HTMLButtonElement>(
+      'button',
+      { name: '다시 불러오는 중…' },
+    );
+
+    expect(retryButton.disabled).toBe(true);
+    expect(visiblePostTitles()).toEqual(originalTitles);
+
+    // 재시도가 성공하면 오류 안내가 사라집니다.
+    await act(async () => {
+      retryRequest.resolve(posts);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    expect(visiblePostTitles()).toEqual(originalTitles);
+    expect(getPosts).toHaveBeenCalledTimes(3);
+  });
+
 });
 
 describe('BoardPage empty results', () => {

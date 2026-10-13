@@ -3,10 +3,10 @@ import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import {
   isCommunityBoardType,
+  type CommunityBoardType,
   type Post,
-  usePosts,
-} from '../../contexts/PostsContext';
-import { useEffect, useState } from 'react';
+} from '../../features/board/types/post';
+import { useEffect, useRef } from 'react';
 import { AuthAccess } from '../../components/auth/AuthAccess';
 import { BaseButton } from '../../components/ui/BaseButton';
 import {
@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import LikeButton from '../../components/ui/LikeButton';
 import PostCommentSection from '../../components/board/PostCommentSection';
-import { getCommentCountFromDB } from '../../utils/comment';
 import ShareButton from '../../components/board/ShareButton';
 import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip';
@@ -27,17 +26,52 @@ import { formatDate } from '../../utils/format';
 import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
 import { normalizeLegacyPostContent } from '../../utils/postContent';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
+import { useDeletePost } from '../../features/board/hooks/useDeletePost';
+import { useBoardPost } from '../../features/board/hooks/useBoardPost';
+import { useBoardPosts } from '../../features/board/hooks/useBoardPosts';
+import { useIncrementPostViewCount } from '../../features/board/hooks/useIncrementPostViewCount';
+import RetryErrorState from '../../components/ui/RetryErrorState';
+import { useAuth } from '../../contexts/AuthContext';
+import { useCommentsQuery } from '../../features/board/hooks/useCommentsQuery';
 
 export default function PostView() {
+  const { boardType, id } = useParams();
+
+  if (!id || !isCommunityBoardType(boardType)) {
+    return <div className="text-center mt-10 font-bold">존재하지 않는 게시판입니다.</div>;
+  }
+
+  return <PostViewContent boardType={boardType} postId={id} />;
+}
+
+function PostViewContent({ boardType, postId }: {
+  boardType: CommunityBoardType;
+  postId: Post['id'];
+}) {
+  const { user } = useAuth();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
-  const { boardType, id } = useParams();
-  const { getPosts, getPost, updateViewCount, deletePost } = usePosts();
-  const [postsState, setPostsState] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPost, setCurrentPost] = useState<Post | null>(null);
-  const [loadError, setLoadError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
+  const { mutateAsync: deletePost } = useDeletePost(boardType);
+  const viewedPostRef = useRef<Set<string>>(new Set());
+  const {
+    data: currentPost,
+    isPending: loading,
+    isError,
+    isFetching,
+    refetch,
+  } = useBoardPost(boardType, postId);
+  const postsQuery = useBoardPosts(boardType);
+  const posts = postsQuery.data ?? [];
+
+  const { mutateAsync: incrementViewCount } = useIncrementPostViewCount(boardType, postId);
+
+  const commentsQuery = useCommentsQuery(
+    boardType,
+    postId,
+    user?.uid,
+  );
+
+  const commentCount = commentsQuery.data?.length;
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -55,153 +89,61 @@ export default function PostView() {
     sort,
   });
 
-  const currentIndex = postsState.findIndex((post) => String(post.id) === id);
-  const prevPost = currentIndex > 0 ? postsState[currentIndex - 1] : undefined;
-  const nextPost = currentIndex >= 0 ? postsState[currentIndex + 1] : undefined;
+  const currentIndex = posts.findIndex((post) => String(post.id) === postId);
+  const prevPost = currentIndex > 0 ? posts[currentIndex - 1] : undefined;
+  const nextPost = currentIndex >= 0 ? posts[currentIndex + 1] : undefined;
 
   const pagerBtnClasses =
     'shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 group-hover:bg-gray-50 group-focus:outline-hidden group-focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:group-hover:bg-neutral-700 dark:focus:bg-neutral-700';
   const pagerClasses =
     "overflow-hidden block relative pb-1 whitespace-nowrap overflow-ellipsis after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-gray-500 after:transition-width after:duration-300 group-hover:after:w-full";
 
-  const [commentCount, setCommentCount] = useState(0);
-
-  // 상세 본문
   useEffect(() => {
-    if (!id || !isCommunityBoardType(boardType)) {
-      setCurrentPost(null);
-      setLoading(false);
+    const viewKey = `${boardType}/${postId}`;
+
+    if (
+      !currentPost ||
+      currentPost.__viewed ||
+      viewedPostRef.current.has(viewKey)
+    ) {
       return;
     }
 
-    let ignore = false;
+    viewedPostRef.current.add(viewKey);
 
-    const fetchCurrentPost = async () => {
-      setLoading(true);
-      setLoadError('');
-      setCurrentPost(null);
+    void incrementViewCount().catch((error: unknown) => {
+      console.error('조회수 기록 실패:', error);
+    });
+  }, [boardType, postId, currentPost, incrementViewCount]);
 
-      try {
-        const post = await getPost(boardType, id);
-
-        if (ignore) return;
-
-        setCurrentPost(post);
-        setLoading(false);
-
-        if (!post.__viewed) {
-          try {
-            await updateViewCount(boardType, id);
-
-            if (ignore) return;
-
-            setCurrentPost({
-              ...post,
-              viewCount: post.viewCount + 1,
-              __viewed: true,
-            });
-          } catch (error) {
-            if (!ignore) {
-              console.error('조회수 기록 실패:', error);
-            }
-          }
-        }
-      } catch (error) {
-        if (!ignore) {
-          console.error('게시글 조회 실패:', error);
-          setLoadError('게시글을 불러오지 못했습니다.');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
-    void fetchCurrentPost();
-
-    return () => {
-      ignore = true;
-    };
-  }, [
-    boardType,
-    id,
-    getPost,
-    updateViewCount,
-    retryCount,
-  ]);
-
-  // 이전·다음 글
-  useEffect(() => {
-    if (!isCommunityBoardType(boardType)) {
-      setPostsState([]);
-      return;
-    }
-
-    let ignore = false;
-
-    const fetchNavigationPosts = async () => {
-      try {
-        const posts = await getPosts(boardType);
-
-        if (!ignore) {
-          setPostsState(posts);
-        }
-      } catch {
-        if (!ignore) {
-          setPostsState([]);
-        }
-      }
-    };
-
-    void fetchNavigationPosts();
-
-    return () => {
-      ignore = true;
-    };
-  }, [boardType, getPosts]);
-
-  useEffect(() => {
-    if (isCommunityBoardType(boardType) && currentPost?.id) {
-      let mounted = true;
-      getCommentCountFromDB(boardType, currentPost.id)
-        .then((count) => {
-          if (mounted) setCommentCount(count);
-        })
-        .catch(() => {
-          if (mounted) setCommentCount(0);
-        });
-      return () => {
-        mounted = false;
-      };
-    }
-  }, [boardType, currentPost]);
-
-  if (!id || !isCommunityBoardType(boardType)) {
-    return <div className="text-center mt-10 font-bold">존재하지 않는 게시판입니다.</div>;
-  }
-
-  if (loading) return <PostViewSkeleton />;
-  if (loadError) {
+  if (loading) {
     return (
-      <div className="mt-10 text-center" role="alert">
-        <p className="font-bold">{loadError}</p>
-        <BaseButton className="mt-4" onClick={() => setRetryCount((count) => count + 1)}>
-          다시 시도
-        </BaseButton>
+      <div role="status">
+        <span className="sr-only">게시글을 불러오는 중입니다.</span>
+        <PostViewSkeleton />
       </div>
     );
   }
+
+  if (isError) {
+    return (
+      <RetryErrorState
+        message="게시글을 불러오지 못했습니다."
+        isRetrying={isFetching}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
+    );
+  }
   if (!currentPost)
-    return <div className="text-center mt-10 font-bold">존재하지 않는 게시글입니다.</div>;
+    return <p role="status" className="mt-10 text-center text-sm text-textSub">존재하지 않는 게시글입니다.</p>;
 
   const categoryLabel = currentPost.category
     ? FREE_BOARD_CATEGORY_LABELS[currentPost.category] ?? currentPost.category
     : null;
 
-  const deletePosts = async (targetId: Post['id']) => {
-    if (!isCommunityBoardType(boardType)) return;
-
+  const deletePosts = async (postId: Post['id']) => {
     if (!window.confirm('삭제하시겠습니까?')) return;
 
     const id = Date.now();
@@ -209,7 +151,7 @@ export default function PostView() {
     const notificationErr = { id, message: '삭제에 실패했습니다.' };
 
     try {
-      await deletePost(boardType, targetId);
+      await deletePost(postId);
       showToast({ message: notification.message });
       addNotification(notification);
 
@@ -293,7 +235,7 @@ export default function PostView() {
               <div className="relative inline-block">
                 <div className="group flex items-center gap-x-2 text-sm text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200">
                   <MessageCircle className="shrink-0 size-4" />
-                  {commentCount > 0 ? commentCount : '0'}
+                  {commentCount ?? '—'}
                   <span
                     className="opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity inline-block absolute z-10 left-1/2 -translate-x-1/2 -translate-y-full py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-md shadow-2xs dark:bg-black"
                     role="tooltip"
@@ -365,7 +307,6 @@ export default function PostView() {
       <PostCommentSection
         boardType={boardType}
         postId={currentPost.id}
-        onCommentChange={setCommentCount}
       />
       {/*댓글기능*/}
     </div>

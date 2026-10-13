@@ -4,13 +4,14 @@ import ImageSlider from '../components/ui/Slider';
 import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore';
 import { toHighResArtwork } from '../utils/image';
 import { GridIcon } from '../components/icons';
-import { CircleX, List, ListMusic, RotateCcw } from 'lucide-react';
+import { CircleX, List, ListMusic } from 'lucide-react';
 import TrackItem from '../components/track/TrackItem';
 import HomePageSkeleton from './HomePageSkeleton';
 import soundCloudLogoBlack from '../assets/brands/soundcloud-logo-black.webp';
 import soundCloudLogoWhite from '../assets/brands/soundcloud-logo-white.webp';
 import type { PlayerOutletContext } from '../layouts/MainLayout';
 import type { PlayerTrack } from '../features/player/types/player.types';
+import RetryErrorState from '../components/ui/RetryErrorState';
 
 const formatDuration = (min: number) => {
   const h = Math.floor(min / 60);
@@ -74,20 +75,18 @@ export default function HomePage() {
 
   if (playlistStatus === 'error') {
     return (
-      <div role="alert" className="px-3 py-14 text-textBase text-center">
-        <p>{widgetError ?? '플레이리스트를 불러오지 못했습니다.'}</p>
-        <button type="button"
-          onClick={retryLoad}
-          className="inline-flex items-center gap-2 mt-4 rounded-lg border border-textThr px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          <RotateCcw className="size-4" aria-hidden="true" /> 다시 시도
-        </button>
-      </div>
+      <RetryErrorState
+        message={
+          widgetError ??
+          '플레이리스트를 불러오지 못했습니다.'
+        }
+        onRetry={retryLoad}
+      />
     );
   }
 
   if (playlistStatus === 'empty') {
-    return <p className="px-3 py-14 text-textSub">플레이리스트가 비어 있어요</p>;
+    return <p className="px-3 py-14 text-textSub text-sm">플레이리스트가 비어 있어요</p>;
   }
 
   return (
