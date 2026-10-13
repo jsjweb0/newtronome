@@ -10,6 +10,9 @@ import {
   incrementPostViewCount,
 } from '../../features/board/services/postsService';
 import PostView from './PostView';
+import { fetchComments } from '../../features/board/services/commentsService';
+import { commentQueryKeys } from '../../features/board/queries/commentQueryKeys';
+import type { Comment } from '../../features/board/types/comment';
 
 vi.mock('../../features/board/services/postsService', () => ({
   fetchPostFromFirestore: vi.fn(),
@@ -33,8 +36,11 @@ vi.mock('../../components/board/ShareButton', () => ({ default: () => null }));
 vi.mock('../../components/ui/Tooltip', () => ({
   default: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock('../../utils/comment', () => ({
-  getCommentCountFromDB: vi.fn().mockResolvedValue(0),
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: null }),
+}));
+vi.mock('../../features/board/services/commentsService', () => ({
+  fetchComments: vi.fn(),
 }));
 
 const post: Post = {
@@ -78,11 +84,12 @@ function renderPostView(
     </QueryClientProvider>
   );
 
-  return { getPost, ...view };
+  return { getPost, queryClient, ...view };
 }
 
 beforeEach(() => {
   vi.mocked(fetchPostsFromFirestore).mockResolvedValue([post]);
+  vi.mocked(fetchComments).mockResolvedValue([]);
   vi.mocked(incrementPostViewCount).mockResolvedValue(undefined);
 });
 
@@ -195,6 +202,25 @@ describe('PostView independent requests', () => {
 
     expect(incrementPostViewCount)
       .toHaveBeenCalledWith('free', 'post-1');
+  });
+
+  it('댓글 목록 캐시가 바뀌면 상세 댓글 개수도 갱신한다', async () => {
+    const comment: Comment = {
+      id: 'comment-1', boardType: 'free', postId: post.id,
+      content: '댓글', createdAt: new Date(), likeCount: 0, liked: false,
+      writerUid: null, writerEmail: null, displayName: null, photoURL: null,
+    };
+    const { queryClient } = renderPostView();
+    await screen.findByText('게시글 본문');
+    const countElement = screen.getByRole('tooltip', { name: 'Comment', hidden: true }).parentElement;
+    expect(countElement?.textContent).toContain('0');
+    act(() => {
+      queryClient.setQueryData(
+        commentQueryKeys.postForViewer('free', post.id), [comment, { ...comment, id: 'comment-2' }],
+      );
+    });
+    expect(await screen.findByText('2', { exact: true })).toBeTruthy();
+    expect(fetchComments).toHaveBeenCalledWith('free', post.id, undefined);
   });
 
 });

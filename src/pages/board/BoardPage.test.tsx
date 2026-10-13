@@ -24,8 +24,8 @@ vi.mock('../../contexts/NotificationContext', () => ({
   useNotifications: () => ({ addNotification: vi.fn() }),
 }));
 
-vi.mock('../../utils/comment', () => ({
-  getCommentCountFromDB: vi.fn().mockResolvedValue(0),
+vi.mock('../../features/board/services/commentsService', () => ({
+  fetchCommentCount: vi.fn().mockResolvedValue(0),
 }));
 
 const posts: Post[] = Array.from({ length: 12 }, (_, index) => {
@@ -94,7 +94,11 @@ async function renderBoard(url = '/board/free', boardPosts = posts) {
 }
 
 function visiblePostTitles() {
-  return screen.queryAllByRole('link').map((link) => link.textContent);
+  // 제목·카테고리만 비교하고 비동기로 변하는 댓글 개수 표시는 제외한다.
+  return screen.queryAllByRole('link').map((link) =>
+    Array.from(link.querySelectorAll(':scope > span.inline-block'))
+      .map((element) => element.textContent).join(''),
+  );
 }
 
 // 실제 네트워크나 타이머 없이 요청의 완료 시점과 순서를 제어한다.

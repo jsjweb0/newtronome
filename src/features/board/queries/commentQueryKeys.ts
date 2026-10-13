@@ -32,4 +32,17 @@ export const commentQueryKeys = {
 
     mine: (userId: string) =>
         [...commentQueryKeys.mineRoot(), userId] as const,
+
+    counts: () =>
+        [...commentQueryKeys.all, 'count'] as const,
+
+    count: (
+        boardType: CommunityBoardType,
+        postId: string,
+    ) =>
+        [
+            ...commentQueryKeys.counts(),
+            boardType,
+            postId,
+        ] as const,
 };

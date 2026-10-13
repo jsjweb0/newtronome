@@ -9,10 +9,9 @@ import { AuthAccess } from '../auth/AuthAccess';
 import LikeButton from '../ui/LikeButton';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import type { Comment as CommentData } from '../../features/board/types/comment';
-import { useQueryClient } from '@tanstack/react-query';
-import { commentQueryKeys } from '../../features/board/queries/commentQueryKeys';
 import { CommunityBoardType } from '../../features/board/types/post';
-import { deleteCommentFromFirestore, updateCommentInFirestore } from '../../features/board/services/commentsService';
+import { useUpdateComment } from '../../features/board/hooks/useUpdateComment';
+import { useDeleteComment } from '../../features/board/hooks/useDeleteComment';
 
 interface CommentProps {
   idx: number;
@@ -31,14 +30,18 @@ export default function Comment({
   openDropdownId,
   setOpenDropdownId,
 }: CommentProps) {
-  const queryClient = useQueryClient();
+  const updateComment = useUpdateComment();
+  const deleteComment = useDeleteComment();
+
+  const isSaving = updateComment.isPending || deleteComment.isPending;
+  const savingRef = useRef(false);
 
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const [showConfirm, setShowConfirm] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState(data.content);
-  const [isSaving, setIsSaving] = useState(false);
+
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const writerName = data.displayName || data.writerEmail;
@@ -66,42 +69,39 @@ export default function Comment({
   }, [isEditing]);
 
   const handleEditSubmit = async () => {
-    if (isSaving || !editText.trim()) return;
-    setIsSaving(true);
-    const notificationId = Date.now();
-    const notification = { notificationId, message: '댓글이 수정되었습니다.' };
-    const notificationErr = { notificationId, message: '수정에 실패했습니다.' };
+    const content = editText.trim();
+
+    if (savingRef.current || !content) return;
+
+    savingRef.current = true;
 
     try {
-      const nextContent = editText.trim();
-
-      await updateCommentInFirestore(
+      await updateComment.mutateAsync({
         boardType,
         postId,
-        data.id,
-        nextContent,
-      );
-
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: commentQueryKeys.post(
-            boardType,
-            postId,
-          ),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: commentQueryKeys.mineRoot(),
-        }),
-      ]);
+        commentId: data.id,
+        content,
+      });
 
       setIsEditing(null);
+
+      const notification = {
+        notificationId: Date.now(),
+        message: '댓글이 수정되었습니다.',
+      };
+
       showToast({ message: notification.message });
       addNotification(notification);
     } catch {
-      showToast({ message: notificationErr.message, type: 'error' });
-      addNotification(notificationErr);
+      const notification = {
+        notificationId: Date.now(),
+        message: '수정에 실패했습니다.',
+      };
+
+      showToast({ message: notification.message, type: 'error' });
+      addNotification(notification);
     } finally {
-      setIsSaving(false);
+      savingRef.current = false;
     }
   };
 
@@ -110,43 +110,37 @@ export default function Comment({
     setEditText(''); // 수정된 텍스트 초기화
   };
 
-  const handleDelete = async (id: string) => {
-    //if (!window.confirm("정말 삭제하시겠습니까?")) return;
+  const handleDelete = async () => {
+    if (savingRef.current) return;
+
+    savingRef.current = true;
     setShowConfirm(false);
     setOpenDropdownId(null);
 
-    if (isSaving) return;
-    setIsSaving(true);
-    const notificationId = Date.now();
-    const notification = { notificationId, message: '댓글이 삭제되었습니다.' };
-    const notificationErr = { notificationId, message: '삭제에 실패했습니다.' };
-
     try {
-      await deleteCommentFromFirestore(
-        data.boardType,
-        data.postId,
-        data.id,
-      );
+      await deleteComment.mutateAsync({
+        boardType: data.boardType,
+        postId: data.postId,
+        commentId: data.id,
+      });
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: commentQueryKeys.post(
-            data.boardType,
-            data.postId,
-          ),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: commentQueryKeys.mineRoot(),
-        }),
-      ]);
+      const notification = {
+        notificationId: Date.now(),
+        message: '댓글이 삭제되었습니다.',
+      };
 
       showToast({ message: notification.message });
-      addNotification(notification);
+      //addNotification(notification);
     } catch {
-      showToast({ message: notificationErr.message, type: 'error' });
-      addNotification(notificationErr);
+      const notification = {
+        notificationId: Date.now(),
+        message: '삭제에 실패했습니다.',
+      };
+
+      showToast({ message: notification.message, type: 'error' });
+      addNotification(notification);
     } finally {
-      setIsSaving(false);
+      savingRef.current = false;
     }
   };
 
@@ -176,6 +170,7 @@ export default function Comment({
               className="resize-none p-3 md:p-4 pb-12 md:pb-12 block w-full border-gray-200 rounded-lg text-xs md:text-base focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
+              disabled={isSaving}
               ref={editTextareaRef}
               placeholder="내용을 입력해주세요."
             />
@@ -188,6 +183,7 @@ export default function Comment({
                 type="button"
                 className="py-2!"
                 onClick={handleCancelEdit}
+                disabled={isSaving}
               >
                 취소
               </BaseButton>
@@ -273,7 +269,7 @@ export default function Comment({
         isOpen={showConfirm}
         title="삭제"
         message="댓글을 삭제하시겠습니까?"
-        onConfirm={() => handleDelete(data.id)}
+        onConfirm={handleDelete}
         onDismiss={() => setShowConfirm(false)}
       />
     </div>

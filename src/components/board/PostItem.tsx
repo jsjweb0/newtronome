@@ -1,14 +1,13 @@
 import { Link } from 'react-router-dom';
 import { AuthAccess } from '../auth/AuthAccess';
 import { useToast } from '../../contexts/ToastContext';
-import { getCommentCountFromDB } from '../../utils/comment';
 import { BaseButton } from '../ui/BaseButton';
-import { useEffect, useState } from 'react';
 import { formatDate } from '../../utils/format';
 import { useNotifications } from '../../contexts/NotificationContext';
 import type { CommunityBoardType, Post } from '../../features/board/types/post';
 import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
+import { useCommentCountQuery } from '../../features/board/hooks/useCommentCountQuery';
 
 type PostItemProps = {
   post: Post;
@@ -31,7 +30,6 @@ function PostItem({
 }: PostItemProps) {
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
-  const [commentCount, setCommentCount] = useState(0);
 
   const sort = dateSort ? 'asc' : 'desc';
   const boardSearch = createBoardListSearch({
@@ -41,19 +39,8 @@ function PostItem({
     sort,
   });
 
-  useEffect(() => {
-    let mounted = true;
-    getCommentCountFromDB(boardType, post.id)
-      .then((count) => {
-        if (mounted) setCommentCount(count);
-      })
-      .catch(() => {
-        if (mounted) setCommentCount(0);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [boardType, post.id]);
+  const commentCountQuery = useCommentCountQuery(boardType, post.id);
+  const commentCount = commentCountQuery.data;
 
   const categoryColorMap: Record<string, string> = {
     chat: 'text-blue-500 font-normal',
@@ -142,11 +129,23 @@ function PostItem({
 
           <span className="inline-block truncate">{highlightText(post.title, searchKeyword)}</span>
 
-          {commentCount > 0 && (
+          {commentCount !== undefined && commentCount > 0 && (
             <i className="shrink-0 inline-block not-italic text-xs text-gray-500 px-2">
               {commentCount}
             </i>
           )}
+
+          {commentCount === undefined && (
+            <span className="shrink-0 px-2 text-xs text-textSub">
+              <i aria-hidden="true">—</i>
+              <i className="sr-only">
+                {commentCountQuery.isError
+                  ? '댓글 수를 불러오지 못했습니다.'
+                  : '댓글 수를 불러오는 중입니다.'}
+              </i>
+            </span>
+          )}
+
         </Link>
         <AuthAccess allow={['admin']}>
           <div className="shrink-0 flex justify-start md:justify-center items-center gap-1">

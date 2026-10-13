@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
 import { ThumbsUp } from 'lucide-react';
@@ -8,10 +8,8 @@ import Pagination from './Pagination';
 import { formatDate } from '../../utils/format';
 import { getCurrentPageItems, getTotalPages } from '../../utils/pagination';
 import RetryErrorState from '../ui/RetryErrorState';
-import { useQueryClient } from '@tanstack/react-query';
-import { deleteCommentFromFirestore } from '../../features/board/services/commentsService';
-import { commentQueryKeys } from '../../features/board/queries/commentQueryKeys';
 import type { Comment as CommentData } from '../../features/board/types/comment';
+import { useDeleteComment } from '../../features/board/hooks/useDeleteComment';
 
 interface MyCommentSectionProps {
   searchKeyword: string;
@@ -45,7 +43,6 @@ export default function MyCommentSection({
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }, [comments, searchKeyword]);
 
-  // 3) 페이징 계산
   const totalItems = filteredComments.length;
   const pageSize = 10;
   const totalPages = getTotalPages(totalItems, pageSize);
@@ -70,37 +67,30 @@ export default function MyCommentSection({
     [filteredComments, currentPage]
   );
 
-  const queryClient = useQueryClient();
+  const deleteComment = useDeleteComment();
+  const deletingRef = useRef(false);
 
   const handleDelete = async (comment: CommentData) => {
+    if (deletingRef.current) return;
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
 
-    try {
-      await deleteCommentFromFirestore(
-        comment.boardType,
-        comment.postId,
-        comment.id
-      );
+    deletingRef.current = true;
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: commentQueryKeys.mineRoot(),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: commentQueryKeys.post(
-            comment.boardType,
-            comment.postId,
-          ),
-        }),
-      ]);
+    try {
+      await deleteComment.mutateAsync({
+        boardType: comment.boardType,
+        postId: comment.postId,
+        commentId: comment.id,
+      });
 
       showToast({ message: '댓글이 삭제되었습니다.' });
-    } catch (error) {
-      console.error('댓글 삭제 실패:', error);
+    } catch {
       showToast({
         message: '삭제에 실패했습니다.',
         type: 'error',
       });
+    } finally {
+      deletingRef.current = false;
     }
   };
 
@@ -161,7 +151,12 @@ export default function MyCommentSection({
               {c.likeCount ?? 0}
             </div>
             <div className="max-md:mt-2">
-              <BaseButton variant="cancel" className="px-3! py-1!" onClick={() => handleDelete(c)}>
+              <BaseButton
+                variant="cancel"
+                className="px-3! py-1!"
+                onClick={() => handleDelete(c)}
+                disabled={deleteComment.isPending}
+              >
                 삭제
               </BaseButton>
             </div>

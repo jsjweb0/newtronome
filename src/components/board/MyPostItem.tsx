@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { getCommentCountFromDB } from "../../utils/comment";
 import { BaseButton } from "../ui/BaseButton";
 import { formatDate } from "../../utils/format";
 import type { Post } from "../../features/board/types/post";
+import { useCommentCountQuery } from '../../features/board/hooks/useCommentCountQuery';
 
 type MyPostItemProps = {
     post: Post;
@@ -16,21 +15,11 @@ function MyPostItem({
     idx,
     onDelete
 }: MyPostItemProps) {
-    const [commentCount, setCommentCount] = useState(0);
-
-    useEffect(() => {
-        let mounted = true;
-        getCommentCountFromDB(post.boardType, post.id)
-            .then(count => {
-                if (mounted) setCommentCount(count);
-            })
-            .catch(() => {
-                if (mounted) setCommentCount(0);
-            });
-        return () => {
-            mounted = false;
-        };
-    }, [post.boardType, post.id]);
+    const commentCountQuery = useCommentCountQuery(
+        post.boardType,
+        post.id,
+    );
+    const commentCount = commentCountQuery.data;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-12 md:gap-2 px-4 py-3 text-xs md:text-base sm:items-center hover:bg-gray-50 dark:hover:bg-neutral-800 dark:border-neutral-700">
@@ -50,10 +39,21 @@ function MyPostItem({
                         className="inline-block truncate">
                         {post.title}
                     </span>
-                    {commentCount > 0 && (
+                    {commentCount !== undefined && commentCount > 0 && (
                         <i className="shrink-0 inline-block not-italic text-xs text-gray-500 px-2">
                             {commentCount}
                         </i>
+                    )}
+
+                    {commentCount === undefined && (
+                        <span className="shrink-0 px-2 text-xs text-textSub">
+                            <i aria-hidden="true">—</i>
+                            <i className="sr-only">
+                                {commentCountQuery.isError
+                                    ? '댓글 수를 불러오지 못했습니다.'
+                                    : '댓글 수를 불러오는 중입니다.'}
+                            </i>
+                        </span>
                     )}
                 </Link>
             </div>

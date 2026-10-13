@@ -7,8 +7,8 @@ import {
   deletePostFromFirestore,
   fetchMyPostsFromFirestore,
 } from '../../features/board/services/postsService';
-import { getCommentCountFromDB } from '../../utils/comment';
 import MyActivity from './MyActivity';
+import { fetchCommentCount, fetchMyComments } from '../../features/board/services/commentsService';
 
 const testState = vi.hoisted(() => ({
   user: {
@@ -57,8 +57,9 @@ vi.mock('../../components/board/PostListSkeleton', () => ({
   default: () => <div aria-hidden="true" />,
 }));
 
-vi.mock('../../utils/comment', () => ({
-  getCommentCountFromDB: vi.fn().mockResolvedValue(0),
+vi.mock('../../features/board/services/commentsService', () => ({
+  fetchCommentCount: vi.fn().mockResolvedValue(0),
+  fetchMyComments: vi.fn().mockResolvedValue([]),
 }));
 
 function createPost(
@@ -124,7 +125,8 @@ function totalPostCount() {
 }
 
 beforeEach(() => {
-  vi.mocked(getCommentCountFromDB).mockResolvedValue(0);
+  vi.mocked(fetchCommentCount).mockResolvedValue(0);
+  vi.mocked(fetchMyComments).mockResolvedValue([]);
 });
 
 afterEach(() => {

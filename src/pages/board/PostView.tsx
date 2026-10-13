@@ -6,7 +6,7 @@ import {
   type CommunityBoardType,
   type Post,
 } from '../../features/board/types/post';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { AuthAccess } from '../../components/auth/AuthAccess';
 import { BaseButton } from '../../components/ui/BaseButton';
 import {
@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import LikeButton from '../../components/ui/LikeButton';
 import PostCommentSection from '../../components/board/PostCommentSection';
-import { getCommentCountFromDB } from '../../utils/comment';
 import ShareButton from '../../components/board/ShareButton';
 import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip';
@@ -32,6 +31,8 @@ import { useBoardPost } from '../../features/board/hooks/useBoardPost';
 import { useBoardPosts } from '../../features/board/hooks/useBoardPosts';
 import { useIncrementPostViewCount } from '../../features/board/hooks/useIncrementPostViewCount';
 import RetryErrorState from '../../components/ui/RetryErrorState';
+import { useAuth } from '../../contexts/AuthContext';
+import { useCommentsQuery } from '../../features/board/hooks/useCommentsQuery';
 
 export default function PostView() {
   const { boardType, id } = useParams();
@@ -47,6 +48,7 @@ function PostViewContent({ boardType, postId }: {
   boardType: CommunityBoardType;
   postId: Post['id'];
 }) {
+  const { user } = useAuth();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const { mutateAsync: deletePost } = useDeletePost(boardType);
@@ -61,7 +63,15 @@ function PostViewContent({ boardType, postId }: {
   const postsQuery = useBoardPosts(boardType);
   const posts = postsQuery.data ?? [];
 
-  const { mutateAsync: incrementViewCount } = useIncrementPostViewCount(boardType, postId)
+  const { mutateAsync: incrementViewCount } = useIncrementPostViewCount(boardType, postId);
+
+  const commentsQuery = useCommentsQuery(
+    boardType,
+    postId,
+    user?.uid,
+  );
+
+  const commentCount = commentsQuery.data?.length;
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -88,8 +98,6 @@ function PostViewContent({ boardType, postId }: {
   const pagerClasses =
     "overflow-hidden block relative pb-1 whitespace-nowrap overflow-ellipsis after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-gray-500 after:transition-width after:duration-300 group-hover:after:w-full";
 
-  const [commentCount, setCommentCount] = useState(0);
-
   useEffect(() => {
     const viewKey = `${boardType}/${postId}`;
 
@@ -107,22 +115,6 @@ function PostViewContent({ boardType, postId }: {
       console.error('조회수 기록 실패:', error);
     });
   }, [boardType, postId, currentPost, incrementViewCount]);
-
-  useEffect(() => {
-    if (currentPost?.id) {
-      let mounted = true;
-      getCommentCountFromDB(boardType, currentPost.id)
-        .then((count) => {
-          if (mounted) setCommentCount(count);
-        })
-        .catch(() => {
-          if (mounted) setCommentCount(0);
-        });
-      return () => {
-        mounted = false;
-      };
-    }
-  }, [boardType, currentPost?.id]);
 
   if (loading) {
     return (
@@ -243,7 +235,7 @@ function PostViewContent({ boardType, postId }: {
               <div className="relative inline-block">
                 <div className="group flex items-center gap-x-2 text-sm text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200">
                   <MessageCircle className="shrink-0 size-4" />
-                  {commentCount > 0 ? commentCount : '0'}
+                  {commentCount ?? '—'}
                   <span
                     className="opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity inline-block absolute z-10 left-1/2 -translate-x-1/2 -translate-y-full py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-md shadow-2xs dark:bg-black"
                     role="tooltip"
@@ -315,7 +307,6 @@ function PostViewContent({ boardType, postId }: {
       <PostCommentSection
         boardType={boardType}
         postId={currentPost.id}
-        onCommentChange={setCommentCount}
       />
       {/*댓글기능*/}
     </div>

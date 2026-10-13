@@ -7,17 +7,17 @@ import type { Post } from '../../features/board/types/post';
 import {
   fetchPostsFromFirestore,
   fetchPostFromFirestore,
-  incrementPostViewCount,
   updatePostInFirestore,
 } from '../../features/board/services/postsService';
 import BoardPage from './BoardPage';
 import PostView from './PostView';
 import EditPostPage from './EditPostPage';
+import { fetchCommentCount } from '../../features/board/services/commentsService';
 
 vi.mock('../../features/board/services/postsService', () => ({
   fetchPostsFromFirestore: vi.fn(),
   fetchPostFromFirestore: vi.fn(),
-  incrementPostViewCount: vi.fn(),
+  incrementPostViewCount: vi.fn().mockResolvedValue(undefined),
   updatePostInFirestore: vi.fn(),
   deletePostFromFirestore: vi.fn(),
 }));
@@ -34,8 +34,9 @@ vi.mock('../../contexts/ToastContext', () => ({
 vi.mock('../../contexts/NotificationContext', () => ({
   useNotifications: () => ({ addNotification: vi.fn() }),
 }));
-vi.mock('../../utils/comment', () => ({
-  getCommentCountFromDB: vi.fn().mockResolvedValue(0),
+vi.mock('../../features/board/services/commentsService', () => ({
+  fetchCommentCount: vi.fn().mockResolvedValue(0),
+  fetchComments: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('../../components/ui/LikeButton', () => ({ default: () => null }));
 vi.mock('../../components/board/PostCommentSection', () => ({ default: () => null }));
@@ -101,7 +102,7 @@ function renderBoardRoute(url: string, options: RenderBoardRouteOptions = {}) {
 
   vi.mocked(fetchPostsFromFirestore).mockImplementation(getPosts);
   vi.mocked(fetchPostFromFirestore).mockImplementation(getPost);
-  vi.mocked(incrementPostViewCount).mockResolvedValue(undefined);
+  vi.mocked(fetchCommentCount).mockResolvedValue(0);
   vi.mocked(updatePostInFirestore).mockImplementation(updatePost);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
