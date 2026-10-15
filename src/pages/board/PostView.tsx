@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import {
@@ -51,7 +51,15 @@ function PostViewContent({ boardType, postId }: {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
-  const { mutateAsync: deletePost } = useDeletePost(boardType);
+  const { mutateAsync: deletePost, isPending: isDeleting } = useDeletePost(boardType);
+  const deletingRef = useRef(false);
+  const location = useLocation();
+  const activeLocationKeyRef = useRef<string | null>(location.key);
+
+  useEffect(() => {
+    activeLocationKeyRef.current = location.key;
+    return () => { activeLocationKeyRef.current = null; };
+  }, [location.key]);
   const viewedPostRef = useRef<Set<string>>(new Set());
   const {
     data: currentPost,
@@ -63,7 +71,7 @@ function PostViewContent({ boardType, postId }: {
   const postsQuery = useBoardPosts(boardType);
   const posts = postsQuery.data ?? [];
 
-  const { mutateAsync: incrementViewCount } = useIncrementPostViewCount(boardType, postId);
+  const { mutateAsync: incrementViewCount } = useIncrementPostViewCount();
 
   const commentsQuery = useCommentsQuery(
     boardType,
@@ -111,7 +119,7 @@ function PostViewContent({ boardType, postId }: {
 
     viewedPostRef.current.add(viewKey);
 
-    void incrementViewCount().catch((error: unknown) => {
+    void incrementViewCount({ boardType, postId }).catch((error: unknown) => {
       console.error('조회수 기록 실패:', error);
     });
   }, [boardType, postId, currentPost, incrementViewCount]);
@@ -144,7 +152,10 @@ function PostViewContent({ boardType, postId }: {
     : null;
 
   const deletePosts = async (postId: Post['id']) => {
+    if (deletingRef.current) return;
     if (!window.confirm('삭제하시겠습니까?')) return;
+    deletingRef.current = true;
+    const startedLocationKey = location.key;
 
     const id = Date.now();
     const notification = { id, message: '게시글이 삭제되었습니다.' };
@@ -155,11 +166,15 @@ function PostViewContent({ boardType, postId }: {
       showToast({ message: notification.message });
       addNotification(notification);
 
-      navigate(`/board/${boardType}${boardSearch}`);
+      if (activeLocationKeyRef.current === startedLocationKey) {
+        navigate(`/board/${boardType}${boardSearch}`);
+      }
     } catch (err) {
       console.error(err);
       showToast({ message: notificationErr.message });
       addNotification(notificationErr);
+    } finally {
+      deletingRef.current = false;
     }
   };
 
@@ -205,6 +220,7 @@ function PostViewContent({ boardType, postId }: {
             </Link>
             <button
               type="button"
+              disabled={isDeleting}
               onClick={() => {
                 deletePosts(currentPost.id);
               }}

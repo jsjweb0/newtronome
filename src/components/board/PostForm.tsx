@@ -53,12 +53,17 @@ export default function PostForm({
   const titleRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
+  const initializedPostRef = useRef<string | null>(null);
 
   const today = new Date();
   const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
+      const postKey = `${boardType}/${initialData.id}`;
+      if (initializedPostRef.current === postKey) return;
+      initializedPostRef.current = postKey;
+
       setInputTitle(initialData.title || '');
       setInputContent(normalizeLegacyPostContent(initialData.content || ''));
 
@@ -73,9 +78,10 @@ export default function PostForm({
         authorName?.trim() ? authorName : defaultWriter
       );
     } else {
+      initializedPostRef.current = null;
       setWriter(defaultWriter);
     }
-  }, [initialData, mode, defaultWriter]);
+  }, [initialData, mode, defaultWriter, boardType]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

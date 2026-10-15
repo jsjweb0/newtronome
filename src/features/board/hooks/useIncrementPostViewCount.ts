@@ -6,16 +6,19 @@ import type { CommunityBoardType, Post } from '../types/post';
 import { incrementPostViewCount } from '../services/postsService';
 import { postQueryKeys } from '../queries/postQueryKeys';
 
-export function useIncrementPostViewCount(
-    boardType: CommunityBoardType,
-    postId: Post['id'],
-) {
+interface ViewCountTarget {
+    boardType: CommunityBoardType;
+    postId: Post['id'];
+}
+
+export function useIncrementPostViewCount() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: () => incrementPostViewCount(boardType, postId),
+        mutationFn: ({ boardType, postId }: ViewCountTarget) =>
+            incrementPostViewCount(boardType, postId),
 
-        onSuccess: () => {
+        onSuccess: (_data, { boardType, postId }) => {
             queryClient.setQueryData<Post>(
                 postQueryKeys.detail(boardType, postId),
                 (post) =>
