@@ -1,0 +1,54 @@
+import { test, expect } from './fixtures/board';
+
+test('post create, read, update and delete synchronize list and detail', async ({ page, store }) => {
+  await page.goto('/board/free');
+  await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+  await page.getByTitle('카테고리').selectOption('chat');
+  await page.getByPlaceholder('제목을 입력해주세요').fill('새 게시글');
+  await page.getByPlaceholder('내용을 입력해주세요.').fill('새 본문');
+  await page.getByRole('button', { name: '등록', exact: true }).click();
+  await page.getByRole('link', { name: /새 게시글/ }).click();
+  await expect(page.locator('pre')).toHaveText('새 본문');
+  await page.getByRole('link', { name: '수정', exact: true }).click();
+  await page.getByPlaceholder('제목을 입력해주세요').fill('수정된 게시글');
+  await page.getByPlaceholder('내용을 입력해주세요.').fill('수정된 본문');
+  await page.getByRole('button', { name: '수정', exact: true }).click();
+  await page.getByRole('link', { name: /수정된 게시글/ }).click();
+  await expect(page.locator('pre')).toHaveText('수정된 본문');
+  page.on('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: '삭제', exact: true }).click();
+  await expect(page).toHaveURL(/\/board\/free\?/);
+  await expect(page.getByRole('link', { name: /수정된 게시글/ })).toHaveCount(0);
+  expect(store.count('create')).toBe(1);
+  expect(store.count('update')).toBe(1);
+  expect(store.count('delete')).toBe(1);
+});
+
+test('comment create, edit, delete and navigation keep post data isolated', async ({ page, store }) => {
+  await page.goto('/board/free/a');
+  await expect(page.getByText('A의 기존 댓글', { exact: true })).toBeVisible();
+  await page.getByPlaceholder('내용을 입력해주세요.').fill('새 댓글');
+  await page.getByRole('button', { name: '작성', exact: true }).click();
+  await expect(page.getByText('새 댓글', { exact: true })).toBeVisible();
+  await expect(page.getByPlaceholder('내용을 입력해주세요.')).toHaveValue('');
+  const row = page.getByText('새 댓글', { exact: true }).locator('xpath=../../..');
+  await row.getByRole('button', { name: 'Dropdown', exact: true }).click();
+  await row.getByRole('button', { name: '수정', exact: true }).click();
+  const editor = page.locator('textarea').filter({ visible: true }).last();
+  await editor.fill('수정된 댓글');
+  await page.getByRole('button', { name: '수정', exact: true }).click();
+  await expect(page.getByText('수정된 댓글', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: /다음글.*게시글 B/ }).click();
+  await expect(page.getByText('B의 기존 댓글', { exact: true })).toBeVisible();
+  await expect(page.getByText('수정된 댓글', { exact: true })).toHaveCount(0);
+  await page.goBack();
+  const updatedRow = page.getByText('수정된 댓글', { exact: true }).locator('xpath=../../..');
+  await updatedRow.getByRole('button', { name: 'Dropdown', exact: true }).click();
+  await updatedRow.getByRole('button', { name: '삭제', exact: true }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: '확인', exact: true }).click();
+  await expect(page.getByText('수정된 댓글', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('A의 기존 댓글', { exact: true })).toBeVisible();
+  expect(store.count('createComment')).toBe(1);
+  expect(store.count('updateComment')).toBe(1);
+  expect(store.count('deleteComment')).toBe(1);
+});
