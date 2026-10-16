@@ -464,7 +464,10 @@ export default function ITunesSearchPage() {
           isOpen={isArtistPanelOpen}
           isSidebarCollapsed={isSidebarCollapsed}
           playingTrackId={playingPreviewTrackId}
-          onClose={() => setIsArtistPanelOpen(false)}
+          onClose={() => {
+            stopPreview();
+            setIsArtistPanelOpen(false);
+          }}
           onPreview={handlePreview}
         />
         {/* // 다른 곡 보기 */}

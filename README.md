@@ -2,7 +2,7 @@
 
 [서비스 바로가기](https://newtronome.jsjweb0.workers.dev/) · [GitHub](https://github.com/jsjweb0/newtronome)
 
-SoundCloud 플레이리스트 재생과 iTunes 곡 검색·미리듣기를 제공하는 음악 서비스입니다. 재생 상태 관리, 외부 API 연동, 사용자별 트랙 저장과 게시판을 구현한 개인 프로젝트입니다.
+공식 SoundCloud Widget과 React 상태를 동기화하고, TanStack Query로 외부 API 및 게시판 데이터의 조회·캐시·변경 후 동기화를 관리했습니다. 재생 상태 관리, 외부 API 연동, 사용자별 트랙 저장과 게시판을 구현한 개인 프로젝트입니다.
 
 ## 화면 미리보기
 
@@ -47,6 +47,8 @@ SoundCloud 플레이리스트 재생과 iTunes 곡 검색·미리듣기를 제�
 | React Context      | 인증·테마·토스트·알림 등 앱 전반의 상태                           |
 | 컴포넌트 로컬 상태 | 검색 입력값·열린 패널 등 화면 내부 상태                           |
 
+초기에는 Context API로 음악 재생 상태를 공유했지만, 기능이 확장되면서 구독 범위가 넓어졌습니다. 이에 재생 상태를 Zustand로 이전하고, 컴포넌트별로 필요한 상태만 선택적으로 구독하도록 구조를 변경했습니다.
+
 ## 주요 구현과 문제 해결
 
 ### 외부 음악 재생 연동과 비동기 충돌 처리
@@ -57,19 +59,26 @@ SoundCloud 플레이리스트 재생과 iTunes 곡 검색·미리듣기를 제�
 
 미리듣기가 시작되면 SoundCloud를 정지하고, SoundCloud 재생 이벤트가 발생하면 미리듣기를 정지합니다. 새 검색이나 페이지 이동 시에는 미리듣기 상태를 정리합니다. 플레이리스트는 로딩·빈 목록·오류를 구분합니다. 빈 목록이 확정되면 이전 곡과 재생 시간이 초기화되는지 테스트했습니다.
 
-### 서버 상태 캐시와 변경 후 화면 동기화
+TypeScript 타입만으로 실제 API 응답의 형태를 보장할 수 없어 iTunes 응답과 Firestore 문서를 런타임에서 검증·변환합니다. 잘못된 검색 항목이나 Firestore 문서는 제외하고, 저장 트랙의 형식 오류는 오류 상태로 전달합니다.
 
+### 검색 결과 캐싱과 요청 상태 관리
+
+iTunes 검색과 아티스트 곡 조회는 TanStack Query로 관리합니다. 검색어·아티스트 ID를 Query Key로 구분하고, `AbortSignal`을
+`fetch`에 전달해 불필요한 요청을 취소합니다.
 아티스트 곡 조회는 ID별 Query Key와 5분의 `staleTime`을 사용합니다. 캐시가 남아 있고 fresh 상태라면 같은 아티스트의 패널을 다시 열 때 응답을 재사용합니다. 새 검색을 시작하면 패널을 닫고 미리듣기를 정지하되 캐시는 유지합니다.
 
+### 게시판 서버 상태 관리 리팩터링
+
+**문제 — 직접 관리하던 캐시와 책임 혼재**
 기존에는 `PostsProvider`와 `useRef`를 사용해 게시판 목록을 직접 캐싱했습니다. 기능이 늘면서 캐시 무효화와 요청 상태를 직접 관리해야 했고, 동시에 발생한 요청을 안정적으로 제어하기도 어려웠습니다. 초기에는 Firestore 접근 로직까지 Provider에 포함되어 UI 상태와 데이터 접근 책임이 섞여 있었습니다.
 
-먼저 Firestore 접근 로직을 service 계층으로 분리한 뒤 게시판의 서버 상태를 TanStack Query로 이전했습니다. 게시글 Query Key는 게시판 종류·게시글 ID·사용자 ID에 따라 목록·상세·내 게시글로 구분했습니다. 생성·수정·삭제 후에는 변경의 영향을 받는 Query만 무효화하고, 로딩·오류 상태와 같은 요청의 캐시 공유는 TanStack Query가 관리합니다.
+**개선 — 데이터 접근 분리와 TanStack Query 도입**
+Firestore 접근 로직을 service 계층으로 분리하고, 게시판의 서버 상태를 TanStack Query로 이전했습니다. 게시글 Query Key는 게시판 종류·게시글 ID·사용자 ID에 따라 목록·상세·내 게시글로 구분했습니다. 생성·수정·삭제 후에는 변경의 영향을 받는 Query만 무효화하고, 로딩·오류 상태와 같은 요청의 캐시 공유는 TanStack Query가 관리합니다.
 
 게시글의 댓글 조회 결과에는 사용자별 `liked` 상태가 포함됩니다. 따라서 조회 키에 게시판 종류·게시글 ID와 조회 사용자 UID를 넣었습니다. 내 댓글은 사용자별로, 댓글 수는 게시글별로 구분합니다.
 
+**결과 — 캐시 동기화와 비동기 상태 관리 개선**
 조회수는 저장 성공 후 `setQueryData`로 해당 상세와 목록을 갱신합니다. 요청 시점의 게시판·게시글 ID를 mutation variables로 전달했습니다. 늦게 끝난 요청이 다른 게시글의 캐시를 변경하지 않도록 하기 위해서입니다. 백그라운드 refetch가 발생해도 수정 중인 입력값은 유지되도록 했습니다. 좋아요 실시간 상태는 Firestore `onSnapshot`으로 구독하고, 댓글 좋아요 저장 후 관련 댓글 Query를 무효화합니다.
-
-TypeScript 타입만으로 외부 데이터의 형태를 보장할 수 없어 iTunes 응답과 Firestore 문서를 런타임에서 검증·변환합니다. 잘못된 검색 항목이나 Firestore 문서는 제외하고, 저장 트랙의 형식 오류는 오류 상태로 전달합니다.
 
 ### 반응형 레이아웃과 접근성
 
@@ -81,6 +90,15 @@ TypeScript 타입만으로 외부 데이터의 형태를 보장할 수 없어 iT
 구현 근거: [검색 화면](src/features/itunes/pages/ITunesSearchPage.tsx), [아티스트 곡 패널](src/features/itunes/components/ArtistTracksPanel.tsx)
 
 ## 테스트
+
+| 테스트                   | 검증 내용                                  |
+| ------------------------ | ------------------------------------------ |
+| Vitest + Testing Library | 재생 상태, 비동기 응답, 검색·캐시 동작     |
+| TanStack Query 테스트    | Query Key, 캐시 무효화, mutation 실패 처리 |
+| Playwright               | 데스크톱·모바일 UI, 게시글·댓글 CRUD       |
+| Firestore Emulator       | 인증 조건에 따른 보안 규칙                 |
+
+Firestore 규칙 테스트는 Java가 설치된 환경에서 로컬 Firestore Emulator로 별도 실행합니다. 위의 `test:run`에는 포함되지 않습니다.
 
 ```bash
 npm run typecheck
@@ -95,14 +113,6 @@ npm run build
 npx playwright install chromium
 npm run test:e2e
 ```
-
-- **훅·컴포넌트 테스트**: 늦게 도착한 곡 정보·재생 시간 응답, 미리듣기 재생 요청의 성공·실패 순서, 빈 목록 상태 정리
-- **아티스트 조회 테스트**: Lookup 응답 검증, 아티스트별 캐시 분리, 패널 재열기 시 요청 재사용, 5분 경과 후 재조회, 새 검색 시 패널 닫힘
-- **게시판 Query 테스트**: 게시글·댓글 Query Key 분리, mutation 성공 후 관련 캐시 무효화, 실패 시 기존 캐시 유지
-- **Firestore 규칙 테스트**: 관리자 claim이 있는 사용자의 공지 삭제 허용, 관리자 이메일만 있는 사용자의 삭제 거부
-- **브라우저 테스트**: 데스크톱·모바일 Chromium에서 음악 목록 로딩과 재생 상태를 확인하고, 게시판에서는 게시글·댓글 CRUD, 목록·상세 동기화, 검색·정렬·페이지 이동, mutation 실패 시 입력값 유지, 오래된 응답과 빠른 연속 클릭 처리를 검증
-
-Firestore 규칙 테스트는 Java가 설치된 환경에서 로컬 Firestore Emulator로 별도 실행합니다. 위의 `test:run`에는 포함되지 않습니다.
 
 ```bash
 npm run test:rules
