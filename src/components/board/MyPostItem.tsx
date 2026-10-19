@@ -24,9 +24,11 @@ function MyPostItem({
     return (
         <div className="grid grid-cols-1 md:grid-cols-12 md:gap-2 px-4 py-3 text-xs md:text-base sm:items-center hover:bg-gray-50 dark:hover:bg-neutral-800 dark:border-neutral-700">
             {/* 게시글 번호 */}
-            <div className="md:col-span-1">{idx}</div>
-            <div className="md:col-span-1">
-                {post.boardType === "free" ? "자유게시판" : "공지사항"}
+            <div className="md:col-span-2 flex gap-2">
+                <div className="md:grow">{idx}</div>
+                <div className="w-2/3">
+                    {post.boardType === "free" ? "자유게시판" : "공지사항"}
+                </div>
             </div>
 
             {/* 제목 및 댓글 수 */}

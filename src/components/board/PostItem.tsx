@@ -56,7 +56,7 @@ function PostItem({
   const displayAuthor =
     boardType === 'notice'
       ? '관리자'
-      : post.displayName ?? post.email ?? '알 수 없음';
+      : post.displayName?.trim() || '알 수 없는 사용자';
 
   const highlightText = (text: string, keyword: string) => {
     if (!keyword) return text;
@@ -103,7 +103,7 @@ function PostItem({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-13 gap-2 px-4 py-3 text-xs md:text-base sm:items-center hover:bg-gray-50 dark:hover:bg-neutral-800 dark:border-neutral-700">
+    <div className="grid grid-cols-1 md:grid-cols-13 gap-1 md:gap-2 px-4 py-3 text-xs md:text-base sm:items-center hover:bg-gray-50 dark:hover:bg-neutral-800 dark:border-neutral-700">
       <div>
         {post.isNotice ? (
           <span className="shrink-0 inline-block px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded-full">
@@ -170,7 +170,7 @@ function PostItem({
         </AuthAccess>
       </div>
       <div className="md:col-span-2">{displayAuthor}</div>
-      <div>{Number.isFinite(post.viewCount) ? post.viewCount : 0}</div>
+      <div className="max-md:hidden">{Number.isFinite(post.viewCount) ? post.viewCount : 0}</div>
       <div className="md:col-span-2">{formatDate(post.date)}</div>
     </div>
   );

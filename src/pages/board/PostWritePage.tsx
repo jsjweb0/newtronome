@@ -64,7 +64,6 @@ function PostWriteContent({
       postNo: nextPostNo,
       content: formData.content,
       date: new Date(),
-      email: user.email,
       authorUid: user.uid,
       displayName: user.displayName || null,
       photoURL: user.photoURL || null,

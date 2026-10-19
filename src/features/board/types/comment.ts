@@ -9,15 +9,17 @@ export interface Comment {
     likeCount: number;
     liked: boolean;
     writerUid: string | null;
-    writerEmail: string | null;
     displayName: string | null;
     photoURL: string | null;
+}
+
+export interface MyComment extends Comment {
+    postExists: boolean;
 }
 
 export interface CreateCommentInput {
     content: string;
     writerUid: string;
-    writerEmail: string | null;
     displayName: string | null;
     photoURL: string | null;
 }

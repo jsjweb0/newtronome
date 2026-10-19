@@ -73,7 +73,7 @@ export default function PostForm({
       );
 
       setNotice(initialData.isNotice || false);
-      const authorName = initialData.displayName || initialData.email;
+      const authorName = initialData.displayName?.trim() || '알 수 없는 사용자';
       setWriter(
         authorName?.trim() ? authorName : defaultWriter
       );

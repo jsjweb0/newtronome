@@ -9,14 +9,14 @@ type Request = { op: Operation; args: unknown[] };
 
 export function makePost(id: string, title: string, overrides: Partial<Post> = {}): Post {
   return { id, title, content: `${title} 본문`, boardType: 'free', authorUid: user.uid,
-    email: user.email, displayName: user.displayName, photoURL: null, category: 'chat',
+    displayName: user.displayName, photoURL: null, category: 'chat',
     postNo: 1, date: new Date('2026-10-01T00:00:00Z'), updatedAt: null,
     likeCount: 0, likedUsers: [], viewCount: 10, isNotice: false, ...overrides };
 }
 
 export function makeComment(id: string, postId: string, content: string): Comment {
   return { id, postId, content, boardType: 'free', writerUid: user.uid,
-    writerEmail: user.email, displayName: user.displayName, photoURL: null,
+    displayName: user.displayName, photoURL: null,
     createdAt: new Date('2026-10-01T00:00:00Z'), likeCount: 0, liked: false };
 }
 

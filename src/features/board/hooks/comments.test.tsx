@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as service from '../services/commentsService';
-import type { Comment } from '../types/comment';
+import type { Comment, MyComment } from '../types/comment';
 import { commentQueryKeys as keys } from '../queries/commentQueryKeys';
 import { useCommentsQuery } from './useCommentsQuery';
 import { useMyCommentsQuery } from './useMyCommentsQuery';
@@ -21,10 +21,14 @@ vi.mock('../services/commentsService', () => ({
 const comment: Comment = {
   id: 'c1', boardType: 'free', postId: 'p1', content: '기존 댓글',
   createdAt: new Date('2026-01-01'), likeCount: 0, liked: false,
-  writerUid: 'u1', writerEmail: null, displayName: null, photoURL: null,
+  writerUid: 'u1', displayName: null, photoURL: null,
+};
+const myComment: MyComment = {
+  ...comment,
+  postExists: true,
 };
 const input = {
-  content: '새 댓글', writerUid: 'u1', writerEmail: null,
+  content: '새 댓글', writerUid: 'u1',
   displayName: null, photoURL: null,
 };
 const target = { boardType: 'free' as const, postId: 'p1', commentId: 'c1' };
@@ -44,7 +48,7 @@ function setup() {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(service.fetchComments).mockResolvedValue([comment]);
-  vi.mocked(service.fetchMyComments).mockResolvedValue([comment]);
+  vi.mocked(service.fetchMyComments).mockResolvedValue([myComment]);
   vi.mocked(service.fetchCommentCount).mockResolvedValue(1);
 });
 afterEach(() => {
@@ -71,16 +75,16 @@ describe('댓글 조회 Query', () => {
 
   it('계정 전환 후 늦게 도착한 내 댓글 응답이 현재 계정 목록을 덮어쓰지 않는다', async () => {
     const { wrapper } = setup();
-    let resolveOld!: (value: Comment[]) => void;
+    let resolveOld!: (value: MyComment[]) => void;
     vi.mocked(service.fetchMyComments)
       .mockReturnValueOnce(new Promise((resolve) => { resolveOld = resolve; }))
-      .mockResolvedValueOnce([{ ...comment, id: 'c2', writerUid: 'u2' }]);
+      .mockResolvedValueOnce([{ ...myComment, id: 'c2', writerUid: 'u2' }]);
     const { result, rerender } = renderHook(({ uid }) => useMyCommentsQuery(uid), {
       wrapper, initialProps: { uid: 'u1' },
     });
     rerender({ uid: 'u2' });
     await waitFor(() => expect(result.current.data?.[0].writerUid).toBe('u2'));
-    await act(async () => { resolveOld([comment]); });
+    await act(async () => { resolveOld([myComment]); });
     expect(result.current.data?.[0].writerUid).toBe('u2');
   });
 
@@ -104,7 +108,9 @@ describe('댓글 Mutation과 캐시 갱신', () => {
       const { client, wrapper } = setup();
       let rows = [comment];
       vi.mocked(service.fetchComments).mockImplementation(async () => rows);
-      vi.mocked(service.fetchMyComments).mockImplementation(async () => rows);
+      vi.mocked(service.fetchMyComments).mockImplementation(async () =>
+        rows.map((row) => ({ ...row, postExists: true }))
+      );
       vi.mocked(service.fetchCommentCount).mockImplementation(async () => rows.length);
       vi.mocked(service.createCommentInFirestore).mockImplementation(async () => {
         const created = { ...comment, id: 'c2', content: input.content };
@@ -143,7 +149,9 @@ describe('댓글 Mutation과 캐시 갱신', () => {
       });
       await waitFor(() => {
         expect(result.current.post.data).toEqual(rows);
-        expect(result.current.mine.data).toEqual(rows);
+        expect(result.current.mine.data).toEqual(
+          rows.map((row) => ({ ...row, postExists: true }))
+        );
         expect(result.current.count.data).toBe(rows.length);
       });
       expect(service.fetchComments).toHaveBeenCalledTimes(2);

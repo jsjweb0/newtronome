@@ -49,7 +49,6 @@ const post: Post = {
   title: '본문을 표시해야 하는 글',
   content: '게시글 본문',
   authorUid: 'user-1',
-  email: 'user@example.com',
   displayName: '작성자',
   photoURL: null,
   category: 'chat',
@@ -208,7 +207,7 @@ describe('PostView independent requests', () => {
     const comment: Comment = {
       id: 'comment-1', boardType: 'free', postId: post.id,
       content: '댓글', createdAt: new Date(), likeCount: 0, liked: false,
-      writerUid: null, writerEmail: null, displayName: null, photoURL: null,
+      writerUid: null, displayName: null, photoURL: null,
     };
     const { queryClient } = renderPostView();
     await screen.findByText('게시글 본문');

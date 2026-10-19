@@ -73,7 +73,6 @@ function createPost(
     title,
     content: '테스트 본문',
     authorUid: testState.user.uid,
-    email: testState.user.email,
     displayName: testState.user.displayName,
     photoURL: null,
     category: boardType === 'free' ? 'chat' : null,

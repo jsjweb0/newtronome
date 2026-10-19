@@ -54,7 +54,6 @@ const posts: Post[] = Array.from({ length: 12 }, (_, index) => ({
   title: `${keyword} ${index + 1}`,
   content: `본문 ${index + 1}`,
   authorUid: 'user-1',
-  email: 'user@example.com',
   displayName: '작성자',
   photoURL: null,
   category: 'question',

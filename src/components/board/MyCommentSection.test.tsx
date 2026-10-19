@@ -6,17 +6,31 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MyCommentSection from './MyCommentSection';
 import { useMyCommentsQuery } from '../../features/board/hooks/useMyCommentsQuery';
 import { deleteCommentFromFirestore, fetchMyComments } from '../../features/board/services/commentsService';
-import type { Comment } from '../../features/board/types/comment';
+import type {
+  MyComment,
+} from '../../features/board/types/comment';
 
 const showToast = vi.hoisted(() => vi.fn());
 vi.mock('../../contexts/ToastContext', () => ({ useToast: () => ({ showToast }) }));
 vi.mock('../../features/board/services/commentsService', () => ({
   fetchMyComments: vi.fn(), deleteCommentFromFirestore: vi.fn(),
 }));
-const comment: Comment = {
-  id: 'c1', boardType: 'free', postId: 'p1', content: '내가 작성한 댓글',
-  createdAt: new Date('2026-01-01'), likeCount: 0, liked: false,
-  writerUid: 'u1', writerEmail: null, displayName: null, photoURL: null,
+const comment: MyComment = {
+  id: 'c1',
+  boardType: 'free',
+  postId: 'p1',
+  content: '내가 작성한 댓글',
+  createdAt: new Date('2026-01-01'),
+  likeCount: 0,
+  liked: false,
+  writerUid: 'u1',
+  displayName: null,
+  photoURL: null,
+  postExists: true,
+};
+const deletedPostComment: MyComment = {
+  ...comment,
+  postExists: false,
 };
 let client: QueryClient;
 
@@ -44,6 +58,24 @@ beforeEach(() => {
 afterEach(() => { cleanup(); client.clear(); vi.restoreAllMocks(); });
 
 describe('내 댓글 삭제 및 조회 상태', () => {
+  it('원본 글이 삭제된 댓글은 링크를 막고 댓글 자체는 삭제할 수 있다', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.mocked(fetchMyComments)
+      .mockResolvedValueOnce([deletedPostComment])
+      .mockResolvedValueOnce([]);
+    vi.mocked(deleteCommentFromFirestore).mockResolvedValue(undefined);
+
+    renderSection();
+
+    expect(await screen.findByText('원본 삭제됨')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: deletedPostComment.content })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '삭제' }));
+
+    expect(await screen.findByText('작성한 댓글이 없습니다.')).toBeTruthy();
+    expect(deleteCommentFromFirestore).toHaveBeenCalledWith('free', 'p1', 'c1');
+  });
+
   it('삭제 확인을 취소하면 요청하지 않고 목록을 유지한다', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderSection();
