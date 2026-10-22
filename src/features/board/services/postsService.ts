@@ -59,16 +59,11 @@ function convertPostDocument(
             data.authorUid.length > 0
             ? data.authorUid
             : null;
-    const email =
-        typeof data.email === 'string' &&
-            data.email.length > 0
-            ? data.email
-            : null;
 
     if (
         typeof data.title !== 'string' ||
         typeof data.content !== 'string' ||
-        (!authorUid && !email)
+        !authorUid
     ) {
         return null;
     }
@@ -80,7 +75,6 @@ function convertPostDocument(
         title: data.title,
         content: data.content,
         authorUid,
-        email,
         displayName:
             typeof data.displayName === 'string'
                 ? data.displayName
@@ -168,15 +162,15 @@ async function fetchPostFromFirestore(
 async function fetchMyPostsFromFirestore(
     boardType: CommunityBoardType,
 ): Promise<Post[]> {
-    const userEmail = auth.currentUser?.email;
+    const userUid = auth.currentUser?.uid;
 
-    if (!userEmail) {
+    if (!userUid) {
         throw new Error('로그인 필요');
     }
 
     const postsQuery = query(
         collection(db, boardType),
-        where('email', '==', userEmail),
+        where('authorUid', '==', userUid),
         orderBy('date', 'desc'),
     );
 
@@ -209,7 +203,6 @@ async function createPostInFirestore(
         likeCount: 0,
         likedUsers: [],
         authorUid: input.authorUid,
-        email: input.email,
         displayName: input.displayName,
         photoURL: input.photoURL,
     };

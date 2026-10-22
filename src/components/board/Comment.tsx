@@ -44,7 +44,7 @@ export default function Comment({
 
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const writerName = data.displayName || data.writerEmail;
+  const writerName = data.displayName?.trim() || '알 수 없는 사용자';
   const fallbackAvatar = writerName
     ? `https://ui-avatars.com/api/?name=${encodeURIComponent(writerName)}&size=128&length=1&background=random&color=ffffff&font-size=0.5&bold=true&uppercase=true`
     : null;
@@ -156,7 +156,7 @@ export default function Comment({
       <div className="grow">
         <div className="flex items-center gap-x-3 max-md:flex-wrap">
           <strong className="inline-block text-sm md:text-base font-medium text-gray-500 dark:text-neutral-500">
-            {data.displayName || data.writerEmail}
+            {data.displayName || writerName}
           </strong>
           <p className="mt-1 text-xs md:text-sm uppercase text-gray-500 dark:text-neutral-500">
             {dayjs(data.createdAt).format('YYYY-MM-DD A hh:mm:ss')}

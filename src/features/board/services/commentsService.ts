@@ -11,12 +11,14 @@ import {
     orderBy,
     Timestamp,
     updateDoc,
+    getDoc,
 } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import { db } from '../../../firebase';
 import type {
     Comment,
     CreateCommentInput,
+    MyComment,
 } from '../types/comment';
 import type { CommunityBoardType } from '../types/post';
 
@@ -70,7 +72,6 @@ function convertCommentDocument(
             : 0,
         liked: typeof myUid === 'string' && likedUsers.includes(myUid),
         writerUid: getNullableString(data.writerUid),
-        writerEmail: getNullableString(data.writerEmail),
         displayName: getNullableString(data.displayName),
         photoURL: getNullableString(data.photoURL),
     };
@@ -110,7 +111,7 @@ export async function fetchComments(
 
 export async function fetchMyComments(
     userId: string
-): Promise<Comment[]> {
+): Promise<MyComment[]> {
     const commentsQuery = query(
         collectionGroup(db, 'comments'),
         where('writerUid', '==', userId),
@@ -119,29 +120,72 @@ export async function fetchMyComments(
 
     const snapshot = await getDocs(commentsQuery);
 
-    return snapshot.docs.flatMap((documentSnapshot) => {
-        const postReference = documentSnapshot.ref.parent.parent;
+    const commentsWithPostReference = snapshot.docs.flatMap(
+        (documentSnapshot) => {
+            const postReference =
+                documentSnapshot.ref.parent.parent;
 
-        if (!postReference) {
-            return [];
+            if (!postReference) {
+                return [];
+            }
+
+            const boardType = postReference.parent.id;
+
+            if (
+                boardType !== 'notice' &&
+                boardType !== 'free'
+            ) {
+                return [];
+            }
+
+            const comment = convertCommentDocument(
+                documentSnapshot.id,
+                boardType,
+                postReference.id,
+                documentSnapshot.data(),
+                userId,
+            );
+
+            return comment
+                ? [{ comment, postReference }]
+                : [];
         }
+    );
 
-        const boardType = postReference.parent.id;
+    // 같은 게시글에 댓글이 여러 개 있어도 부모 글은 한 번만 조회
+    const uniquePostReferences = new Map(
+        commentsWithPostReference.map(
+            ({ postReference }) => [
+                postReference.path,
+                postReference,
+            ]
+        )
+    );
 
-        if (boardType !== 'notice' && boardType !== 'free') {
-            return [];
-        }
+    const postExistenceEntries = await Promise.all(
+        [...uniquePostReferences.entries()].map(
+            async ([path, postReference]) => {
+                const postSnapshot = await getDoc(postReference);
 
-        const comment = convertCommentDocument(
-            documentSnapshot.id,
-            boardType,
-            postReference.id,
-            documentSnapshot.data(),
-            userId,
-        );
+                return [
+                    path,
+                    postSnapshot.exists(),
+                ] as const;
+            }
+        )
+    );
 
-        return comment ? [comment] : [];
-    });
+    const postExistsByPath = new Map(
+        postExistenceEntries
+    );
+
+    return commentsWithPostReference.map(
+        ({ comment, postReference }) => ({
+            ...comment,
+            postExists:
+                postExistsByPath.get(postReference.path) === true,
+        })
+    );
 }
 
 export async function createCommentInFirestore(
@@ -156,7 +200,6 @@ export async function createCommentInFirestore(
         likedUsers: [],
         likeCount: 0,
         writerUid: input.writerUid,
-        writerEmail: input.writerEmail,
         displayName: input.displayName,
         photoURL: input.photoURL,
     };
@@ -180,7 +223,6 @@ export async function createCommentInFirestore(
         likeCount: data.likeCount,
         liked: false,
         writerUid: data.writerUid,
-        writerEmail: data.writerEmail,
         displayName: data.displayName,
         photoURL: data.photoURL,
     };

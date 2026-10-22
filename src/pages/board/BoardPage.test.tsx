@@ -36,7 +36,6 @@ const posts: Post[] = Array.from({ length: 12 }, (_, index) => {
     title: `${postNo >= 11 ? '질문' : '일반 글'} ${postNo}`,
     content: '테스트 게시글',
     authorUid: null,
-    email: null,
     displayName: '작성자',
     photoURL: null,
     category: postNo === 12 ? 'question' : 'chat',

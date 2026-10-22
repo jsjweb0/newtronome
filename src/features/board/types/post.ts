@@ -14,7 +14,6 @@ export interface Post {
     content: string;
 
     authorUid: string | null;
-    email: string | null;
     displayName: string | null;
     photoURL: string | null;
 
@@ -41,7 +40,6 @@ export interface CreatePostInput {
     isNotice: boolean;
 
     authorUid: string;
-    email: string | null;
     displayName: string | null;
     photoURL: string | null;
 }

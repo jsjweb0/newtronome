@@ -91,7 +91,6 @@ export default function PostCommentSection({
         input: {
           content,
           writerUid: user.uid,
-          writerEmail: user.email,
           displayName: user.displayName || null,
           photoURL: user.photoURL || null,
         },

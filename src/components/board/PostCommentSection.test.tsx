@@ -46,7 +46,6 @@ function createComment(id: string, content: string): CommentData {
     likeCount: 0,
     liked: false,
     writerUid: null,
-    writerEmail: null,
     displayName: null,
     photoURL: null,
   };
@@ -146,7 +145,7 @@ describe('PostCommentSection request state', () => {
     fireEvent.submit(textbox.closest('form')!);
     await waitFor(() => expect(commentMocks.createCommentInFirestore).toHaveBeenCalledTimes(1));
     expect(commentMocks.createCommentInFirestore).toHaveBeenCalledWith('free', 'first', {
-      content: '등록된 댓글', writerUid: 'u1', writerEmail: 'user@example.com',
+      content: '등록된 댓글', writerUid: 'u1',
       displayName: '사용자', photoURL: null,
     });
     await waitFor(() => expect(textbox.disabled).toBe(true));

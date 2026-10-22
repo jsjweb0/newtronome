@@ -191,9 +191,7 @@ function PostViewContent({ boardType, postId }: {
           <li className="px-3 border-gray-300 text-gray-500 text-xs md:text-base dark:text-gray-400">
             {boardType === 'notice'
               ? '관리자'
-              : boardType === 'free'
-                ? currentPost.displayName
-                : currentPost.email}
+              : currentPost.displayName?.trim() || '알 수 없는 사용자'}
           </li>
           <li className="px-3 text-gray-500 text-xs md:text-base dark:text-gray-400">
             {formatDate(currentPost.date)}
