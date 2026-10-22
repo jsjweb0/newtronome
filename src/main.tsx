@@ -11,6 +11,28 @@ import { AuthProvider } from './contexts/AuthProvider';
 import { DarkModeProvider } from './contexts/DarkModeProvider';
 import { NotificationProvider } from './contexts/NotificationProvider';
 
+const PRELOAD_RELOAD_KEY = 'newtronome:preload-reloaded';
+
+if (import.meta.env.PROD) {
+  window.addEventListener('vite:preloadError', () => {
+    try {
+      const hasReloaded =
+        window.sessionStorage.getItem(PRELOAD_RELOAD_KEY) === 'true';
+
+      if (hasReloaded) {
+        return;
+      }
+
+      window.sessionStorage.setItem(PRELOAD_RELOAD_KEY, 'true');
+    } catch {
+      // 반복 방지 기록을 저장할 수 없으면 자동 복구를 생략합니다.
+      return;
+    }
+
+    window.location.reload();
+  });
+}
+
 const queryClient = new QueryClient();
 
 const routerBasename =

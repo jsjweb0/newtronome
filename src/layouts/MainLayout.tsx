@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import PageErrorBoundary from '../components/ui/PageErrorBoundary';
 import { useSoundCloudWidget } from '../features/player/hooks/useSoundCloudWidget';
 import { usePlayerStore } from '../features/player/stores/usePlayerStore';
 import '../assets/css/index.css';
@@ -48,6 +49,8 @@ export interface PlayerOutletContext {
 }
 
 export default function MainLayout() {
+  const location = useLocation();
+
   const [playlistUrl] = useState(() => {
     const randomIndex = Math.floor(Math.random() * PLAYLIST_URLS.length);
     return PLAYLIST_URLS[randomIndex];
@@ -138,9 +141,11 @@ export default function MainLayout() {
           )}
         >
           <article className="min-h-[calc(100vh-162px)] xl:min-h-[calc(100vh-232px)] max-lg:mt-2">
-            <Suspense fallback={<LoadingLogo />}>
-              <Outlet context={outletContext} />
-            </Suspense>
+            <PageErrorBoundary key={location.pathname}>
+              <Suspense fallback={<LoadingLogo />}>
+                <Outlet context={outletContext} />
+              </Suspense>
+            </PageErrorBoundary>
           </article>
         </main>
 
