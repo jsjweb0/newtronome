@@ -130,6 +130,83 @@ service cloud.firestore {
           .hasOnly(['content']);
     }
 
+    function isValidPostAfterUpdate() {
+      let data = request.resource.data;
+      let viewCount = data.get('viewCount', 0);
+      let updatedAt = data.get('updatedAt', null);
+
+      return data.keys().hasAll([
+          'title',
+          'content',
+          'postNo',
+          'date',
+          'category',
+          'isNotice',
+          'likeCount',
+          'likedUsers',
+          'authorUid',
+          'displayName',
+          'photoURL'
+        ])
+        && hasOnlyAllowedPostFields()
+        && data.title is string
+        && data.content is string
+        && data.postNo is int
+        && data.date is timestamp
+        && (
+          data.category == null
+          || data.category is string
+        )
+        && data.isNotice is bool
+        && data.likeCount is int
+        && data.likeCount >= 0
+        && data.likedUsers is list
+        && data.authorUid is string
+        && (
+          data.displayName == null
+          || data.displayName is string
+        )
+        && (
+          data.photoURL == null
+          || data.photoURL is string
+        )
+        && viewCount is int
+        && viewCount >= 0
+        && (
+          updatedAt == null
+          || updatedAt is string
+        );
+    }
+
+    function isValidCommentAfterUpdate() {
+      let data = request.resource.data;
+
+      return data.keys().hasAll([
+          'content',
+          'createdAt',
+          'likedUsers',
+          'likeCount',
+          'writerUid',
+          'displayName',
+          'photoURL'
+        ])
+        && hasOnlyAllowedCommentFields()
+        && data.content is string
+        && data.createdAt is timestamp
+        && data.likedUsers is list
+        && data.likeCount is int
+        && data.likeCount >= 0
+        && data.writerUid is string
+        && (
+          data.displayName == null
+          || data.displayName is string
+        )
+        && (
+          data.photoURL == null
+          || data.photoURL is string
+        );
+    }
+
     function isValidLikeCreate() {
       return isSignedIn()
         && request.resource.data.keys().hasAll(['likeCount', 'likedUsers'])
@@ -274,7 +351,7 @@ service cloud.firestore {
           request.resource.data.get('isNotice', false) == false
           || isAdmin()
         );
-      allow update: if hasOnlyAllowedPostFields()
+      allow update: if isValidPostAfterUpdate()
         && (
           isValidPostContentUpdate()
           || isAdmin()
@@ -293,7 +370,7 @@ service cloud.firestore {
         allow update: if exists(
             /databases/$(database)/documents/free/$(postId)
           )
-          && hasOnlyAllowedCommentFields()
+          && isValidCommentAfterUpdate()
           && (
             isValidCommentContentUpdate()
             || isAdmin()
@@ -310,7 +387,7 @@ service cloud.firestore {
       allow create: if isAdmin()
          && isValidPostCreate()
         && request.resource.data.isNotice == true;
-      allow update: if hasOnlyAllowedPostFields()
+      allow update: if isValidPostAfterUpdate()
         && (
           isAdmin()
           || isValidLikeUpdate()
@@ -328,7 +405,7 @@ service cloud.firestore {
         allow update: if exists(
             /databases/$(database)/documents/notice/$(postId)
           )
-          && hasOnlyAllowedCommentFields()
+          && isValidCommentAfterUpdate()
           && (
             isValidCommentContentUpdate()
           || isAdmin()

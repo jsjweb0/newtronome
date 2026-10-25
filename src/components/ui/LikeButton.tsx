@@ -15,11 +15,15 @@ interface LikeButtonProps {
   docId: string | number;
   parentId?: string | number;
   subCollection?: 'comments';
+  initialCount?: number;
   showCount?: boolean;
   className?: string;
   svgClassName?: string;
   'aria-describedby'?: string;
 }
+
+const normalizeLikeCount = (value: number | undefined) =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : 0;
 
 export default function LikeButton({
   type = 'heart',
@@ -27,6 +31,7 @@ export default function LikeButton({
   docId, // 문서 ID (포스트ID 또는 댓글ID)
   parentId = undefined, // 댓글일 때만 필요
   subCollection = undefined, // 댓글일 때만 "comments"
+  initialCount,
   showCount = true,
   className = '',
   svgClassName = '',
@@ -43,7 +48,7 @@ export default function LikeButton({
 
   const { showToast } = useToast();
   const [liked, setLiked] = useState(false);
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(() => normalizeLikeCount(initialCount));
   const [animate, setAnimate] = useState(false);
 
   const commentDocId = String(docId);
@@ -57,9 +62,9 @@ export default function LikeButton({
   );
 
   useEffect(() => {
-    if (!uid) {
+    if (!uid && (!showCount || initialCount !== undefined)) {
       setLiked(false);
-      setCount(0);
+      setCount(normalizeLikeCount(initialCount));
       setLookupStatus('ready');
       return;
     }
@@ -80,12 +85,17 @@ export default function LikeButton({
           )
           : [];
 
-        setLiked(likedUsers.includes(uid));
+        setLiked(
+          typeof uid === 'string' && likedUsers.includes(uid)
+        );
+
         setCount(
-          typeof data?.likeCount === 'number' && Number.isFinite(data.likeCount)
+          typeof data?.likeCount === 'number' &&
+            Number.isFinite(data.likeCount)
             ? data.likeCount
             : 0
         );
+
         setLookupStatus('ready');
       },
       () => {
@@ -97,7 +107,13 @@ export default function LikeButton({
       active = false;
       unsubscribe();
     };
-  }, [docRef, uid, retryCount]);
+  }, [
+    docRef,
+    uid,
+    retryCount,
+    initialCount,
+    showCount,
+  ]);
 
   const retryLookup = () => {
     setLookupStatus('loading');

@@ -7,6 +7,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import {
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   setDoc,
@@ -105,6 +106,21 @@ async function createFreePost(postId = 'post-1') {
     await setDoc(
       doc(context.firestore(), 'free', postId),
       createValidPostData('user-1')
+    );
+  });
+}
+
+async function createFreeComment(commentId = 'comment-1') {
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(
+      doc(
+        context.firestore(),
+        'free',
+        'post-1',
+        'comments',
+        commentId
+      ),
+      createValidCommentData('user-1')
     );
   });
 }
@@ -272,6 +288,7 @@ describe('허용하지 않은 필드 수정 규칙', () => {
   });
 
   it('관리자도 댓글에 writerEmail 필드를 추가할 수 없다', async () => {
+    await createFreePost();
     await testEnvironment.withSecurityRulesDisabled(async (context) => {
       await setDoc(
         doc(
@@ -302,6 +319,155 @@ describe('허용하지 않은 필드 수정 규칙', () => {
           writerEmail: 'user@example.com',
         }
       )
+    );
+  });
+});
+
+describe('수정 후 문서 유효성 규칙', () => {
+  it('작성자가 유효한 게시글과 댓글 내용을 수정할 수 있다', async () => {
+    await createFreePost();
+    await createFreeComment();
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertSucceeds(
+      updateDoc(doc(userDb, 'free', 'post-1'), {
+        title: '수정된 제목',
+        content: '수정된 본문',
+        category: null,
+        updatedAt: new Date('2026-02-01').toISOString(),
+      })
+    );
+    await assertSucceeds(
+      updateDoc(
+        doc(userDb, 'free', 'post-1', 'comments', 'comment-1'),
+        { content: '수정된 댓글' }
+      )
+    );
+  });
+
+  it.each([
+    ['title', 123],
+    ['content', null],
+    ['category', []],
+    ['updatedAt', 123],
+  ])('작성자가 게시글의 %s 필드를 잘못된 타입으로 수정할 수 없다', async (field, value) => {
+    await createFreePost();
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(userDb, 'free', 'post-1'), {
+        [field]: value,
+      })
+    );
+  });
+
+  it.each(['title', 'content'])(
+    '작성자가 게시글의 필수 필드 %s을 삭제할 수 없다',
+    async (field) => {
+      await createFreePost();
+
+      const userDb = testEnvironment
+        .authenticatedContext('user-1')
+        .firestore();
+
+      await assertFails(
+        updateDoc(doc(userDb, 'free', 'post-1'), {
+          [field]: deleteField(),
+        })
+      );
+    }
+  );
+
+  it.each([123, null])(
+    '작성자가 댓글 내용을 잘못된 값 %s로 수정할 수 없다',
+    async (content) => {
+      await createFreePost();
+      await createFreeComment();
+
+      const userDb = testEnvironment
+        .authenticatedContext('user-1')
+        .firestore();
+
+      await assertFails(
+        updateDoc(
+          doc(userDb, 'free', 'post-1', 'comments', 'comment-1'),
+          { content }
+        )
+      );
+    }
+  );
+
+  it('작성자가 댓글의 필수 content 필드를 삭제할 수 없다', async () => {
+    await createFreePost();
+    await createFreeComment();
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      updateDoc(
+        doc(userDb, 'free', 'post-1', 'comments', 'comment-1'),
+        { content: deleteField() }
+      )
+    );
+  });
+
+  it('관리자도 게시글과 댓글을 잘못된 타입으로 수정할 수 없다', async () => {
+    await createFreePost();
+    await createFreeComment();
+
+    const adminDb = testEnvironment
+      .authenticatedContext('admin-user', { admin: true })
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(adminDb, 'free', 'post-1'), { title: 123 })
+    );
+    await assertFails(
+      updateDoc(
+        doc(adminDb, 'free', 'post-1', 'comments', 'comment-1'),
+        { content: 123 }
+      )
+    );
+  });
+
+  it('유효한 좋아요와 조회수 수정은 계속 허용한다', async () => {
+    await createFreePost();
+    await createFreeComment();
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+    const publicDb = testEnvironment
+      .unauthenticatedContext()
+      .firestore();
+
+    await assertSucceeds(
+      updateDoc(doc(userDb, 'free', 'post-1'), {
+        likeCount: 1,
+        likedUsers: ['user-1'],
+      })
+    );
+    await assertSucceeds(
+      updateDoc(
+        doc(userDb, 'free', 'post-1', 'comments', 'comment-1'),
+        {
+          likeCount: 1,
+          likedUsers: ['user-1'],
+        }
+      )
+    );
+    await assertSucceeds(
+      updateDoc(doc(publicDb, 'free', 'post-1'), {
+        viewCount: 1,
+      })
     );
   });
 });

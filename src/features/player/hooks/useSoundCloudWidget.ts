@@ -170,8 +170,15 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
     const soundCloud = window.SC;
 
-    if (!iframeElement || !soundCloud) {
+    if (!iframeElement) {
       widgetRef.current = null;
+      return;
+    }
+
+    if (!soundCloud) {
+      widgetRef.current = null;
+      setPlaylistStatus('error');
+      setWidgetError('SoundCloud 재생 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
       return;
     }
 
@@ -450,13 +457,22 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
   const retryLoad = useCallback(() => {
     if (!widgetError) return;
+
+    if (!window.SC) {
+      window.location.reload();
+      return;
+    }
+
     const retry = retryLoadRef.current;
     setWidgetError(null);
+
     if (retry) {
       retry();
       return;
     }
+
     if (!iframeElement) return;
+
     setIsReady(false);
     setPlaylistStatus('loading');
     iframeElement.src = iframeElement.src;

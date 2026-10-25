@@ -145,15 +145,84 @@ describe('Board list conditions across routes', () => {
   });
 
   it.each([
-    ['이전글', 'post-10', '본문 10'],
-    ['다음글', 'post-12', '본문 12'],
-  ])('preserves all conditions in the %s link and after navigation', async (name, id, content) => {
+    ['이전글', 'post-10', '본문 10', '1'],
+    ['다음글', 'post-12', '본문 12', '2'],
+  ])('preserves the list conditions and target page in the %s link', async (name, id, content, targetPage) => {
     renderBoardRoute(`/board/free/post-11${search}`);
     const link = await screen.findByRole('link', { name: new RegExp(name) });
-    expectConditions(link.getAttribute('href') ?? '', `/board/free/${id}`);
+    expectConditions(link.getAttribute('href') ?? '', `/board/free/${id}`, {
+      ...conditions,
+      page: targetPage,
+    });
     fireEvent.click(link);
     await screen.findByText(content);
-    expectConditions(currentUrl(), `/board/free/${id}`);
+    expectConditions(currentUrl(), `/board/free/${id}`, {
+      ...conditions,
+      page: targetPage,
+    });
+  });
+
+  it('uses only posts matching the keyword and category for previous and next navigation', async () => {
+    const navigationPosts: Post[] = [
+      { ...posts[0], id: 'matching-1', postNo: 1, title: '리액트 질문 1' },
+      { ...posts[1], id: 'other-keyword', postNo: 2, title: '자바스크립트 질문' },
+      { ...posts[2], id: 'matching-3', postNo: 3, title: '리액트 질문 3' },
+      { ...posts[3], id: 'other-category', postNo: 4, title: '리액트 질문 4', category: 'chat' },
+      { ...posts[4], id: 'matching-5', postNo: 5, title: '리액트 질문 5' },
+    ];
+    const filteredSearch = `?${new URLSearchParams({
+      page: '1',
+      keyword: '리액트',
+      category: 'question',
+      sort: 'asc',
+    })}`;
+
+    renderBoardRoute(`/board/free/matching-3${filteredSearch}`, {
+      getPosts: vi.fn<typeof fetchPostsFromFirestore>().mockResolvedValue(navigationPosts),
+      getPost: vi.fn<typeof fetchPostFromFirestore>().mockResolvedValue(navigationPosts[2]),
+    });
+
+    expect(
+      (await screen.findByRole('link', { name: /이전글/ })).getAttribute('href'),
+    ).toContain('/board/free/matching-1');
+    expect(screen.getByRole('link', { name: /다음글/ }).getAttribute('href')).toContain(
+      '/board/free/matching-5',
+    );
+    expect(screen.queryByText('자바스크립트 질문')).toBeNull();
+    expect(screen.queryByText('리액트 질문 4')).toBeNull();
+  });
+
+  it('changes previous and next navigation order when descending sort is selected', async () => {
+    const descendingSearch = `?${new URLSearchParams({
+      page: '1',
+      keyword,
+      category: 'question',
+      sort: 'desc',
+    })}`;
+
+    renderBoardRoute(`/board/free/post-6${descendingSearch}`);
+
+    expect(
+      (await screen.findByRole('link', { name: /이전글/ })).getAttribute('href'),
+    ).toContain('/board/free/post-7');
+    expect(screen.getByRole('link', { name: /다음글/ }).getAttribute('href')).toContain(
+      '/board/free/post-5',
+    );
+  });
+
+  it('does not show navigation links when the current post is outside the filtered result', async () => {
+    const unmatchedSearch = `?${new URLSearchParams({
+      page: '1',
+      keyword: '검색 결과에 없는 제목',
+      category: 'question',
+      sort: 'asc',
+    })}`;
+
+    renderBoardRoute(`/board/free/post-6${unmatchedSearch}`);
+
+    await screen.findByText('본문 6');
+    expect(screen.queryByRole('link', { name: /이전글/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /다음글/ })).toBeNull();
   });
 
   it.each(['list', 'detail'] as const)(

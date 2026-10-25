@@ -201,6 +201,7 @@ export default function Comment({
                 parentId={postId}
                 subCollection="comments"
                 docId={data.id}
+                initialCount={data.likeCount}
                 showCount
               />
               <button

@@ -810,4 +810,26 @@ describe('useSoundCloudWidget source switching', () => {
     expect(result.current.widgetError).toBeTruthy();
     expect(widget.getSounds).toHaveBeenCalledTimes(1);
   });
+
+  it('reports an error when the SoundCloud SDK is unavailable', () => {
+    delete window.SC;
+
+    const { result } = renderWidgetHook();
+
+    expect(result.current.playlistStatus).toBe('error');
+    expect(result.current.widgetError).toContain(
+      '페이지를 새로고침해 주세요'
+    );
+  });
+
+  it('does not classify the initial missing iframe as an SDK error', () => {
+    createWidgetMock();
+
+    const { result } = renderHook(() =>
+      useSoundCloudWidget(PLAYLIST_URL)
+    );
+
+    expect(result.current.playlistStatus).toBe('loading');
+    expect(result.current.widgetError).toBeNull();
+  });
 });
