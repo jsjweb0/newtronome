@@ -18,6 +18,7 @@ import CategoryFilter, {
 } from '../../components/board/CategoryFilter';
 import { isFreeBoardCategoryValue } from '../../constants/freeBoardCategories';
 import RetryErrorState from '../../components/ui/RetryErrorState';
+import { filterAndSortBoardPosts } from '../../features/board/utils/filterAndSortBoardPosts';
 
 export default function BoardPage() {
   const { boardType } = useParams();
@@ -68,35 +69,15 @@ function BoardContent({
   const [draftKeyword, setDraftKeyword] = useState(keywordParam);
   const dateSort = sortParam;
 
-  const filteredPosts = useMemo(() => {
-    const posts = data ?? [];
-
-    const matchedPosts = posts.filter((post) => {
-      const matchesKeyword = post.title
-        .toLowerCase()
-        .includes(searchKeyword.toLowerCase());
-
-      const matchesCategory =
-        selectedCategory === '' ||
-        post.category === selectedCategory;
-
-      return matchesKeyword && matchesCategory;
-    });
-
-    return matchedPosts.sort((a, b) => {
-      const firstPostNo = Number.isFinite(Number(a.postNo))
-        ? Number(a.postNo)
-        : 0;
-
-      const secondPostNo = Number.isFinite(Number(b.postNo))
-        ? Number(b.postNo)
-        : 0;
-
-      return dateSort
-        ? firstPostNo - secondPostNo
-        : secondPostNo - firstPostNo;
-    });
-  }, [data, searchKeyword, selectedCategory, dateSort]);
+  const filteredPosts = useMemo(
+    () =>
+      filterAndSortBoardPosts(data ?? [], {
+        keyword: searchKeyword,
+        category: selectedCategory,
+        sort: dateSort ? 'asc' : 'desc',
+      }),
+    [data, searchKeyword, selectedCategory, dateSort],
+  );
 
   const totalItems = filteredPosts.length;
   const totalPages = Math.max(1, getTotalPages(totalItems));

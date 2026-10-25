@@ -43,6 +43,20 @@ const bookmarkTrack: PlayerTrack = {
   tags: [],
 };
 
+const secondBookmarkTrack: PlayerTrack = {
+  ...bookmarkTrack,
+  id: 'bookmark-2',
+  title: 'Second saved track',
+  permalinkUrl: 'https://soundcloud.com/example/second-saved-track',
+};
+
+const thirdBookmarkTrack: PlayerTrack = {
+  ...bookmarkTrack,
+  id: 'bookmark-3',
+  title: 'Third saved track',
+  permalinkUrl: 'https://soundcloud.com/example/third-saved-track',
+};
+
 type WidgetListener = (event?: unknown) => void;
 
 function createWidgetMock() {
@@ -280,6 +294,161 @@ describe('useSoundCloudWidget source switching', () => {
     });
     expect(result.current.widgetTrack?.id).toBe(3);
     expect(result.current.widgetIsPlaying).toBe(true);
+  });
+
+  it('loads a later bookmark after the first bookmark finishes loading', () => {
+    const { widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+
+    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    const onFirstLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
+    expect(onFirstLoaded).toBeTypeOf('function');
+
+    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+    expect(widget.load).toHaveBeenCalledTimes(1);
+
+    act(() => onFirstLoaded?.());
+
+    expect(widget.load).toHaveBeenCalledTimes(2);
+    expect(widget.load).toHaveBeenLastCalledWith(
+      secondBookmarkTrack.permalinkUrl,
+      expect.objectContaining({ auto_play: true })
+    );
+    expect(usePlayerStore.getState().currentTrack).toEqual(secondBookmarkTrack);
+  });
+
+  it('loads only the latest bookmark selected during another bookmark load', () => {
+    const { widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+
+    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    const onFirstLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
+    expect(onFirstLoaded).toBeTypeOf('function');
+
+    act(() => {
+      result.current.playBookmarkTrack(secondBookmarkTrack);
+      result.current.playBookmarkTrack(thirdBookmarkTrack);
+    });
+    expect(widget.load).toHaveBeenCalledTimes(1);
+
+    act(() => onFirstLoaded?.());
+
+    expect(widget.load).toHaveBeenCalledTimes(2);
+    expect(widget.load).toHaveBeenLastCalledWith(
+      thirdBookmarkTrack.permalinkUrl,
+      expect.objectContaining({ auto_play: true })
+    );
+    expect(usePlayerStore.getState().currentTrack).toEqual(thirdBookmarkTrack);
+  });
+
+  it('loads the selected playlist track after a bookmark finishes loading', () => {
+    const { widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+
+    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    const onBookmarkLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
+    expect(onBookmarkLoaded).toBeTypeOf('function');
+
+    act(() => result.current.selectTrack(1));
+    expect(widget.load).toHaveBeenCalledTimes(1);
+
+    act(() => onBookmarkLoaded?.());
+
+    expect(widget.load).toHaveBeenCalledTimes(2);
+    expect(widget.load).toHaveBeenLastCalledWith(
+      PLAYLIST_URL,
+      expect.objectContaining({ auto_play: true, start_track: 1 })
+    );
+    expect(usePlayerStore.getState()).toMatchObject({
+      playbackMode: 'playlist',
+      currentTrack: playlistTracks[1],
+    });
+  });
+
+  it('loads a bookmark after the playlist finishes loading', () => {
+    const { widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+    usePlayerStore.setState({ playbackMode: 'bookmark' });
+
+    act(() => result.current.selectTrack(0));
+    const onPlaylistLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
+    expect(onPlaylistLoaded).toBeTypeOf('function');
+
+    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+    expect(widget.load).toHaveBeenCalledTimes(1);
+
+    act(() => onPlaylistLoaded?.());
+
+    expect(widget.load).toHaveBeenCalledTimes(2);
+    expect(widget.load).toHaveBeenLastCalledWith(
+      secondBookmarkTrack.permalinkUrl,
+      expect.objectContaining({ auto_play: true })
+    );
+    expect(usePlayerStore.getState()).toMatchObject({
+      playbackMode: 'bookmark',
+      currentTrack: secondBookmarkTrack,
+    });
+  });
+
+  it('discards a pending selection when the active load fails', () => {
+    const { events, listeners, widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+
+    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    const onFailedLoad = vi.mocked(widget.load).mock.calls[0][1]?.callback;
+    expect(onFailedLoad).toBeTypeOf('function');
+    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+
+    act(() => listeners.get(events.ERROR)?.());
+    act(() => onFailedLoad?.());
+
+    expect(result.current.widgetError).toBeTruthy();
+    expect(widget.load).toHaveBeenCalledTimes(1);
+    expect(usePlayerStore.getState().currentTrack).toEqual(bookmarkTrack);
+  });
+
+  it('discards a pending selection when the hook is cleaned up', () => {
+    const { widget } = createWidgetMock();
+    const { result, unmount } = renderWidgetHook();
+
+    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    const onFirstLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
+    expect(onFirstLoaded).toBeTypeOf('function');
+    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+
+    unmount();
+    act(() => onFirstLoaded?.());
+
+    expect(widget.load).toHaveBeenCalledTimes(1);
+    expect(usePlayerStore.getState().currentTrack).toEqual(bookmarkTrack);
+  });
+
+  it('ignores an earlier load callback after a newer selection starts loading', () => {
+    const { widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+
+    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    const onFirstLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
+    expect(onFirstLoaded).toBeTypeOf('function');
+    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+    act(() => onFirstLoaded?.());
+    const onSecondLoaded = vi.mocked(widget.load).mock.calls[1][1]?.callback;
+    expect(onSecondLoaded).toBeTypeOf('function');
+
+    act(() => result.current.playBookmarkTrack(thirdBookmarkTrack));
+    act(() => onFirstLoaded?.());
+
+    expect(widget.load).toHaveBeenCalledTimes(2);
+    expect(usePlayerStore.getState().currentTrack).toEqual(secondBookmarkTrack);
+
+    act(() => onSecondLoaded?.());
+
+    expect(widget.load).toHaveBeenCalledTimes(3);
+    expect(widget.load).toHaveBeenLastCalledWith(
+      thirdBookmarkTrack.permalinkUrl,
+      expect.objectContaining({ auto_play: true })
+    );
+    expect(usePlayerStore.getState().currentTrack).toEqual(thirdBookmarkTrack);
   });
 
   it('ignores an earlier track lookup after a source switch', () => {
@@ -640,5 +809,27 @@ describe('useSoundCloudWidget source switching', () => {
     expect(result.current.playlistStatus).toBe('error');
     expect(result.current.widgetError).toBeTruthy();
     expect(widget.getSounds).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports an error when the SoundCloud SDK is unavailable', () => {
+    delete window.SC;
+
+    const { result } = renderWidgetHook();
+
+    expect(result.current.playlistStatus).toBe('error');
+    expect(result.current.widgetError).toContain(
+      '페이지를 새로고침해 주세요'
+    );
+  });
+
+  it('does not classify the initial missing iframe as an SDK error', () => {
+    createWidgetMock();
+
+    const { result } = renderHook(() =>
+      useSoundCloudWidget(PLAYLIST_URL)
+    );
+
+    expect(result.current.playlistStatus).toBe('loading');
+    expect(result.current.widgetError).toBeNull();
   });
 });

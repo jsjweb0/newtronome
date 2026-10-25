@@ -7,6 +7,7 @@ import { commentQueryKeys } from '../../features/board/queries/commentQueryKeys'
 import LikeButton from './LikeButton';
 
 const mocks = vi.hoisted(() => ({
+  user: { uid: 'user-1' } as { uid: string } | null,
   subscriptions: [] as Array<{
     onSuccess: (snapshot: {
       data: () => Record<string, unknown>;
@@ -19,7 +20,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { uid: 'user-1' } }),
+  useAuth: () => ({ user: mocks.user }),
 }));
 vi.mock('../../contexts/ToastContext', () => ({
   useToast: () => ({ showToast: mocks.showToast }),
@@ -74,6 +75,7 @@ function publishLikeSnapshot(likedUsers: string[], likeCount: number) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.user = { uid: 'user-1' };
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   mocks.subscriptions.length = 0;
   mocks.setDoc.mockResolvedValue(undefined);
@@ -84,6 +86,53 @@ afterEach(() => {
   cleanup();
   queryClient.clear();
   vi.restoreAllMocks();
+});
+
+describe('LikeButton 공개 좋아요 수', () => {
+  it('비로그인 사용자에게 전달받은 좋아요 수를 추가 조회 없이 표시한다', () => {
+    mocks.user = null;
+    const button = renderLikeButton({ initialCount: 7 });
+
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(onSnapshot).not.toHaveBeenCalled();
+
+    fireEvent.click(button);
+
+    expect(mocks.setDoc).not.toHaveBeenCalled();
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      message: '로그인 후 이용해 주세요!',
+      type: 'info',
+    });
+  });
+
+  it('로그인 사용자는 전달값을 표시한 뒤 실시간 개수로 갱신한다', () => {
+    renderLikeButton({ initialCount: 7 });
+
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(onSnapshot).toHaveBeenCalledTimes(1);
+
+    publishLikeSnapshot(['user-1'], 8);
+
+    expect(screen.getByText('8')).toBeTruthy();
+  });
+
+  it('비로그인 상태에서 초기 개수가 없으면 공개 개수를 조회한다', () => {
+    mocks.user = null;
+    renderLikeButton();
+
+    expect(onSnapshot).toHaveBeenCalledTimes(1);
+
+    publishLikeSnapshot(['other-user'], 5);
+
+    expect(screen.getByText('5')).toBeTruthy();
+  });
+
+  it('비로그인 상태에서 개수를 숨기면 공개 개수를 조회하지 않는다', () => {
+    mocks.user = null;
+    renderLikeButton({ showCount: false });
+
+    expect(onSnapshot).not.toHaveBeenCalled();
+  });
 });
 
 describe('댓글 좋아요와 Query 캐시 동기화', () => {

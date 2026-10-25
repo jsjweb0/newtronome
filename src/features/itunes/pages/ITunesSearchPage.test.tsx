@@ -8,7 +8,11 @@ import { searchITunesTracks } from '../services/searchITunesTracks';
 import { usePlayerStore } from '../../player/stores/usePlayerStore';
 import type { ITunesTrack } from '../types/itunes.types';
 
-const mocks = vi.hoisted(() => ({ onPauseSoundCloud: vi.fn() }));
+const mocks = vi.hoisted(() => ({ onPauseSoundCloud: vi.fn(), showToast: vi.fn() }));
+
+vi.mock('../../../contexts/ToastContext', () => ({
+  useToast: () => ({ showToast: mocks.showToast }),
+}));
 
 vi.mock('react-router-dom', () => ({
   useOutletContext: () => ({ onPauseSoundCloud: mocks.onPauseSoundCloud }),
@@ -34,6 +38,13 @@ const tracks: ITunesTrack[] = [
 
 let queryClient: QueryClient;
 
+function setMediaError(audio: HTMLAudioElement, code: number | null) {
+  Object.defineProperty(audio, 'error', {
+    configurable: true,
+    value: code === null ? null : { code, message: 'Media failed' },
+  });
+}
+
 function deferred() {
   let resolve!: () => void;
   let reject!: (reason: Error) => void;
@@ -58,6 +69,13 @@ async function showSearchResults() {
 }
 
 beforeEach(() => {
+  // jsdom does not implement MediaError or the audio.error property.
+  vi.stubGlobal('MediaError', {
+    MEDIA_ERR_ABORTED: 1,
+    MEDIA_ERR_NETWORK: 2,
+    MEDIA_ERR_DECODE: 3,
+    MEDIA_ERR_SRC_NOT_SUPPORTED: 4,
+  });
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   vi.clearAllMocks();
   vi.mocked(getArtistTracks).mockReset();
@@ -72,6 +90,7 @@ afterEach(() => {
   cleanup();
   queryClient.clear();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('artist panel cache', () => {
@@ -241,6 +260,7 @@ describe('iTunes preview request order', () => {
     await act(async () => { firstPlay.reject(new Error('interrupted')); try { await firstPlay.promise; } catch { /* expected */ } });
 
     expect(screen.getByRole('button', { name: '둘째 곡 미리듣기 정지' })).toBeTruthy();
+    expect(mocks.showToast).not.toHaveBeenCalled();
   });
 
   it.each(['resolve', 'reject'] as const)('ignores a pending play %s after SoundCloud starts', async (outcome) => {
@@ -261,5 +281,121 @@ describe('iTunes preview request order', () => {
 
     expect(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' })).toBeTruthy();
     expect(mocks.onPauseSoundCloud).toHaveBeenCalledTimes(1);
+    expect(mocks.showToast).not.toHaveBeenCalled();
+  });
+});
+
+describe('iTunes preview failure feedback', () => {
+  const failureToast = {
+    message: '미리듣기를 재생하지 못했습니다. 다시 눌러 재시도해 주세요.',
+    type: 'error',
+  };
+
+  it('announces a play failure and retries when the same track is clicked again', async () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, 'play')
+      .mockRejectedValueOnce(new DOMException('Unsupported media', 'NotSupportedError'))
+      .mockResolvedValueOnce(undefined);
+    await showSearchResults();
+
+    fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+    await waitFor(() => expect(mocks.showToast).toHaveBeenCalledWith(failureToast));
+    expect(mocks.showToast).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+    expect(await screen.findByRole('button', { name: '첫 곡 미리듣기 정지' })).toBeTruthy();
+    expect(play).toHaveBeenCalledTimes(2);
+    expect(mocks.showToast).toHaveBeenCalledTimes(1);
+  });
+
+  it('silently ignores AbortError from the current play request', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play')
+      .mockRejectedValue(new DOMException('Playback interrupted', 'AbortError'));
+    await showSearchResults();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+    });
+
+    expect(mocks.showToast).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' })).toBeTruthy();
+  });
+
+  it.each([2, 3, 4])('announces media error code %s after playback starts', async (code) => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+    await showSearchResults();
+    fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+    await screen.findByRole('button', { name: '첫 곡 미리듣기 정지' });
+    const audio = document.querySelector('audio')!;
+    setMediaError(audio, code);
+
+    fireEvent.error(audio);
+
+    expect(mocks.showToast).toHaveBeenCalledExactlyOnceWith(failureToast);
+    expect(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' })).toBeTruthy();
+  });
+
+  it.each(['media-first', 'promise-first'] as const)(
+    'announces the same failure only once when both error paths fire: %s', async (order) => {
+      const pendingPlay = deferred();
+      vi.spyOn(HTMLMediaElement.prototype, 'play').mockReturnValue(pendingPlay.promise);
+      await showSearchResults();
+      fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+      const audio = document.querySelector('audio')!;
+      setMediaError(audio, 3);
+
+      if (order === 'media-first') fireEvent.error(audio);
+      await act(async () => {
+        pendingPlay.reject(new DOMException('Decode failed', 'NotSupportedError'));
+        await pendingPlay.promise.catch(() => undefined);
+      });
+      fireEvent.error(audio);
+
+      expect(mocks.showToast).toHaveBeenCalledExactlyOnceWith(failureToast);
+    }
+  );
+
+  it('announces a new failure if retrying also fails', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockRejectedValue(new Error('Playback failed'));
+    await showSearchResults();
+
+    fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+    await waitFor(() => expect(mocks.showToast).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+    await waitFor(() => expect(mocks.showToast).toHaveBeenCalledTimes(2));
+    expect(mocks.showToast).toHaveBeenLastCalledWith(failureToast);
+  });
+
+  it.each(['aborted', 'no-error', 'stopped'] as const)(
+    'silently ignores a media error event when %s', async (condition) => {
+      vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+      await showSearchResults();
+      fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+      await screen.findByRole('button', { name: '첫 곡 미리듣기 정지' });
+      const audio = document.querySelector('audio')!;
+      setMediaError(audio, condition === 'no-error' ? null : condition === 'aborted' ? 1 : 2);
+      if (condition === 'stopped') {
+        act(() => usePlayerStore.setState({ isPlaying: true }));
+        expect(audio.hasAttribute('src')).toBe(false);
+      }
+
+      fireEvent.error(audio);
+
+      expect(mocks.showToast).not.toHaveBeenCalled();
+    }
+  );
+
+  it('does not announce a pending play failure after unmount', async () => {
+    const pendingPlay = deferred();
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockReturnValue(pendingPlay.promise);
+    await showSearchResults();
+    fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+
+    cleanup();
+    await act(async () => {
+      pendingPlay.reject(new Error('Late failure'));
+      await pendingPlay.promise.catch(() => undefined);
+    });
+
+    expect(mocks.showToast).not.toHaveBeenCalled();
   });
 });

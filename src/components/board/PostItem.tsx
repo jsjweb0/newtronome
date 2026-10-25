@@ -58,10 +58,14 @@ function PostItem({
       ? '관리자'
       : post.displayName?.trim() || '알 수 없는 사용자';
 
+  const escapeRegExp = (value: string) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
   const highlightText = (text: string, keyword: string) => {
     if (!keyword) return text;
 
-    const regex = new RegExp(`(${keyword})`, 'gi');
+    const escapedKeyword = escapeRegExp(keyword);
+    const regex = new RegExp(`(${escapedKeyword})`, 'gi');
 
     return text.split(regex).map((part, index) =>
       part.toLowerCase() === keyword.toLowerCase() ? (

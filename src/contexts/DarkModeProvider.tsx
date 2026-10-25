@@ -9,21 +9,33 @@ interface DarkModeContextProps {
     children: ReactNode
 }
 
+const THEME_STORAGE_KEY = 'theme';
+
+const getInitialDarkMode = () => {
+    try {
+        return window.localStorage.getItem(THEME_STORAGE_KEY) !== 'light';
+    } catch {
+        return true;
+    }
+};
+
 export function DarkModeProvider({
     children
 }: DarkModeContextProps) {
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        return localStorage.getItem("theme") !== "light";
-    });
+    const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode);
 
     useEffect(() => {
         const root = document.documentElement;
-        if (isDarkMode) {
-            root.classList.add("dark");
-            localStorage.setItem("theme", "dark");
-        } else {
-            root.classList.remove("dark");
-            localStorage.setItem("theme", "light");
+
+        root.classList.toggle('dark', isDarkMode);
+
+        try {
+            window.localStorage.setItem(
+                THEME_STORAGE_KEY,
+                isDarkMode ? 'dark' : 'light'
+            );
+        } catch {
+            // 저장할 수 없어도 현재 세션의 테마는 계속 적용한다.
         }
     }, [isDarkMode]);
 

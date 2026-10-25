@@ -216,6 +216,45 @@ describe('BoardPage URL navigation', () => {
   });
 });
 
+describe('BoardPage search highlighting', () => {
+  it.each(['[', '(', '+', '.', '\\'])(
+    'treats %s as a literal search character',
+    async (keyword) => {
+      const postWithSpecialCharacter: Post = {
+        ...posts[0],
+        id: `special-${keyword}`,
+        boardType: 'notice',
+        title: `특수문자 ${keyword} 검색`,
+        isNotice: true,
+      };
+
+      await renderBoard(
+        `/board/notice?keyword=${encodeURIComponent(keyword)}`,
+        [postWithSpecialCharacter],
+      );
+
+      expect(screen.getByText(keyword, { selector: 'mark' }).textContent)
+        .toBe(keyword);
+      expect(screen.queryByRole('alert')).toBeNull();
+    },
+  );
+
+  it('highlights a dot literally instead of matching any character', async () => {
+    const postWithSimilarText: Post = {
+      ...posts[0],
+      id: 'literal-dot',
+      boardType: 'notice',
+      title: '검색 확인 a.b axb',
+      isNotice: true,
+    };
+
+    await renderBoard('/board/notice?keyword=a.b', [postWithSimilarText]);
+
+    expect(screen.getByText('a.b', { selector: 'mark' }).textContent).toBe('a.b');
+    expect(screen.queryByText('axb', { selector: 'mark' })).toBeNull();
+  });
+});
+
 describe('BoardPage request failures and stale responses', () => {
   it('distinguishes a failed query from an empty board and recovers on retry', async () => {
     const retryRequest = createPendingPostsRequest();

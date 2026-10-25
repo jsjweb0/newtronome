@@ -6,7 +6,7 @@ import {
   type CommunityBoardType,
   type Post,
 } from '../../features/board/types/post';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { AuthAccess } from '../../components/auth/AuthAccess';
 import { BaseButton } from '../../components/ui/BaseButton';
 import {
@@ -23,7 +23,10 @@ import ShareButton from '../../components/board/ShareButton';
 import PostViewSkeleton from './PostViewSkeleton';
 import Tooltip from '../../components/ui/Tooltip';
 import { formatDate } from '../../utils/format';
-import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
+import {
+  FREE_BOARD_CATEGORY_LABELS,
+  isFreeBoardCategoryValue,
+} from '../../constants/freeBoardCategories';
 import { normalizeLegacyPostContent } from '../../utils/postContent';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
 import { useDeletePost } from '../../features/board/hooks/useDeletePost';
@@ -33,6 +36,8 @@ import { useIncrementPostViewCount } from '../../features/board/hooks/useIncreme
 import RetryErrorState from '../../components/ui/RetryErrorState';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCommentsQuery } from '../../features/board/hooks/useCommentsQuery';
+import { filterAndSortBoardPosts } from '../../features/board/utils/filterAndSortBoardPosts';
+import { DEFAULT_ITEMS_PER_PAGE } from '../../utils/pagination';
 
 export default function PostView() {
   const { boardType, id } = useParams();
@@ -69,7 +74,6 @@ function PostViewContent({ boardType, postId }: {
     refetch,
   } = useBoardPost(boardType, postId);
   const postsQuery = useBoardPosts(boardType);
-  const posts = postsQuery.data ?? [];
 
   const { mutateAsync: incrementViewCount } = useIncrementPostViewCount();
 
@@ -89,6 +93,10 @@ function PostViewContent({ boardType, postId }: {
   const keyword = searchParams.get('keyword') ?? '';
   const category = searchParams.get('category') ?? '';
   const sort = searchParams.get('sort') === 'asc' ? 'asc' : 'desc';
+  const selectedCategory =
+    boardType === 'free' && isFreeBoardCategoryValue(category)
+      ? category
+      : '';
 
   const boardSearch = createBoardListSearch({
     page,
@@ -97,9 +105,50 @@ function PostViewContent({ boardType, postId }: {
     sort,
   });
 
-  const currentIndex = posts.findIndex((post) => String(post.id) === postId);
-  const prevPost = currentIndex > 0 ? posts[currentIndex - 1] : undefined;
-  const nextPost = currentIndex >= 0 ? posts[currentIndex + 1] : undefined;
+  const navigationPosts = useMemo(
+    () =>
+      filterAndSortBoardPosts(postsQuery.data ?? [], {
+        keyword,
+        category: selectedCategory,
+        sort,
+      }),
+    [postsQuery.data, keyword, selectedCategory, sort],
+  );
+
+  const currentIndex = navigationPosts.findIndex(
+    (post) => String(post.id) === postId,
+  );
+
+  const prevIndex = currentIndex - 1;
+  const nextIndex = currentIndex + 1;
+
+  const prevPost = prevIndex >= 0 ? navigationPosts[prevIndex] : undefined;
+
+  const nextPost =
+    currentIndex >= 0 && nextIndex < navigationPosts.length
+      ? navigationPosts[nextIndex]
+      : undefined;
+
+  const getPageByIndex = (index: number) =>
+    Math.floor(index / DEFAULT_ITEMS_PER_PAGE) + 1;
+
+  const prevSearch =
+    prevPost &&
+    createBoardListSearch({
+      page: getPageByIndex(prevIndex),
+      keyword,
+      category: selectedCategory,
+      sort,
+    });
+
+  const nextSearch =
+    nextPost &&
+    createBoardListSearch({
+      page: getPageByIndex(nextIndex),
+      keyword,
+      category: selectedCategory,
+      sort,
+    });
 
   const pagerBtnClasses =
     'shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 group-hover:bg-gray-50 group-focus:outline-hidden group-focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:group-hover:bg-neutral-700 dark:focus:bg-neutral-700';
@@ -241,6 +290,7 @@ function PostViewContent({ boardType, postId }: {
                 <LikeButton
                   docId={currentPost.id}
                   collection={boardType}
+                  initialCount={currentPost.likeCount}
                 />
               </Tooltip>
               <div className="block h-3 border-e border-gray-300 mx-3 dark:border-neutral-600"></div>
@@ -271,7 +321,7 @@ function PostViewContent({ boardType, postId }: {
         <div className="max-md:hidden w-[40%]">
           {prevPost ? (
             <Link
-              to={`/board/${boardType}/${prevPost.id}${boardSearch}`}
+              to={`/board/${boardType}/${prevPost.id}${prevSearch}`}
               className="group overflow-hidden flex items-center gap-3 text-gray-500 dark:text-white/60"
             >
               <i className="sr-only">이전글</i>
@@ -302,7 +352,7 @@ function PostViewContent({ boardType, postId }: {
         <div className="max-md:hidden w-[40%] text-right">
           {nextPost ? (
             <Link
-              to={`/board/${boardType}/${nextPost.id}${boardSearch}`}
+              to={`/board/${boardType}/${nextPost.id}${nextSearch}`}
               className="group flex items-center justify-end gap-3 text-gray-500 dark:text-white/60"
             >
               <i className="sr-only">다음글</i>

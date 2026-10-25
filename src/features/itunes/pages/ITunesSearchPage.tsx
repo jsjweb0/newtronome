@@ -14,6 +14,7 @@ import type { PlayerOutletContext } from "../../../layouts/MainLayout";
 import { usePlayerStore } from "../../player/stores/usePlayerStore";
 import ArtistTracksPanel from "../components/ArtistTracksPanel";
 import SearchSuggestions from "../components/SearchSuggestions";
+import { useToast } from "../../../contexts/ToastContext";
 
 const getLargeArtworkUrl = (artworkUrl: string) => {
   return artworkUrl.replace(
@@ -50,6 +51,8 @@ interface SelectedArtist {
 export default function ITunesSearchPage() {
   const { onPauseSoundCloud, isSidebarCollapsed } = useOutletContext<PlayerOutletContext>();
 
+  const { showToast } = useToast();
+
   const [keyword, setKeyword] = useState('');
   const [searchKeyword, setSearchKeyword] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
@@ -72,6 +75,7 @@ export default function ITunesSearchPage() {
   const [recommendedArtists, setRecommendedArtists] = useState<string[]>([]);
 
   const previewRequestIdRef = useRef(0);
+  const notifiedPreviewRequestIdRef = useRef<number | null>(null);
 
   const [selectedArtist, setSelectedArtist] = useState<SelectedArtist | null>(null);
   const [isArtistPanelOpen, setIsArtistPanelOpen] = useState(false);
@@ -201,6 +205,8 @@ export default function ITunesSearchPage() {
     const audio = audioRef.current;
 
     return () => {
+      previewRequestIdRef.current += 1;
+
       if (audio) {
         audio.pause();
         audio.removeAttribute('src');
@@ -208,6 +214,26 @@ export default function ITunesSearchPage() {
       }
     };
   }, []);
+
+  const notifyPreviewFailure = (requestId: number) => {
+    // 이미 다른 곡을 선택했거나 재생을 중단했다면 무시
+    if (previewRequestIdRef.current !== requestId) {
+      return;
+    }
+
+    // 같은 요청의 실패를 이미 안내했다면 무시
+    if (notifiedPreviewRequestIdRef.current === requestId) {
+      return;
+    }
+
+    notifiedPreviewRequestIdRef.current = requestId;
+    setPlayingPreviewTrackId(null);
+
+    showToast({
+      message: '미리듣기를 재생하지 못했습니다. 다시 눌러 재시도해 주세요.',
+      type: 'error',
+    });
+  };
 
   const handlePreview = async (track: ITunesTrack) => {
     const audio = audioRef.current;
@@ -240,12 +266,36 @@ export default function ITunesSearchPage() {
 
       setPlayingPreviewTrackId(track.trackId);
 
-    } catch {
-      if (previewRequestIdRef.current === requestId) {
-        setPlayingPreviewTrackId(null);
+    } catch (error) {
+      // 이전 요청 실패
+      if (previewRequestIdRef.current !== requestId) {
+        return;
       }
 
+      // 재생 중단으로 생긴 오류는 안내하지 않음
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setPlayingPreviewTrackId(null);
+        return;
+      }
+
+      notifyPreviewFailure(requestId);
     }
+  };
+
+  const handlePreviewError = () => {
+    const audio = audioRef.current;
+
+    // 정지하면서 src를 지웠거나 현재 미디어 오류가 없으면 무시
+    if (!audio || !audio.hasAttribute('src') || !audio.error) {
+      return;
+    }
+
+    // 미디어 로딩이 중단된 경우는 안내하지 않음
+    if (audio.error.code === MediaError.MEDIA_ERR_ABORTED) {
+      return;
+    }
+
+    notifyPreviewFailure(previewRequestIdRef.current);
   };
 
   const stopPreview = useCallback(() => {
@@ -476,6 +526,7 @@ export default function ITunesSearchPage() {
         <audio
           ref={audioRef}
           onEnded={() => setPlayingPreviewTrackId(null)}
+          onError={handlePreviewError}
         />
       </section>
     </div>
