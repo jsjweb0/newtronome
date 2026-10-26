@@ -22,7 +22,7 @@ type TrackItemProps = {
     interactive?: boolean;
     showDuration?: boolean;
     footerActions?: ReactNode;
-    //ariaLabel?: string;
+    ariaLabel?: string;
 };
 
 export default function TrackItem({
@@ -36,7 +36,7 @@ export default function TrackItem({
     interactive = true,
     showDuration = false,
     footerActions,
-    //ariaLabel,
+    ariaLabel,
 }: TrackItemProps) {
     const isThisTrack = currentTrack?.id === track.id;
     const isPlayingTrack = isThisTrack && isPlaying;
@@ -155,7 +155,10 @@ export default function TrackItem({
                         onTrackClick?.(track);
                     }}
                     className={contentClassName}
-                    aria-label={isPlayingTrack || isPlayingPreview ? '일시정지' : '재생'}
+                    aria-label={
+                        ariaLabel ??
+                        `${track.title} ${isPlayingTrack || isPlayingPreview ? '일시정지' : '재생'}`
+                    }
                 >
                     {trackContent}
                 </button>
