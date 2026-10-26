@@ -385,8 +385,7 @@ service cloud.firestore {
     match /notice/{postId} {
       allow read: if true;
       allow create: if isAdmin()
-         && isValidPostCreate()
-        && request.resource.data.isNotice == true;
+         && isValidPostCreate();
       allow update: if isValidPostAfterUpdate()
         && (
           isAdmin()
