@@ -176,7 +176,7 @@ export default function LikeButton({
   };
 
   return (
-    <div className="inline-flex  items-center relative text-sm text-gray-500">
+    <div className="inline-flex items-center relative text-sm text-gray-500">
       {type === 'heart' && (
         <>
           <button
@@ -189,6 +189,7 @@ export default function LikeButton({
                 : '좋아요'
             }
             aria-describedby={ariaDescribedBy}
+            aria-pressed={liked}
             className={clsx('group flex items-center px-2 hover:text-gray-800', className)}
           >
             <Heart
@@ -216,8 +217,9 @@ export default function LikeButton({
                 : '좋아요'
             }
             aria-describedby={ariaDescribedBy}
+            aria-pressed={!liked}
             className={clsx(
-              'group flex items-center text-xs md:text-sm hover:text-gray-800 focus:outline-hidden focus:text-gray-800',
+              'group flex items-center text-xs md:text-sm hover:text-gray-800 focus:text-gray-800',
               'dark:hover:text-neutral-200 dark:focus:text-neutral-200',
               liked ? 'text-blue-600 font-medium' : 'text-gray-500 dark:text-neutral-400'
             )}

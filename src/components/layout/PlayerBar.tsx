@@ -15,6 +15,7 @@ import Tooltip from '../ui/Tooltip';
 import { useDarkMode } from '../../contexts/DarkModeContext';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
+import { formatTime } from '../../utils/format';
 
 interface PlayerBarProps {
   onPanelToggle: () => void;
@@ -45,7 +46,7 @@ export default function PlayerBar({
 
   const min = 0;
   const max = duration || 0;
-  const step = 0.01; // 0.01초 단위로 이동
+  const step = 1;
   const value = currentTime;
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +110,8 @@ export default function PlayerBar({
             onInput={handleInput}
             className="w-full h-1 xl:h-1.5 rounded appearance-none"
             style={{ background: '#ddd' }}
-            aria-label={currentTrack.title}
+            aria-label={`재생 위치: ${currentTrack.title}`}
+            aria-valuetext={`현재 ${formatTime(currentTime * 1000)} / 전체 ${formatTime(duration * 1000)}`}
             disabled={controlsDisabled}
           />
         </div>
@@ -202,7 +204,9 @@ export default function PlayerBar({
         >
           <button
             type="button"
+            id="playlist-panel-btn"
             onClick={onPanelToggle}
+            aria-controls="playlist-panel"
             aria-label={collapsed ? '플레이리스트 닫기' : '플레이리스트 열기'}
           >
             <ListMusic aria-hidden="true" className="size-4 xl:size-7" />
@@ -211,7 +215,7 @@ export default function PlayerBar({
         <Tooltip content="북마크">
           <TrackBookmarkButton
             track={currentTrack}
-            className="size-4 xl:size-7"
+            className="items-center size-4 xl:size-7"
           />
         </Tooltip>
         <div className="hidden xl:flex items-center gap-x-3 w-full">

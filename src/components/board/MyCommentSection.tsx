@@ -170,7 +170,7 @@ export default function MyCommentSection({
             <div className="max-md:mt-2">
               <BaseButton
                 variant="cancel"
-                className="px-3! py-1!"
+                className="px-3! py-1! min-w-max"
                 onClick={() => handleDelete(comment)}
                 disabled={deleteComment.isPending}
               >

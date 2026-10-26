@@ -150,7 +150,7 @@ export default function Comment({
         <img
           src={validPhotoURL || undefined}
           alt={writerName || '댓글 작성자'}
-          className="size-12 rounded-full"
+          className="size-8 md:size-12 rounded-full"
         />
       </div>
       <div className="grow">
@@ -166,7 +166,9 @@ export default function Comment({
         {/* 댓글 내용 수정 폼 */}
         {isEditing === data.id ? (
           <div className="relative mt-4">
+            <label htmlFor="comment-edit-input" className="sr-only">작성된 댓글</label>
             <textarea
+              id="comment-edit-input"
               className="resize-none p-3 md:p-4 pb-12 md:pb-12 block w-full border-gray-200 rounded-lg text-xs md:text-base focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
@@ -206,7 +208,7 @@ export default function Comment({
               />
               <button
                 type="button"
-                className="text-xs md:text-sm text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
+                className="text-xs md:text-sm text-gray-500 hover:text-gray-800 focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
               >
                 Reply
               </button>
@@ -216,13 +218,13 @@ export default function Comment({
                   <button
                     id={'commentMenu' + idx}
                     type="button"
-                    className="group flex justify-center items-center size-7 text-sm font-semibold rounded-lg bg-white text-gray-800 hover:bg-gray-50 focus:outline-hidden focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
+                    className="group flex justify-center items-center size-7 text-sm font-semibold rounded-lg bg-white text-gray-800 hover:bg-gray-50 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
                     onClick={() => toggleDropdown(data.id)}
                     aria-haspopup="menu"
                     aria-expanded={openDropdownId === data.id ? 'true' : 'false'}
                     aria-label="Dropdown"
                   >
-                    <Ellipsis className="size-5 text-gray-600 dark:text-neutral-500" />
+                    <Ellipsis className="size-5 text-gray-600 dark:text-neutral-500" aria-hidden="true" />
                     <span
                       className="pacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity inline-block absolute z-10 left-1/2 -translate-x-1/2 -translate-y-full py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-md shadow-2xs dark:bg-neutral-700"
                       role="tooltip"
@@ -243,7 +245,7 @@ export default function Comment({
                     <div className="p-1 space-y-0.5">
                       <button
                         type="button"
-                        className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700"
+                        className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700"
                         onClick={() => handleEditClick(data.id)}
                       >
                         <PenLine className="shrink-0 size-4" />
@@ -251,7 +253,7 @@ export default function Comment({
                       </button>
                       <button
                         type="button"
-                        className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700"
+                        className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700"
                         onClick={() => setShowConfirm(true)}
                       >
                         <Trash2 className="shrink-0 size-4" />

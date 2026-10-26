@@ -33,13 +33,17 @@ export function useSoundCloudControls({
         widgetRef.current?.toggle();
     }, [widgetRef]);
 
-    const seek = useCallback((seconds: number) => {
-        if (!isNonNegativeFiniteNumber(seconds)) {
-            return;
-        }
+    const setCurrentTime = usePlayerStore((state) => state.setCurrentTime);
 
-        widgetRef.current?.seekTo(seconds * 1000);
-    }, [widgetRef]);
+    const seek = useCallback((seconds: number) => {
+        if (!isNonNegativeFiniteNumber(seconds)) return;
+
+        const widget = widgetRef.current;
+        if (!widget) return;
+
+        widget.seekTo(seconds * 1000);
+        setCurrentTime(seconds);
+    }, [setCurrentTime, widgetRef]);
 
     const previousTrack = useCallback(() => {
         trackRequestIdRef.current += 1;

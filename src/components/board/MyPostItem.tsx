@@ -67,7 +67,7 @@ function MyPostItem({
             <div className="md:col-span-1 max-md:mt-2">
                 <BaseButton
                     variant="cancel"
-                    className="px-3! py-1!"
+                    className="px-3! py-1! min-w-max"
                     onClick={onDelete}
                 >
                     삭제

@@ -49,10 +49,13 @@ export default function PlaylistPanel({
 
   return (
     <aside
+      id="playlist-panel"
       className={clsx(
         'z-51 fixed top-0 lg:top-3 right-0 lg:right-3 h-full xl:max-h-[calc(100%-116px-2.25rem)] transform transition-transform duration-300 w-full max-w-md lg:max-w-[300px] rounded-2xl',
         collapsed ? 'translate-x-0' : 'translate-x-full'
       )}
+      aria-expanded={collapsed}
+      aria-labelledby="playlist-panel-btn"
     >
       {/* widget */}
       <div

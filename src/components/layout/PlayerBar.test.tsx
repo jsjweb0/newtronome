@@ -137,6 +137,27 @@ describe('PlayerBar bookmark controls', () => {
     expect(soundCloudWidget.toggle).toHaveBeenCalledTimes(1);
   });
 
+  it('provides an accessible playback position slider with one-second seeking', () => {
+    usePlayerStore.setState({
+      currentTime: 80,
+      duration: 220,
+    });
+    renderPlayerBar();
+
+    const playbackPositionSlider = screen.getByRole('slider', {
+      name: `재생 위치: ${currentTrack.title}`,
+    });
+
+    expect(playbackPositionSlider.getAttribute('step')).toBe('1');
+    expect(playbackPositionSlider.getAttribute('aria-valuetext')).toBe(
+      '현재 1:20 / 전체 3:40'
+    );
+
+    fireEvent.change(playbackPositionSlider, { target: { value: '81' } });
+
+    expect(soundCloudWidget.seek).toHaveBeenCalledWith(81);
+  });
+
   it('does not show the previous track after the playlist becomes empty', () => {
     usePlayerStore.setState({ playbackMode: 'playlist' });
     usePlayerStore.getState().setPlaylist([]);

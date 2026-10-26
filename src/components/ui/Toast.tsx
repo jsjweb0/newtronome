@@ -61,7 +61,7 @@ const Toast = forwardRef<ToastContextValue>(function Toast(_, ref) {
             >
               <button
                 type="button"
-                className="absolute top-3 inset-e-3 inline-flex shrink-0 justify-center items-center size-5 rounded-lg text-gray-800 opacity-50 hover:opacity-100 focus:outline-hidden focus:opacity-100 dark:text-white"
+                className="absolute top-3 inset-e-3 inline-flex shrink-0 justify-center items-center size-5 rounded-lg text-gray-800 opacity-50 hover:opacity-100 focus:opacity-100 dark:text-white"
                 aria-label="Close"
                 onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
               >

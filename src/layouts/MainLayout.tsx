@@ -117,9 +117,11 @@ export default function MainLayout() {
           >
             <button
               type="button"
+              id=""
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="lg:flex items-center justify-center size-11 rounded-full text-textBase hover:text-primary hover:bg-primary/6"
               aria-label={isSidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
+              aria-controls=""
             >
               <PanelLeft className="size-6" />
             </button>
