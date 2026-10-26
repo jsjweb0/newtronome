@@ -18,7 +18,7 @@ export default function LikedTracksPage() {
   const { user, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
 
-  const { onPlayBookmarkTrack, onToggleTrack } = useOutletContext<PlayerOutletContext>();
+  const { onPlaySingleTrack, onToggleTrack } = useOutletContext<PlayerOutletContext>();
   const playbackMode = usePlayerStore((state) => state.playbackMode);
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
@@ -60,16 +60,16 @@ export default function LikedTracksPage() {
   }, [isAuthLoading, user?.uid, retryCount]);
 
   const handleTrackClick = (track: PlayerTrack) => {
-    const isCurrentBookmark =
-      playbackMode === 'bookmark' &&
+    const isCurrentSingleTrack =
+      playbackMode === 'single' &&
       String(currentTrack?.id) === String(track.id);
 
-    if (isCurrentBookmark) {
+    if (isCurrentSingleTrack) {
       onToggleTrack();
       return;
     }
 
-    onPlayBookmarkTrack(track);
+    onPlaySingleTrack(track);
   };
 
   const handleRemove = async (track: SavedTrack) => {

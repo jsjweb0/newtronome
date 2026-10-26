@@ -41,7 +41,7 @@ export interface PlayerOutletContext {
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
   onPauseSoundCloud: () => void;
-  onPlayBookmarkTrack: (track: PlayerTrack) => void;
+  onPlaySingleTrack: (track: PlayerTrack) => void;
 
   playlistStatus: ReturnType<typeof useSoundCloudWidget>['playlistStatus'];
   widgetError: string | null;
@@ -90,7 +90,7 @@ export default function MainLayout() {
     onSelectTrack: soundCloudWidget.selectTrack,
     onToggleTrack: soundCloudWidget.toggle,
     onPauseSoundCloud: soundCloudWidget.pause,
-    onPlayBookmarkTrack: soundCloudWidget.playBookmarkTrack,
+    onPlaySingleTrack: soundCloudWidget.playSingleTrack,
 
     playlistStatus: soundCloudWidget.playlistStatus,
     widgetError: soundCloudWidget.widgetError,
