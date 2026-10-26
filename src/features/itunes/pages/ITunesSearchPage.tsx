@@ -443,7 +443,7 @@ export default function ITunesSearchPage() {
                       interactive={Boolean(track.previewUrl)}
                       isPlayingPreview={isPlayingPreview}
                       onTrackClick={() => handlePreview(track)}
-                      ariaLabel={
+                      ariaL-abel={
                         isPlayingPreview
                           ? `${track.trackName} 미리듣기 정지`
                           : `${track.trackName} 30초 미리듣기`
