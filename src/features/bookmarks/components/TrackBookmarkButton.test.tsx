@@ -141,7 +141,7 @@ describe('TrackBookmarkButton subscription failures', () => {
 
   it('keeps SoundCloud playback state when Firebase bookmark lookup fails', () => {
     usePlayerStore.setState({
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       currentTrack: track,
       isPlaying: true,
       currentTime: 12,
@@ -153,7 +153,7 @@ describe('TrackBookmarkButton subscription failures', () => {
 
     expect(screen.getByRole('button', { name: /북마크 상태를 확인하지 못했습니다/ })).toBeTruthy();
     expect(usePlayerStore.getState()).toMatchObject({
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       currentTrack: track,
       isPlaying: true,
       currentTime: 12,

@@ -19,7 +19,7 @@ function renderHomePage(status: PlaylistStatus) {
     onSelectTrack: vi.fn(),
     onToggleTrack: vi.fn(),
     onPauseSoundCloud: vi.fn(),
-    onPlayBookmarkTrack: vi.fn(),
+    onPlaySingleTrack: vi.fn(),
     playlistStatus: status,
     widgetError: status === 'error' ? 'SoundCloud를 불러오지 못했습니다.' : null,
     retryLoad,

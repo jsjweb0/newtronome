@@ -49,11 +49,11 @@ function renderPlayerBar(widget = soundCloudWidget) {
   );
 }
 
-describe('PlayerBar bookmark controls', () => {
+describe('PlayerBar single-track controls', () => {
   beforeEach(() => {
     usePlayerStore.setState({
       currentTrack,
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       isPlaying: true,
       currentTime: 10,
       duration: 200,
@@ -70,13 +70,13 @@ describe('PlayerBar bookmark controls', () => {
     renderPlayerBar();
 
     const previousButton = screen.getByRole('button', {
-      name: '북마크 단일 재생 중에는 이전 트랙을 사용할 수 없습니다',
+      name: '단일 곡 재생 중에는 이전 트랙을 사용할 수 없습니다',
     });
     const nextButton = screen.getByRole('button', {
-      name: '북마크 단일 재생 중에는 다음 트랙을 사용할 수 없습니다',
+      name: '단일 곡 재생 중에는 다음 트랙을 사용할 수 없습니다',
     });
     const randomButton = screen.getByRole('button', {
-      name: '북마크 단일 재생 중에는 임의 재생을 사용할 수 없습니다',
+      name: '단일 곡 재생 중에는 임의 재생을 사용할 수 없습니다',
     });
 
     expect((previousButton as HTMLButtonElement).disabled).toBe(true);

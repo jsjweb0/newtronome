@@ -1,4 +1,4 @@
-export type PlaybackMode = 'playlist' | 'bookmark';
+export type PlaybackMode = 'playlist' | 'single';
 
 export interface PlayerTrack {
   id: number | string;

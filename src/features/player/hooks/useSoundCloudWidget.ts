@@ -330,7 +330,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
     const handleFinish = () => {
       const playbackMode = usePlayerStore.getState().playbackMode;
 
-      if (playbackMode !== 'bookmark') return;
+      if (playbackMode !== 'single') return;
 
       widget.seekTo(0);
       setCurrentTime(0);
@@ -395,23 +395,23 @@ export function useSoundCloudWidget(playlistUrl: string) {
     };
   }, [iframeElement, clearLoadTimer, failLoad, setCurrentTime, setCurrentTrack, setDuration, setPlaying, setPlaylist, startLoadTimer]);
 
-  const playBookmarkTrack = useCallback(
+  const playSingleTrack = useCallback(
     (track: PlayerTrack) => {
       const widget = widgetRef.current;
       const permalinkUrl = track.permalinkUrl;
 
       if (!widget || !permalinkUrl) return;
 
-      const loadBookmarkTrack = () => {
+      const loadSingleTrack = () => {
         if (widgetRef.current !== widget) return;
 
         if (isSourceSwitchingRef.current) {
-          pendingSelectionRef.current = loadBookmarkTrack;
+          pendingSelectionRef.current = loadSingleTrack;
           return;
         }
 
         pendingSelectionRef.current = null;
-        retryLoadRef.current = loadBookmarkTrack;
+        retryLoadRef.current = loadSingleTrack;
         isSourceSwitchingRef.current = true;
 
         const transitionId = ++transitionIdRef.current;
@@ -419,7 +419,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
         setWidgetError(null);
         startLoadTimer(transitionId);
 
-        setPlaybackMode('bookmark');
+        setPlaybackMode('single');
         setPlaying(false);
         setCurrentTrack(track);
         setCurrentTime(0);
@@ -441,7 +441,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
         });
       };
 
-      loadBookmarkTrack();
+      loadSingleTrack();
     },
     [
       clearLoadTimer,
@@ -488,7 +488,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
     widgetError,
     retryLoad,
     ...controls,
-    playBookmarkTrack,
+    playSingleTrack,
     selectTrack,
     widgetTrack,
     widgetIsPlaying,
