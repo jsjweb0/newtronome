@@ -136,12 +136,12 @@ describe('useSoundCloudWidget source switching', () => {
     vi.restoreAllMocks();
   });
 
-  it('loads a saved track and changes to bookmark playback mode', () => {
+  it('loads a saved track and changes to single playback mode', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
     act(() => {
-      result.current.playBookmarkTrack(bookmarkTrack);
+      result.current.playSingleTrack(bookmarkTrack);
     });
 
     expect(widget.load).toHaveBeenCalledWith(
@@ -149,7 +149,7 @@ describe('useSoundCloudWidget source switching', () => {
       expect.objectContaining({ auto_play: true })
     );
     expect(usePlayerStore.getState()).toMatchObject({
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       currentTrack: bookmarkTrack,
       isPlaying: false,
       currentTime: 0,
@@ -162,7 +162,7 @@ describe('useSoundCloudWidget source switching', () => {
     renderWidgetHook();
 
     usePlayerStore.setState({
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       isPlaying: true,
       currentTime: 120,
     });
@@ -173,17 +173,17 @@ describe('useSoundCloudWidget source switching', () => {
 
     expect(widget.seekTo).toHaveBeenCalledWith(0);
     expect(usePlayerStore.getState()).toMatchObject({
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       isPlaying: false,
       currentTime: 0,
     });
   });
 
-  it('loads the playlist at the selected track when leaving bookmark mode', () => {
+  it('loads the playlist at the selected track when leaving single mode', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
-    usePlayerStore.setState({ playbackMode: 'bookmark' });
+    usePlayerStore.setState({ playbackMode: 'single' });
 
     act(() => {
       result.current.selectTrack(1);
@@ -221,7 +221,7 @@ describe('useSoundCloudWidget source switching', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
-    usePlayerStore.setState({ playbackMode: 'bookmark' });
+    usePlayerStore.setState({ playbackMode: 'single' });
 
     act(() => {
       result.current.selectTrack(0);
@@ -258,7 +258,7 @@ describe('useSoundCloudWidget source switching', () => {
 
     usePlayerStore.setState({
       tracks: [...playlistTracks, thirdTrack],
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
     });
 
     act(() => {
@@ -296,15 +296,15 @@ describe('useSoundCloudWidget source switching', () => {
     expect(result.current.widgetIsPlaying).toBe(true);
   });
 
-  it('loads a later bookmark after the first bookmark finishes loading', () => {
+  it('loads a later single track after the first single track finishes loading', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
-    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    act(() => result.current.playSingleTrack(bookmarkTrack));
     const onFirstLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
     expect(onFirstLoaded).toBeTypeOf('function');
 
-    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+    act(() => result.current.playSingleTrack(secondBookmarkTrack));
     expect(widget.load).toHaveBeenCalledTimes(1);
 
     act(() => onFirstLoaded?.());
@@ -317,17 +317,17 @@ describe('useSoundCloudWidget source switching', () => {
     expect(usePlayerStore.getState().currentTrack).toEqual(secondBookmarkTrack);
   });
 
-  it('loads only the latest bookmark selected during another bookmark load', () => {
+  it('loads only the latest single track selected during another single-track load', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
-    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    act(() => result.current.playSingleTrack(bookmarkTrack));
     const onFirstLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
     expect(onFirstLoaded).toBeTypeOf('function');
 
     act(() => {
-      result.current.playBookmarkTrack(secondBookmarkTrack);
-      result.current.playBookmarkTrack(thirdBookmarkTrack);
+      result.current.playSingleTrack(secondBookmarkTrack);
+      result.current.playSingleTrack(thirdBookmarkTrack);
     });
     expect(widget.load).toHaveBeenCalledTimes(1);
 
@@ -341,18 +341,18 @@ describe('useSoundCloudWidget source switching', () => {
     expect(usePlayerStore.getState().currentTrack).toEqual(thirdBookmarkTrack);
   });
 
-  it('loads the selected playlist track after a bookmark finishes loading', () => {
+  it('loads the selected playlist track after a single track finishes loading', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
-    act(() => result.current.playBookmarkTrack(bookmarkTrack));
-    const onBookmarkLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
-    expect(onBookmarkLoaded).toBeTypeOf('function');
+    act(() => result.current.playSingleTrack(bookmarkTrack));
+    const onSingleTrackLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
+    expect(onSingleTrackLoaded).toBeTypeOf('function');
 
     act(() => result.current.selectTrack(1));
     expect(widget.load).toHaveBeenCalledTimes(1);
 
-    act(() => onBookmarkLoaded?.());
+    act(() => onSingleTrackLoaded?.());
 
     expect(widget.load).toHaveBeenCalledTimes(2);
     expect(widget.load).toHaveBeenLastCalledWith(
@@ -365,16 +365,16 @@ describe('useSoundCloudWidget source switching', () => {
     });
   });
 
-  it('loads a bookmark after the playlist finishes loading', () => {
+  it('loads a single track after the playlist finishes loading', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
-    usePlayerStore.setState({ playbackMode: 'bookmark' });
+    usePlayerStore.setState({ playbackMode: 'single' });
 
     act(() => result.current.selectTrack(0));
     const onPlaylistLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
     expect(onPlaylistLoaded).toBeTypeOf('function');
 
-    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+    act(() => result.current.playSingleTrack(secondBookmarkTrack));
     expect(widget.load).toHaveBeenCalledTimes(1);
 
     act(() => onPlaylistLoaded?.());
@@ -385,7 +385,7 @@ describe('useSoundCloudWidget source switching', () => {
       expect.objectContaining({ auto_play: true })
     );
     expect(usePlayerStore.getState()).toMatchObject({
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       currentTrack: secondBookmarkTrack,
     });
   });
@@ -394,10 +394,10 @@ describe('useSoundCloudWidget source switching', () => {
     const { events, listeners, widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
-    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    act(() => result.current.playSingleTrack(bookmarkTrack));
     const onFailedLoad = vi.mocked(widget.load).mock.calls[0][1]?.callback;
     expect(onFailedLoad).toBeTypeOf('function');
-    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+    act(() => result.current.playSingleTrack(secondBookmarkTrack));
 
     act(() => listeners.get(events.ERROR)?.());
     act(() => onFailedLoad?.());
@@ -411,10 +411,10 @@ describe('useSoundCloudWidget source switching', () => {
     const { widget } = createWidgetMock();
     const { result, unmount } = renderWidgetHook();
 
-    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    act(() => result.current.playSingleTrack(bookmarkTrack));
     const onFirstLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
     expect(onFirstLoaded).toBeTypeOf('function');
-    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+    act(() => result.current.playSingleTrack(secondBookmarkTrack));
 
     unmount();
     act(() => onFirstLoaded?.());
@@ -427,15 +427,15 @@ describe('useSoundCloudWidget source switching', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
-    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    act(() => result.current.playSingleTrack(bookmarkTrack));
     const onFirstLoaded = vi.mocked(widget.load).mock.calls[0][1]?.callback;
     expect(onFirstLoaded).toBeTypeOf('function');
-    act(() => result.current.playBookmarkTrack(secondBookmarkTrack));
+    act(() => result.current.playSingleTrack(secondBookmarkTrack));
     act(() => onFirstLoaded?.());
     const onSecondLoaded = vi.mocked(widget.load).mock.calls[1][1]?.callback;
     expect(onSecondLoaded).toBeTypeOf('function');
 
-    act(() => result.current.playBookmarkTrack(thirdBookmarkTrack));
+    act(() => result.current.playSingleTrack(thirdBookmarkTrack));
     act(() => onFirstLoaded?.());
 
     expect(widget.load).toHaveBeenCalledTimes(2);
@@ -459,7 +459,7 @@ describe('useSoundCloudWidget source switching', () => {
     const previousLookup = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
     const previousDuration = vi.mocked(widget.getDuration).mock.calls[0][0];
 
-    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    act(() => result.current.playSingleTrack(bookmarkTrack));
     act(() => {
       previousLookup({ id: 1, title: 'Old track' });
       previousDuration(99_000);
@@ -556,7 +556,7 @@ describe('useSoundCloudWidget source switching', () => {
   it('does not let READY or PLAY finish an ongoing source switch', () => {
     const { events, listeners, widget } = createWidgetMock();
     const { result } = renderWidgetHook();
-    usePlayerStore.setState({ playbackMode: 'bookmark' });
+    usePlayerStore.setState({ playbackMode: 'single' });
 
     act(() => result.current.selectTrack(0));
     act(() => {
@@ -573,7 +573,7 @@ describe('useSoundCloudWidget source switching', () => {
   it('unlocks playback after an ERROR and retries the failed source', () => {
     const { events, listeners, widget } = createWidgetMock();
     const { result } = renderWidgetHook();
-    usePlayerStore.setState({ playbackMode: 'bookmark' });
+    usePlayerStore.setState({ playbackMode: 'single' });
 
     act(() => result.current.selectTrack(0));
     const failedCallback = vi.mocked(widget.load).mock.calls[0][1]?.callback;
@@ -593,7 +593,7 @@ describe('useSoundCloudWidget source switching', () => {
     const { events, listeners, widget } = createWidgetMock();
     const { result } = renderWidgetHook();
 
-    act(() => result.current.playBookmarkTrack(bookmarkTrack));
+    act(() => result.current.playSingleTrack(bookmarkTrack));
     expect(widget.load).toHaveBeenCalledWith(
       bookmarkTrack.permalinkUrl,
       expect.objectContaining({ auto_play: true })
@@ -604,7 +604,7 @@ describe('useSoundCloudWidget source switching', () => {
     expect(result.current.playlistStatus).toBe('error');
     expect(result.current.widgetError).toBeTruthy();
     expect(usePlayerStore.getState()).toMatchObject({
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       currentTrack: bookmarkTrack,
       isPlaying: false,
     });
@@ -617,7 +617,7 @@ describe('useSoundCloudWidget source switching', () => {
     vi.useFakeTimers();
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
-    usePlayerStore.setState({ playbackMode: 'bookmark' });
+    usePlayerStore.setState({ playbackMode: 'single' });
 
     act(() => result.current.selectTrack(0));
     const lateCallback = vi.mocked(widget.load).mock.calls[0][1]?.callback;
@@ -736,11 +736,11 @@ describe('useSoundCloudWidget source switching', () => {
     });
   });
 
-  it('keeps the bookmarked track when an empty playlist is detected in bookmark mode', () => {
+  it('keeps the bookmarked track when an empty playlist is detected in single mode', () => {
     const { events, listeners } = createWidgetMock();
     usePlayerStore.setState({
       tracks: [],
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       currentTrack: bookmarkTrack,
       isPlaying: true,
       currentTime: 42,
@@ -752,7 +752,7 @@ describe('useSoundCloudWidget source switching', () => {
 
     expect(result.current.playlistStatus).toBe('empty');
     expect(usePlayerStore.getState()).toMatchObject({
-      playbackMode: 'bookmark',
+      playbackMode: 'single',
       currentTrack: bookmarkTrack,
       isPlaying: true,
       currentTime: 42,

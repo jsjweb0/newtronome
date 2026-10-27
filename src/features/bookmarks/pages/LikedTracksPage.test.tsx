@@ -37,7 +37,7 @@ it('clears a validation error when the same saved-tracks subscription later rece
   render(
     <MemoryRouter initialEntries={['/likes']}>
       <Routes>
-        <Route element={<Outlet context={{ onPlayBookmarkTrack: vi.fn(), onToggleTrack: vi.fn() }} />}>
+        <Route element={<Outlet context={{ onPlaySingleTrack: vi.fn(), onToggleTrack: vi.fn() }} />}>
           <Route path="/likes" element={<LikedTracksPage />} />
         </Route>
       </Routes>

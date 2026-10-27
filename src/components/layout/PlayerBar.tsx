@@ -28,7 +28,7 @@ export default function PlayerBar({
   soundCloudWidget,
 }: PlayerBarProps) {
   const playbackMode = usePlayerStore((state) => state.playbackMode);
-  const isBookmarkMode = playbackMode === 'bookmark';
+  const isSingleMode = playbackMode === 'single';
 
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
@@ -127,17 +127,17 @@ export default function PlayerBar({
             </button>
           </Tooltip>
           <Tooltip
-            content={isBookmarkMode ? '북마크 단일 재생 중' : 'Previous'}
+            content={isSingleMode ? '단일 곡 재생 중' : 'Previous'}
             className="max-xl:hidden"
           >
             <button
               type="button"
-              disabled={isBookmarkMode || controlsDisabled}
+              disabled={isSingleMode || controlsDisabled}
               onClick={previousTrack}
               className="inline-flex items-center justify-center w-11 h-11 p-2.5 disabled:cursor-not-allowed disabled:opacity-30"
               aria-label={
-                isBookmarkMode
-                  ? '북마크 단일 재생 중에는 이전 트랙을 사용할 수 없습니다'
+                isSingleMode
+                  ? '단일 곡 재생 중에는 이전 트랙을 사용할 수 없습니다'
                   : '이전 트랙'
               }
             >
@@ -160,17 +160,17 @@ export default function PlayerBar({
             </button>
           </Tooltip>
           <Tooltip
-            content={isBookmarkMode ? '북마크 단일 재생 중' : 'Next'}
+            content={isSingleMode ? '단일 곡 재생 중' : 'Next'}
             className="max-xl:hidden"
           >
             <button
               type="button"
-              disabled={isBookmarkMode || controlsDisabled}
+              disabled={isSingleMode || controlsDisabled}
               onClick={nextTrack}
               className="inline-flex items-center justify-center w-11 h-11 p-2.5 disabled:cursor-not-allowed disabled:opacity-30"
               aria-label={
-                isBookmarkMode
-                  ? '북마크 단일 재생 중에는 다음 트랙을 사용할 수 없습니다'
+                isSingleMode
+                  ? '단일 곡 재생 중에는 다음 트랙을 사용할 수 없습니다'
                   : '다음 트랙'
               }
             >
@@ -180,11 +180,11 @@ export default function PlayerBar({
           <Tooltip content="Shuffle" className="max-xl:hidden">
             <button
               type="button"
-              disabled={isBookmarkMode || controlsDisabled}
+              disabled={isSingleMode || controlsDisabled}
               onClick={playRandomTrack}
               aria-label={
-                isBookmarkMode
-                  ? '북마크 단일 재생 중에는 임의 재생을 사용할 수 없습니다'
+                isSingleMode
+                  ? '단일 곡 재생 중에는 임의 재생을 사용할 수 없습니다'
                   : '임의의 트랙 재생'
               }
               className="disabled:cursor-not-allowed disabled:opacity-30"
