@@ -19,7 +19,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import Tooltip from '../ui/Tooltip';
 import NotificationDropdown from '../ui/NotificationDropdown';
 import type { ComponentType, SVGProps } from 'react';
-import HSDropdown from '@preline/dropdown';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -45,7 +44,9 @@ type NavItem =
 
 export default function Sidebar({ collapsed = false }: SidebarProps) {
   const { user, logout, avatarUrl, nicknameUrl } = useAuth();
+
   const [isMobile, setIsMobile] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems: ReadonlyArray<NavItem> = [
     { label: 'Browse', path: '/', icon: Music },
@@ -90,47 +91,26 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
   };
 
   useEffect(() => {
-    //window.HSStaticMethods?.autoInit();
-    HSDropdown.autoInit();
-  }, []);
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+    const syncViewport = (matches: boolean) => {
+      setIsMobile(matches);
 
-    const resetStyles = () => {
-      const navbar = document.getElementById('navbar');
-      if (navbar) {
-        navbar.removeAttribute('style');
+      if (!matches) {
+        setIsMobileMenuOpen(false);
       }
     };
 
-    const mql = window.matchMedia('(max-width: 1024px)');
-    const handleChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    syncViewport(mediaQuery.matches);
 
-    setIsMobile(mql.matches);
+    const handleChange = (event: MediaQueryListEvent) => {
+      syncViewport(event.matches);
+    };
 
-    if (mql.matches) resetStyles();
-    const onMatchChange = (event: MediaQueryListEvent) => event.matches && resetStyles();
-
-    if (mql.addEventListener) {
-      mql.addEventListener('change', handleChange);
-      mql.addEventListener('change', onMatchChange);
-    } else {
-      mql.addListener(handleChange);
-      mql.addListener(onMatchChange);
-    }
-
-    document.addEventListener('close.hs.dropdown', resetStyles);
+    mediaQuery.addEventListener('change', handleChange);
 
     return () => {
-      if (mql.removeEventListener) {
-        mql.removeEventListener('change', handleChange);
-        mql.removeEventListener('change', onMatchChange);
-      } else {
-        mql.removeListener(handleChange);
-        mql.removeListener(onMatchChange);
-      }
-      document.removeEventListener('close.hs.dropdown', resetStyles);
+      mediaQuery.removeEventListener('change', handleChange);
     };
   }, []);
 
@@ -138,40 +118,69 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
 
   return (
     <div>
-      <nav id="navbar" className="group hs-dropdown" aria-label="Main">
-        <div className="hs-dropdown-toggle-wrapper flex items-center lg:mb-14 lg:pt-3">
+      <nav
+        id="navbar"
+        className={clsx('group relative', isMobileMenuOpen && 'open')}
+        aria-label="주요 메뉴"
+      >
+        <div className="flex items-center lg:mb-14 lg:pt-3 max-lg:p-2">
           <h1 className="grow text-left">
             <Link
               to="/"
-              className="inline-flex justify-start p-0.5 lg:p-2 text-primary max-lg:h-4 max-lg:pl-2"
+              className="inline-flex justify-start p-0.5 text-primary lg:p-2 max-lg:h-4 max-lg:pl-2"
               aria-label="NEWTRONOME"
             >
-              {collapsed ? <LogoMoIcon className="w-8" /> : <LogoIcon className="w-full" />}
+              <LogoIcon className="h-4 w-auto lg:hidden" />
+              {collapsed ? <LogoMoIcon className="w-8 max-lg:hidden" /> : <LogoIcon className="w-full max-lg:hidden" />}
             </Link>
           </h1>
           {/* Collapse Button */}
           <button
-            id="hs-dropdown-default"
+            id="mobile-menu-toggle"
             type="button"
-            className="hs-dropdown-toggle block lg:hidden p-1 text-base"
-            aria-haspopup="menu"
-            aria-expanded="false"
-            aria-label="Dropdown"
+            onClick={() => {
+              setIsMobileMenuOpen((current) => !current);
+            }}
+            className="block lg:hidden p-1 text-base"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-navigation"
+            aria-label={
+              isMobileMenuOpen
+                ? '전체 메뉴 닫기'
+                : '전체 메뉴 열기'
+            }
           >
-            <Menu className="group-[.open]:hidden size-5" />
-            <X className="hidden group-[.open]:block shrink-0 size-5" />
-            <span className="sr-only">전체메뉴 토글</span>
+            <Menu
+              aria-hidden="true"
+              className="group-[.open]:hidden size-5"
+            />
+            <X
+              aria-hidden="true"
+              className="hidden group-[.open]:block shrink-0 size-5"
+            />
           </button>
           {/* End Collapse Button */}
         </div>
 
         {/* Collapse */}
         <div
+          id="mobile-navigation"
           className={clsx(
-            'hs-dropdown-menu transition-[opacity,margin] duration hs-dropdown-open:opacity-100 max-lg:opacity-0 z-50 lg:transform-none!',
-            'hidden lg:block lg:basis-full lg:grow w-full transition-all duration-300',
-            'max-lg:px-3 max-lg:mt-2',
-            'max-lg:max-h-[calc(100dvh-3.5rem)] max-lg:overflow-y-auto max-lg:overscroll-contain'
+            'z-50 w-full transition-[opacity,margin] duration-300',
+            // 모바일: 헤더 아래에 겹쳐서 표시
+            'max-lg:absolute',
+            'max-lg:top-[calc(100%+0.25rem)]',
+            'max-lg:left-0 max-lg:right-0',
+            'max-lg:max-h-[calc(100dvh-4.5rem)]',
+            'max-lg:overflow-y-auto',
+            'max-lg:overscroll-contain',
+
+            // 데스크톱: 기존 사이드바 흐름 유지
+            'lg:static lg:block lg:basis-full lg:grow lg:opacity-100',
+
+            isMobileMenuOpen
+              ? 'max-lg:block max-lg:translate-y-0 max-lg:opacity-100'
+              : 'max-lg:hidden max-lg:-translate-y-1 max-lg:opacity-0'
           )}
         >
           <div className="relative max-lg:bg-background rounded-xl max-lg:p-3 max-lg:shadow-md">
@@ -183,8 +192,12 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
                   <li key={label} className={clsx('mb-2', hideOnLg && 'lg:hidden')}>
                     {item.path !== undefined ? (
                       <Tooltip content={label} position="right" enabled={enableTooltip}>
-                        <NavLink to={item.path} className={({ isActive }) => getNavItemClass(isActive)}>
-                          <Icon className={navIconClasses} />
+                        <NavLink
+                          to={item.path}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={({ isActive }) => getNavItemClass(isActive)}
+                        >
+                          <Icon aria-hidden="true" className={navIconClasses} />
                           <span
                             className={clsx(
                               'transition-all duration-300 ease-in-out whitespace-nowrap',
@@ -199,9 +212,12 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
                       <button
                         type="button"
                         className={clsx('w-full', getNavItemClass(false))}
-                        onClick={item.action}
+                        onClick={async () => {
+                          setIsMobileMenuOpen(false);
+                          await item.action();
+                        }}
                       >
-                        <Icon className={navIconClasses} />
+                        <Icon aria-hidden="true" className={navIconClasses} />
                         <span>{label}</span>
                       </button>
                     )}

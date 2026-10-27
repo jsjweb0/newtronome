@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react';
+import { RefObject, useCallback, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react';
 import { selectCurrentTrack, usePlayerStore } from '../../features/player/stores/usePlayerStore';
 import {
   SkipBack,
@@ -21,12 +21,14 @@ interface PlayerBarProps {
   onPanelToggle: () => void;
   collapsed: boolean;
   soundCloudWidget: ReturnType<typeof useSoundCloudWidget>;
+  panelToggleRef: RefObject<HTMLButtonElement | null>;
 }
 
 export default function PlayerBar({
   onPanelToggle,
   collapsed,
   soundCloudWidget,
+  panelToggleRef,
 }: PlayerBarProps) {
   const playbackMode = usePlayerStore((state) => state.playbackMode);
   const isSingleMode = playbackMode === 'single';
@@ -203,10 +205,12 @@ export default function PlayerBar({
           position="top"
         >
           <button
+            ref={panelToggleRef}
             type="button"
             id="playlist-panel-btn"
             onClick={onPanelToggle}
             aria-controls="playlist-panel"
+            aria-expanded={collapsed}
             aria-label={collapsed ? '플레이리스트 닫기' : '플레이리스트 열기'}
           >
             <ListMusic aria-hidden="true" className="size-4 xl:size-7" />

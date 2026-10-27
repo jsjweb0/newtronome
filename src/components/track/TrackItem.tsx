@@ -74,7 +74,8 @@ export default function TrackItem({
                     list: "row-span-2 size-12 md:size-20"
                 })
             )}>
-                <img src={toHighResArtwork(track.artworkUrl)} alt={track.title}
+                <img src={toHighResArtwork(track.artworkUrl)}
+                    alt=""
                     className={clsx(
                         "block object-cover w-full h-full transition-transform",
                         viewModeClass(viewMode, "absolute top-0 left-0"),

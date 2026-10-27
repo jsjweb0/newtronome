@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { PropsWithChildren } from 'react';
+import { createRef, type PropsWithChildren } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PlayerBar from './PlayerBar';
 import { usePlayerStore } from '../../features/player/stores/usePlayerStore';
@@ -45,6 +45,7 @@ function renderPlayerBar(widget = soundCloudWidget) {
       onPanelToggle={vi.fn()}
       collapsed={true}
       soundCloudWidget={widget}
+      panelToggleRef={createRef<HTMLButtonElement>()}
     />
   );
 }
@@ -128,6 +129,7 @@ describe('PlayerBar single-track controls', () => {
         onPanelToggle={vi.fn()}
         collapsed={true}
         soundCloudWidget={{ ...soundCloudWidget, widgetError: null, playlistStatus: 'ready' }}
+        panelToggleRef={createRef<HTMLButtonElement>()}
       />
     );
 
