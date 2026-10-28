@@ -142,35 +142,40 @@ export default function HomePage() {
 
       <div className="z-1 relative mt-1 md:mt-8">
         <div className="flex flex-wrap items-center justify-between relative mb-5 md:mb-10 md:pr-64">
-          <h4 className="flex items-center justify-between gap-x-2 text-lg lg:text-2xl font-bold">
-            <ListMusic className="max-md:size-5" />
+          <h3 className="flex items-center justify-between gap-x-2 text-lg lg:text-2xl font-bold">
+            <ListMusic className="max-md:size-5" aria-hidden="true" />
             Track List
-          </h4>
+          </h3>
           <div className="shrink-0 flex gap-x-1 items-center">
             <p className="mr-1 text-textSub text-sm">View</p>
             <button
+              type="button"
               onClick={() => setViewMode('grid')}
               className={`inline-flex justify-center items-center p-1 bg-background rounded-lg ${viewMode === 'grid' ? 'text-primary' : 'text-textBase'}`}
-              aria-label="Badges"
+              aria-pressed={viewMode === 'grid'}
+              aria-label="앨범형"
             >
-              <GridIcon className="size-5 md:size-6" />
+              <GridIcon className="size-5 md:size-6" aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={() => setViewMode('list')}
               className={`inline-flex justify-center items-center p-1 bg-background rounded-lg ${viewMode === 'list' ? 'text-primary' : 'text-textBase'}`}
-              aria-label="List"
+              aria-pressed={viewMode === 'list'}
+              aria-label="목록형"
             >
-              <List className="max-md:size-5" />
+              <List className="max-md:size-5" aria-hidden="true" />
             </button>
           </div>
           <div className="relative md:absolute md:right-0 w-full md:w-60 space-y-3 max-md:mt-3">
+            <label htmlFor="search-track-input" className="sr-only">검색어</label>
             <input
               type="text"
+              id="search-track-input"
               className="py-2.5 sm:py-3 px-4 block w-full mb-0 border border-textThr dark:border-none rounded-lg bg-background text-sm md:text-base disabled:opacity-50 disabled:pointer-events-none focus:ring-primary"
               placeholder="Filter"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              aria-label="Track Search"
             />
             {searchKeyword && (
               <button
@@ -178,7 +183,7 @@ export default function HomePage() {
                 className="inline-flex items-center absolute top-0 right-1 md:right-0 h-full px-2 md:px-3 text-textSub"
                 aria-label="검색어 삭제"
               >
-                <CircleX className="size-4 md:size-5" />
+                <CircleX className="size-4 md:size-5" aria-hidden="true" />
               </button>
             )}
           </div>

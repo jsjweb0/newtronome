@@ -39,6 +39,7 @@ export default function SoundCloudWidget({
       <iframe
         ref={iframeRef}
         title="SoundCloud 플레이리스트"
+        tabIndex={-1}
         src={widgetUrl}
         width="100%"
         height={WIDGET_PRELOAD_HEIGHT}

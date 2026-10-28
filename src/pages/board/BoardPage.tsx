@@ -135,7 +135,7 @@ function BoardContent({
 
   if (isPending) {
     return (
-      <div className="max-w-340 mx-auto px-4 py-10">
+      <div className="max-w-340 mx-auto px-4 py-4 lg:py-10">
         <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
           {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
         </h2>
@@ -166,7 +166,7 @@ function BoardContent({
   }
 
   return (
-    <div className="max-w-340 mx-auto px-4 py-10">
+    <div className="max-w-340 mx-auto px-4 py-4 lg:py-10">
       <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
         {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
       </h2>

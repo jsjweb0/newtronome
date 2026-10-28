@@ -25,7 +25,7 @@ function DarkModeToggle({
     <button
       type="button"
       className={clsx(
-        'flex justify-center items-center rounded-full focus:outline-hidden focus:bg-primary/6 disabled:opacity-50 disabled:pointer-events-none dark:border-none',
+        'flex justify-center items-center rounded-full focus:bg-primary/6 disabled:opacity-50 disabled:pointer-events-none dark:border-none',
         'dark:text-textBase hover:text-primary hover:bg-primary/6',
         showText ? 'gap-x-2 px-3 py-3' : 'size-11',
         className

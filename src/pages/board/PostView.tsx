@@ -151,7 +151,7 @@ function PostViewContent({ boardType, postId }: {
     });
 
   const pagerBtnClasses =
-    'shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 group-hover:bg-gray-50 group-focus:outline-hidden group-focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:group-hover:bg-neutral-700 dark:focus:bg-neutral-700';
+    'shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 group-hover:bg-gray-50 group-focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:group-hover:bg-neutral-700 dark:focus:bg-neutral-700';
   const pagerClasses =
     "overflow-hidden block relative pb-1 whitespace-nowrap overflow-ellipsis after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-gray-500 after:transition-width after:duration-300 group-hover:after:w-full";
 
@@ -228,7 +228,7 @@ function PostViewContent({ boardType, postId }: {
   };
 
   return (
-    <div className="max-w-[85rem] mx-auto px-4 py-10">
+    <div className="max-w-[85rem] mx-auto px-4 py-4 lg:py-10">
       <div className="flex flex-row max-md:flex-col items-center justify-between gap-2 px-4 py-4 border-y border-gray-300">
         <h4 className="font-medium text-sm md:text-xl">
           <span className="block md:inline-block md:mr-3 text-sm md:text-base text-center text-gray-500 dark:text-neutral-400">
@@ -297,7 +297,7 @@ function PostViewContent({ boardType, postId }: {
 
               {/* Button */}
               <div className="relative inline-block">
-                <div className="group flex items-center gap-x-2 text-sm text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200">
+                <div className="group flex items-center gap-x-2 text-sm text-gray-500 hover:text-gray-800 focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200">
                   <MessageCircle className="shrink-0 size-4" />
                   {commentCount ?? '—'}
                   <span

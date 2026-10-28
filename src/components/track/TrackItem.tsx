@@ -74,7 +74,8 @@ export default function TrackItem({
                     list: "row-span-2 size-12 md:size-20"
                 })
             )}>
-                <img src={toHighResArtwork(track.artworkUrl)} alt={track.title}
+                <img src={toHighResArtwork(track.artworkUrl)}
+                    alt=""
                     className={clsx(
                         "block object-cover w-full h-full transition-transform",
                         viewModeClass(viewMode, "absolute top-0 left-0"),
@@ -99,13 +100,17 @@ export default function TrackItem({
                                 className={clsx(
                                     "fade-in fill-white transition-all duration-300",
                                     viewModeClass(viewMode, "size-12 lg:size-18", "size-6 lg:size-8"),
-                                )} />
+                                )}
+                                aria-hidden="true"
+                            />
                         ) : (
                             <PlayRound
                                 className={clsx(
                                     "fade-in fill-white transition-all duration-300",
                                     viewModeClass(viewMode, "size-12 lg:size-18", "size-6 lg:size-8"),
-                                )} />
+                                )}
+                                aria-hidden="true"
+                            />
                         )}
                     </i>
                 )}
@@ -150,8 +155,11 @@ export default function TrackItem({
                     onClick={() => {
                         onTrackClick?.(track);
                     }}
-                    aria-label={ariaLabel}
                     className={contentClassName}
+                    aria-label={
+                        ariaLabel ??
+                        `${track.title} ${isPlayingTrack || isPlayingPreview ? '일시정지' : '재생'}`
+                    }
                 >
                     {trackContent}
                 </button>

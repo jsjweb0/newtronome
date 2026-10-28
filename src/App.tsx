@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { ROUTES } from './constants/routes';
 import MainLayout from './layouts/MainLayout';
 import NotFoundPage from './pages/NotFoundPage';
 import ScrollToTopSmooth from './components/ui/ScrollToTopSmooth';
@@ -6,7 +7,6 @@ import { lazy } from 'react';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const AccountProfile = lazy(() => import('./pages/user/AccountProfile'));
-const PetBoardPage = lazy(() => import('./pages/board/PetBoardPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const SignupPage = lazy(() => import('./pages/auth/SignupPage'));
 const MyActivity = lazy(() => import('./pages/user/MyActivity'));
@@ -14,7 +14,6 @@ const DynamicBoard = lazy(() => import('./pages/board/DynamicBoard'));
 const PostView = lazy(() => import('./pages/board/PostView'));
 const PostWritePage = lazy(() => import('./pages/board/PostWritePage'));
 const EditPostPage = lazy(() => import('./pages/board/EditPostPage'));
-const PetPostView = lazy(() => import('./pages/board/PetPostView'));
 const LikedTracksPage = lazy(
   () => import('./features/bookmarks/pages/LikedTracksPage')
 );
@@ -27,38 +26,22 @@ function App() {
     <>
       <ScrollToTopSmooth />
       <Routes>
-        <Route path="/" element={<MainLayout />}>
-          {/* layout 적용될 라우트 그룹 */}
+        <Route path={ROUTES.home.path} element={<MainLayout />}>
           <Route index element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/account" element={<AccountProfile />} />
-          <Route path="/likes" element={<LikedTracksPage />} />
-          <Route path="/search" element={<ITunesSearchPage />} />
-          <Route
-            path="/mypage"
-            element={<MyActivity />}
-          />
+          {/* layout 적용될 라우트 그룹 */}
+          <Route path={ROUTES.login.path} element={<LoginPage />} />
+          <Route path={ROUTES.signup.path} element={<SignupPage />} />
+          <Route path={ROUTES.account.path} element={<AccountProfile />} />
+          <Route path={ROUTES.likes.path} element={<LikedTracksPage />} />
+          <Route path={ROUTES.search.path} element={<ITunesSearchPage />} />
+          <Route path={ROUTES.mypage.path} element={<MyActivity />} />
 
           {/* 게시판 */}
-          <Route
-            path="/board/:boardType"
-            element={<DynamicBoard />}
-          />
-          <Route
-            path="/board/:boardType/:id"
-            element={<PostView />}
-          />
-          <Route
-            path="/board/:boardType/write"
-            element={<PostWritePage />}
-          />
-          <Route
-            path="/board/:boardType/edit/:id"
-            element={<EditPostPage />}
-          />
-          <Route path="/board/pet" element={<PetBoardPage />} />
-          <Route path="/board/pet/:id" element={<PetPostView />} />
+          <Route path={ROUTES.boardList.path} element={<DynamicBoard />} />
+          <Route path={ROUTES.boardDetail.path} element={<PostView />} />
+          <Route path={ROUTES.boardWrite.path} element={<PostWritePage />} />
+          <Route path={ROUTES.boardEdit.path} element={<EditPostPage />} />
+
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

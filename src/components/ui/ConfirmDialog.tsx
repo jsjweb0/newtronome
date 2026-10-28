@@ -29,7 +29,7 @@ export default function ConfirmDialog({
                   onClick={onDismiss}
                   className={clsx(
                     'size-7 md:size-8 inline-flex justify-center items-center gap-x-2 rounded-full border border-transparent bg-gray-100 text-gray-800',
-                    'hover:bg-gray-200 focus:outline-hidden focus:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none',
+                    'hover:bg-gray-200 focus:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none',
                     'dark:bg-neutral-700 dark:hover:bg-neutral-600 dark:text-neutral-400 dark:focus:bg-neutral-600'
                   )}
                   aria-label="닫기"
@@ -53,7 +53,7 @@ export default function ConfirmDialog({
                   onClick={onDismiss}
                   className={clsx(
                     'w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-es-xl border border-transparent bg-gray-100 text-gray-800 max-md:text-xs',
-                    'hover:bg-gray-200 focus:outline-hidden focus:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none',
+                    'hover:bg-gray-200 focus:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none',
                     'dark:bg-textThr/65! dark:hover:bg-textThr! dark:text-white dark:hover:text-white dark:focus:bg-textThr!'
                   )}
                 >
@@ -66,7 +66,7 @@ export default function ConfirmDialog({
                   className={clsx(
                     'w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-ee-xl border border-transparent bg-primary text-white',
                     'max-md:text-xs',
-                    'hover:bg-[#ef688a] focus:outline-hidden focus:bg-[#ef688a] disabled:opacity-50 disabled:pointer-events-none',
+                    'hover:bg-[#ef688a] focus:bg-[#ef688a] disabled:opacity-50 disabled:pointer-events-none',
                     'dark:bg-primary/65 dark:hover:bg-primary/80 dark:focus:bg-primary/80'
                   )}
                 >

@@ -42,7 +42,7 @@ function renderControls(widget: SoundCloudWidgetInstance) {
 
 describe('useSoundCloudControls', () => {
   beforeEach(() => {
-    usePlayerStore.setState({ isMuted: false });
+    usePlayerStore.setState({ isMuted: false, currentTime: 0 });
   });
 
   afterEach(() => {
@@ -80,6 +80,7 @@ describe('useSoundCloudControls', () => {
 
     expect(widget.seekTo).toHaveBeenCalledOnce();
     expect(widget.seekTo).toHaveBeenCalledWith(12_500);
+    expect(usePlayerStore.getState().currentTime).toBe(12.5);
   });
 
   it('invalidates pending track requests before moving between tracks', () => {

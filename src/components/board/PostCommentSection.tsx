@@ -12,6 +12,7 @@ import RetryErrorState from '../ui/RetryErrorState';
 import type { CommunityBoardType } from '../../features/board/types/post';
 import { useCommentsQuery } from '../../features/board/hooks/useCommentsQuery';
 import { useCreateComment } from '../../features/board/hooks/useCreateComment';
+import clsx from 'clsx';
 
 dayjs.locale('ko');
 dayjs.extend(relativeTime);
@@ -152,11 +153,17 @@ export default function PostCommentSection({
                 <img
                   src={profileImage()}
                   alt={user.displayName ?? user.email ?? '사용자 프로필'}
-                  className="size-12 rounded-full"
+                  className="size-8 md:size-12 rounded-full"
                 />
               </div>
+              <label htmlFor="comment-input" className="sr-only">댓글</label>
               <textarea
-                className="resize-none block w-full pt-5 pr-5 pb-12 pl-21 border-gray-200 rounded-lg text-xs md:text-base focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                id="comment-input"
+                className={clsx(
+                  'resize-none block w-full pt-5 pr-5 pb-12 pl-15 md:pl-21 border-gray-200 rounded-lg text-xs md:text-base',
+                  'focus:border-blue-500 focus:ring-blue-500',
+                  'dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600'
+                )}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 disabled={isSubmitting}

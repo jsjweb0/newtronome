@@ -243,7 +243,7 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                           className={clsx(
                             'flex justify-center items-center size-9 text-sm rounded-lg text-gray-800',
                             'transition-all duration-200',
-                            'focus:outline-hidden focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none',
+                            'focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none',
                             'dark:border-neutral-700 dark:text-textBase dark:focus:bg-neutral-800',
                             'group-hover:opacity-100! group-hover:visible!',
                             'group-focus-within:opacity-100! group-focus-within:visible!',
@@ -306,7 +306,7 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                         aria-label="알림 삭제"
                         className={clsx(
                           'flex items-center gap-x-2.5 w-full py-2 px-3 rounded-lg text-sm text-textSub',
-                          'hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100',
+                          'hover:bg-gray-100 focus:bg-gray-100',
                           'dark:hover:bg-neutral-700 dark:focus:bg-neutral-700'
                         )}
                       >

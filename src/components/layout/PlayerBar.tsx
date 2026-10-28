@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react';
+import { RefObject, useCallback, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react';
 import { selectCurrentTrack, usePlayerStore } from '../../features/player/stores/usePlayerStore';
 import {
   SkipBack,
@@ -15,17 +15,20 @@ import Tooltip from '../ui/Tooltip';
 import { useDarkMode } from '../../contexts/DarkModeContext';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
+import { formatTime } from '../../utils/format';
 
 interface PlayerBarProps {
   onPanelToggle: () => void;
   collapsed: boolean;
   soundCloudWidget: ReturnType<typeof useSoundCloudWidget>;
+  panelToggleRef: RefObject<HTMLButtonElement | null>;
 }
 
 export default function PlayerBar({
   onPanelToggle,
   collapsed,
   soundCloudWidget,
+  panelToggleRef,
 }: PlayerBarProps) {
   const playbackMode = usePlayerStore((state) => state.playbackMode);
   const isSingleMode = playbackMode === 'single';
@@ -45,7 +48,7 @@ export default function PlayerBar({
 
   const min = 0;
   const max = duration || 0;
-  const step = 0.01; // 0.01초 단위로 이동
+  const step = 1;
   const value = currentTime;
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +112,8 @@ export default function PlayerBar({
             onInput={handleInput}
             className="w-full h-1 xl:h-1.5 rounded appearance-none"
             style={{ background: '#ddd' }}
-            aria-label={currentTrack.title}
+            aria-label={`재생 위치: ${currentTrack.title}`}
+            aria-valuetext={`현재 ${formatTime(currentTime * 1000)} / 전체 ${formatTime(duration * 1000)}`}
             disabled={controlsDisabled}
           />
         </div>
@@ -201,17 +205,22 @@ export default function PlayerBar({
           position="top"
         >
           <button
+            ref={panelToggleRef}
             type="button"
+            id="playlist-panel-btn"
             onClick={onPanelToggle}
+            aria-controls="playlist-panel"
+            aria-expanded={collapsed}
             aria-label={collapsed ? '플레이리스트 닫기' : '플레이리스트 열기'}
+            className="max-xl:size-6 max-xl:p-1 max-xl:mb-1"
           >
-            <ListMusic aria-hidden="true" className="size-4 xl:size-7" />
+            <ListMusic aria-hidden="true" className="size-5 xl:size-7" />
           </button>
         </Tooltip>
         <Tooltip content="북마크">
           <TrackBookmarkButton
             track={currentTrack}
-            className="size-4 xl:size-7"
+            className="items-center size-6 xl:size-7 max-xl:p-1"
           />
         </Tooltip>
         <div className="hidden xl:flex items-center gap-x-3 w-full">

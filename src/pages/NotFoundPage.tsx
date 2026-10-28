@@ -7,7 +7,7 @@ export default function NotFoundPage() {
             <p className="text-xl mb-6">죄송합니다. 요청하신 페이지를 찾을 수 없습니다.</p>
             <Link
                 to="/"
-                className="px-5 py-3 bg-primary text-white rounded-2xl hover:text-primary hover:bg-primary/6 transition"
+                className="px-5 py-3 bg-primary text-white dark:text-black rounded-2xl hover:text-primary hover:bg-primary/6 transition"
             >
                 홈으로 돌아가기
             </Link>

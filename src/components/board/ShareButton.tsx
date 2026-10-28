@@ -93,7 +93,7 @@ export default function ShareButton({
       <button
         type="button"
         id={buttonId}
-        className="flex items-center gap-x-2 text-sm text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
+        className="flex items-center gap-x-2 text-sm text-gray-500 hover:text-gray-800 focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
         aria-expanded={showCopy && !closing}
         aria-controls={panelId}
         aria-label="Dropdown"
@@ -111,7 +111,7 @@ export default function ShareButton({
         >
           <button
             type="button"
-            className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-400 hover:bg-white/10 focus:outline-hidden focus:bg-white/10 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:focus:bg-neutral-900"
+            className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-400 hover:bg-white/10 focus:bg-white/10 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:focus:bg-neutral-900"
             onClick={handleCopy}
           >
             <LinkIcon className="shrink-0 size-4" />
@@ -122,7 +122,7 @@ export default function ShareButton({
               <div className="border-t border-gray-600 my-2 dark:border-neutral-800"></div>
               <button
                 type="button"
-                className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-400 hover:bg-white/10 focus:outline-hidden focus:bg-white/10 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:focus:bg-neutral-900"
+                className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-400 hover:bg-white/10 focus:bg-white/10 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:focus:bg-neutral-900"
                 onClick={shareToKakao}
               >
                 <svg

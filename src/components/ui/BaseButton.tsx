@@ -23,7 +23,7 @@ type BaseButtonProps = ButtonProps | LinkButtonProps;
 
 export function BaseButton(props: BaseButtonProps) {
     const baseStyle =
-        "group shrink-0 px-4 py-3 inline-flex items-center justify-center gap-x-2 font-medium border rounded-lg shadow-2xs align-middle text-xs md:text-base transition-all focus:z-10 focus:outline-hidden disabled:opacity-50 disabled:pointer-events-none";
+        "group shrink-0 px-4 py-3 inline-flex items-center justify-center gap-x-2 font-medium border rounded-lg shadow-2xs align-middle text-xs md:text-base transition-all focus:z-10 disabled:opacity-50 disabled:pointer-events-none";
 
     const variantStyle: Record<ButtonVariant, string> = {
         primary:

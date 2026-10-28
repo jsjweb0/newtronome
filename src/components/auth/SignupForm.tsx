@@ -142,7 +142,7 @@ export default function SignupForm() {
                 type="submit"
                 className={clsx(
                   'w-full mt-4 py-3 px-4 inline-flex justify-center items-center gap-x-2',
-                  'text-sm font-medium rounded-lg border border-transparent bg-primary text-white',
+                  'text-sm font-medium rounded-lg border border-transparent bg-primary text-white dark:text-black',
                   'disabled:bg-textThr disabled:pointer-events-none'
                 )}
                 disabled={!isDirty || isSubmitting}

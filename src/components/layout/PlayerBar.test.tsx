@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { PropsWithChildren } from 'react';
+import { createRef, type PropsWithChildren } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PlayerBar from './PlayerBar';
 import { usePlayerStore } from '../../features/player/stores/usePlayerStore';
@@ -45,6 +45,7 @@ function renderPlayerBar(widget = soundCloudWidget) {
       onPanelToggle={vi.fn()}
       collapsed={true}
       soundCloudWidget={widget}
+      panelToggleRef={createRef<HTMLButtonElement>()}
     />
   );
 }
@@ -128,6 +129,7 @@ describe('PlayerBar single-track controls', () => {
         onPanelToggle={vi.fn()}
         collapsed={true}
         soundCloudWidget={{ ...soundCloudWidget, widgetError: null, playlistStatus: 'ready' }}
+        panelToggleRef={createRef<HTMLButtonElement>()}
       />
     );
 
@@ -135,6 +137,27 @@ describe('PlayerBar single-track controls', () => {
     expect((screen.getByRole('slider') as HTMLInputElement).disabled).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: '재생' }));
     expect(soundCloudWidget.toggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('provides an accessible playback position slider with one-second seeking', () => {
+    usePlayerStore.setState({
+      currentTime: 80,
+      duration: 220,
+    });
+    renderPlayerBar();
+
+    const playbackPositionSlider = screen.getByRole('slider', {
+      name: `재생 위치: ${currentTrack.title}`,
+    });
+
+    expect(playbackPositionSlider.getAttribute('step')).toBe('1');
+    expect(playbackPositionSlider.getAttribute('aria-valuetext')).toBe(
+      '현재 1:20 / 전체 3:40'
+    );
+
+    fireEvent.change(playbackPositionSlider, { target: { value: '81' } });
+
+    expect(soundCloudWidget.seek).toHaveBeenCalledWith(81);
   });
 
   it('does not show the previous track after the playlist becomes empty', () => {

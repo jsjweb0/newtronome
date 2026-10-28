@@ -3,9 +3,10 @@ import { test, expect, makePost } from './fixtures/board';
 test('list read failure shows retry UI and recovers without production traffic', async ({ page, store }) => {
   store.fail('list', 4);
   await page.goto('/board/free');
-  await expect(page.getByRole('alert')).toContainText('게시글을 불러오지 못했습니다.');
+  const main = page.locator('main');
+  await expect(main.getByRole('alert')).toContainText('게시글을 불러오지 못했습니다.');
   expect(store.count('list')).toBe(4);
-  await page.getByRole('button', { name: '다시 시도' }).click();
+  await main.getByRole('button', { name: '다시 시도' }).click();
   await expect(page.getByRole('link', { name: /게시글 A/ })).toBeVisible();
 });
 
@@ -99,7 +100,7 @@ test('search, sort, pagination, detail and browser back preserve list state', as
   await expect(page).toHaveURL(/page=2/);
   await expect(page.getByRole('link', { name: /React 글 2/ })).toBeVisible();
 
-  await page.getByTitle('검색어').fill('React 글 1');
+  await page.getByRole('textbox', { name: '검색어' }).fill('React 글 1');
   await page.getByRole('button', { name: '검색', exact: true }).click();
   await expect(page).toHaveURL(/keyword=React(?:\+|%20)%EA%B8%80(?:\+|%20)1/);
   await expect(page.getByRole('link', { name: /React 글 12/ })).toBeVisible();
