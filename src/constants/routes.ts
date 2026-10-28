@@ -6,7 +6,6 @@ interface RouteMetadata {
 export const BOARD_TITLES = {
   notice: '공지사항',
   free: '자유게시판',
-  pet: '반려동물 게시판',
 } as const;
 
 export type BoardType = keyof typeof BOARD_TITLES;
@@ -33,6 +32,4 @@ export const ROUTES = {
   boardWrite: { path: '/board/:boardType/write', title: '글쓰기' },
   boardDetail: { path: '/board/:boardType/:id', title: '게시글 상세' },
   boardList: { path: '/board/:boardType', title: '게시판' },
-  petBoard: { path: '/board/pet', title: '반려동물 게시판' },
-  petDetail: { path: '/board/pet/:id', title: '반려동물 게시글 상세' },
 } as const satisfies Record<string, RouteMetadata>;

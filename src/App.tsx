@@ -7,7 +7,6 @@ import { lazy } from 'react';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const AccountProfile = lazy(() => import('./pages/user/AccountProfile'));
-const PetBoardPage = lazy(() => import('./pages/board/PetBoardPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const SignupPage = lazy(() => import('./pages/auth/SignupPage'));
 const MyActivity = lazy(() => import('./pages/user/MyActivity'));
@@ -15,7 +14,6 @@ const DynamicBoard = lazy(() => import('./pages/board/DynamicBoard'));
 const PostView = lazy(() => import('./pages/board/PostView'));
 const PostWritePage = lazy(() => import('./pages/board/PostWritePage'));
 const EditPostPage = lazy(() => import('./pages/board/EditPostPage'));
-const PetPostView = lazy(() => import('./pages/board/PetPostView'));
 const LikedTracksPage = lazy(
   () => import('./features/bookmarks/pages/LikedTracksPage')
 );
@@ -43,8 +41,6 @@ function App() {
           <Route path={ROUTES.boardDetail.path} element={<PostView />} />
           <Route path={ROUTES.boardWrite.path} element={<PostWritePage />} />
           <Route path={ROUTES.boardEdit.path} element={<EditPostPage />} />
-          <Route path={ROUTES.petBoard.path} element={<PetBoardPage />} />
-          <Route path={ROUTES.petDetail.path} element={<PetPostView />} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Route>
