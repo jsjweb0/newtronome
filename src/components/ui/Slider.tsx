@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Slider, { type Settings } from 'react-slick';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import 'slick-carousel/slick/slick.css';
@@ -10,15 +10,40 @@ interface ImageSliderProps {
   className?: string;
 }
 
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia(REDUCED_MOTION_QUERY).matches;
+
 export default function ImageSlider({
   images = [],
   alt = '',
   className = '',
 }: ImageSliderProps) {
   const sliderRef = useRef<Slider | null>(null);
-  const [isAutoplaying, setIsAutoplaying] = useState(true);
+  const [isAutoplaying, setIsAutoplaying] = useState(() => !prefersReducedMotion());
 
   const hasMultipleImages = images.length > 1;
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+
+    const mediaQuery = window.matchMedia(REDUCED_MOTION_QUERY);
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (!event.matches) return;
+
+      sliderRef.current?.slickPause();
+      setIsAutoplaying(false);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
 
   const handleAutoplayToggle = () => {
     if (isAutoplaying) {
@@ -46,7 +71,7 @@ export default function ImageSlider({
     slidesToShow: 1,
     slidesToScroll: 1,
     arrows: false,
-    autoplay: hasMultipleImages,
+    autoplay: hasMultipleImages && isAutoplaying,
     autoplaySpeed: 4000,
     pauseOnHover: true,
     pauseOnFocus: true,

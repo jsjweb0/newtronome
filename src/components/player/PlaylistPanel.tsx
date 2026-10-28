@@ -270,8 +270,22 @@ export default function PlaylistPanel({
                 <h4 className="font-semibold">All Playlists</h4>
                 <ListMusic className="size-5.5" />
               </div>
-              <ol className="space-y-4">
-                {soundCloudWidget.playlistStatus === 'error' ? (
+              {soundCloudWidget.playlistStatus === 'loading' ? (
+                <p
+                  className="flex items-center gap-2 text-sm text-textBase"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <AudioEqualizerIcon
+                    isPlaying={true}
+                    aria-hidden="true"
+                    className="size-4 text-textBase"
+                  />
+                  플레이리스트 불러오는 중...
+                </p>
+              ) : (
+                <ol className="space-y-4">
+                  {soundCloudWidget.playlistStatus === 'error' ? (
                   <li>
                     <RetryErrorState
                       message={
@@ -280,15 +294,6 @@ export default function PlaylistPanel({
                       }
                       onRetry={soundCloudWidget.retryLoad}
                     />
-                  </li>
-                ) : soundCloudWidget.playlistStatus === 'loading' ? (
-                  <li
-                    className="flex items-center gap-2 text-sm text-gray-500"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    <AudioEqualizerIcon isPlaying={true} className="size-4 text-gray-500" />
-                    플레이리스트 불러오는 중...
                   </li>
                 ) : soundCloudWidget.playlistStatus === 'ready' ? (
                   tracks.map((track, index) => {
@@ -360,8 +365,9 @@ export default function PlaylistPanel({
                   })
                 ) : (
                   <li className="text-sm text-gray-500">플레이리스트가 비어 있어요</li>
-                )}
-              </ol>
+                  )}
+                </ol>
+              )}
             </div>
           </div>
         </div>

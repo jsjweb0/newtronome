@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { getBoardTitle, ROUTES } from '../constants/routes';
 import PageErrorBoundary from '../components/ui/PageErrorBoundary';
 import { useSoundCloudWidget } from '../features/player/hooks/useSoundCloudWidget';
 import { usePlayerStore } from '../features/player/stores/usePlayerStore';
@@ -14,6 +15,35 @@ import LoadingLogo from '../components/ui/LoadingLogo';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle';
 import type { PlayerTrack } from '../features/player/types/player.types';
+
+const getPageTitle = (pathname: string) => {
+  const [section, boardType, action] =
+    pathname.split('/').filter(Boolean);
+
+  if (section === 'board') {
+    const boardTitle = getBoardTitle(boardType);
+
+    if (action === 'write') {
+      return `${boardTitle} 글쓰기`;
+    }
+
+    if (action === 'edit') {
+      return `${boardTitle} 게시글 수정`;
+    }
+
+    if (action) {
+      return `${boardTitle} 게시글 상세`;
+    }
+
+    return boardTitle;
+  }
+
+  const matchedRoute = Object.values(ROUTES).find(
+    ({ path }) => path === pathname
+  );
+
+  return matchedRoute?.title ?? '페이지를 찾을 수 없음';
+};
 
 const PLAYLIST_URLS = [
   'https://soundcloud.com/ssu-1/sets/2025-summer',
@@ -50,6 +80,10 @@ export interface PlayerOutletContext {
 
 export default function MainLayout() {
   const location = useLocation();
+
+  useEffect(() => {
+    document.title = `${getPageTitle(location.pathname)} | NEWTRONOME`;
+  }, [location.pathname]);
 
   const [playlistUrl] = useState(() => {
     const randomIndex = Math.floor(Math.random() * PLAYLIST_URLS.length);
@@ -109,6 +143,13 @@ export default function MainLayout() {
 
   return (
     <div className="overflow-x-clip relative lg:pt-3 px-3 pb-27.5 xl:pb-35 text-textBase dark:bg-black">
+      <a
+        href="#main-content"
+        inert={isMobilePanelOpen}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-200 focus:rounded-lg focus:bg-background focus:px-4 focus:py-3 focus:text-textBase focus:shadow-lg"
+      >
+        본문 바로가기
+      </a>
       {/* 왼쪽 사이드바 */}
       <header
         inert={isMobilePanelOpen}
@@ -128,11 +169,11 @@ export default function MainLayout() {
           >
             <button
               type="button"
-              id=""
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="lg:flex items-center justify-center size-11 rounded-full text-textBase hover:text-primary hover:bg-primary/6"
               aria-label={isSidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
-              aria-controls=""
+              aria-controls="navbar"
+              aria-expanded={!isSidebarCollapsed}
             >
               <PanelLeft className="size-6" />
             </button>
@@ -148,6 +189,8 @@ export default function MainLayout() {
       >
         {/* 메인 콘텐츠 */}
         <main
+          id="main-content"
+          tabIndex={-1}
           inert={isMobilePanelOpen}
           className={clsx(
             'transition-all duration-300',

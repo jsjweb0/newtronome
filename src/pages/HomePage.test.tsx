@@ -81,4 +81,25 @@ describe('HomePage playlist status', () => {
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
     expect(retryLoad).toHaveBeenCalledTimes(1);
   });
+
+  it('exposes the selected view mode with aria-pressed', () => {
+    renderHomePage('ready');
+
+    const gridButton = screen.getByRole('button', { name: '앨범형' });
+    const listButton = screen.getByRole('button', { name: '목록형' });
+
+    expect(gridButton.getAttribute('aria-pressed')).toBe('true');
+    expect(listButton.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(listButton);
+
+    expect(gridButton.getAttribute('aria-pressed')).toBe('false');
+    expect(listButton.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('keeps the track list heading in sequence after the page heading', () => {
+    renderHomePage('ready');
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Track List' })).toBeTruthy();
+  });
 });

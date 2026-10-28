@@ -131,7 +131,7 @@ export default function LikedTracksPage() {
 
           <Link
             to="/login"
-            className="mt-5 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="mt-5 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-medium text-white dark:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             로그인하고 시작하기
           </Link>

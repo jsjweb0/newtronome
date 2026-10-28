@@ -212,14 +212,15 @@ export default function PlayerBar({
             aria-controls="playlist-panel"
             aria-expanded={collapsed}
             aria-label={collapsed ? '플레이리스트 닫기' : '플레이리스트 열기'}
+            className="max-xl:size-6 max-xl:p-1 max-xl:mb-1"
           >
-            <ListMusic aria-hidden="true" className="size-4 xl:size-7" />
+            <ListMusic aria-hidden="true" className="size-5 xl:size-7" />
           </button>
         </Tooltip>
         <Tooltip content="북마크">
           <TrackBookmarkButton
             track={currentTrack}
-            className="items-center size-4 xl:size-7"
+            className="items-center size-6 xl:size-7 max-xl:p-1"
           />
         </Tooltip>
         <div className="hidden xl:flex items-center gap-x-3 w-full">

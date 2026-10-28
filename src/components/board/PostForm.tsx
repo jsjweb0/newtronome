@@ -94,14 +94,12 @@ export default function PostForm({
       newErrors.category = '카테고리를 선택해 주세요.';
       showToast({ message: '카테고리를 선택해 주세요.', type: 'error' });
       hasError = true;
-    }
-    if (!inputTitle.trim()) {
+    } else if (!inputTitle.trim()) {
       newErrors.title = '제목을 입력해주세요.';
       showToast({ message: '제목을 입력해주세요.', type: 'error' });
       hasError = true;
       titleRef.current?.focus();
-    }
-    if (!inputContent.trim()) {
+    } else if (!inputContent.trim()) {
       newErrors.content = '내용을 입력해주세요.';
       showToast({ message: '내용을 입력해주세요.', type: 'error' });
       hasError = true;

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
+import { createBoardPath, ROUTES } from '../../constants/routes';
 import { useEffect, useState } from 'react';
 import DarkModeToggle from '../DarkModeToggle';
 import {
@@ -49,16 +50,14 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems: ReadonlyArray<NavItem> = [
-    { label: 'Browse', path: '/', icon: Music },
-    { label: 'Search', path: '/search', icon: SearchIcon },
-    { label: 'Likes', path: '/likes', icon: Heart },
-    { label: 'Notice', path: '/board/notice', icon: Disc3 },
-    { label: 'Free Board', path: '/board/free', icon: Activity },
-    //{ label: 'Archive', path: '/board/pet', icon: Dog },
-    //{label: "About", path: "/about", icon: LogoMoIcon},
-    { label: 'My Account', path: '/account', icon: Turntable, requiresAuth: true },
-    { label: 'My Activity', path: '/mypage', icon: MusicLibrary, requiresAuth: true },
-    { label: 'Login', path: '/login', icon: LogIn, requiresGuest: true, hideOnLg: true },
+    { label: 'Browse', path: ROUTES.home.path, icon: Music },
+    { label: 'Search', path: ROUTES.search.path, icon: SearchIcon },
+    { label: 'Likes', path: ROUTES.likes.path, icon: Heart },
+    { label: 'Notice', path: createBoardPath('notice'), icon: Disc3 },
+    { label: 'Free Board', path: createBoardPath('free'), icon: Activity },
+    { label: 'My Account', path: ROUTES.account.path, icon: Turntable, requiresAuth: true },
+    { label: 'My Activity', path: ROUTES.mypage.path, icon: MusicLibrary, requiresAuth: true },
+    { label: 'Login', path: ROUTES.login.path, icon: LogIn, requiresGuest: true, hideOnLg: true },
     { label: 'LogOut', icon: LogOut, requiresAuth: true, action: logout, hideOnLg: true },
   ];
 

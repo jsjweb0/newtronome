@@ -188,7 +188,7 @@ export default function LoginForm() {
                 type="submit"
                 className={clsx(
                   'w-full py-3 px-4 inline-flex justify-center items-center gap-x-2  rounded-lg border border-transparent',
-                  'text-sm font-medium text-white bg-primary',
+                  'text-sm font-medium text-white dark:text-black bg-primary',
                   'disabled:pointer-events-none disabled:bg-textThr disabled:text-neutral-500'
                 )}
                 disabled={!isDirty || isSubmitting}
