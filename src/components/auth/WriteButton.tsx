@@ -4,7 +4,7 @@ import { Pencil } from 'lucide-react';
 import { getUserRole } from '../../utils/role';
 
 type BoardTypeProps = {
-  boardType: 'notice' | 'free' | 'pet';
+  boardType: 'notice' | 'free';
 }
 
 export default function WriteButton({ boardType }: BoardTypeProps) {
