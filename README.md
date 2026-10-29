@@ -157,7 +157,7 @@ src/
   pages/           인증, 게시판, 사용자 페이지
   utils/           포맷팅과 데이터 변환
 public/mock/       로컬 게시글·댓글 목업
-workers/           정적 파일 제공과 외부 API 프록시
+workers/           정적 파일 제공
 tests/e2e/         브라우저 테스트
 firestore.rules    Firestore 접근 제어 규칙
 wrangler.toml      Cloudflare 배포 설정
