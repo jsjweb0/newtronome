@@ -36,6 +36,7 @@ Thumbs.db
 AGENTS.md
 .codex/
 .codex-build/
+_workspace/
 
 # Browser test artifacts
 playwright-report/
