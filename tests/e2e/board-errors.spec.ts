@@ -10,6 +10,18 @@ test('list read failure shows retry UI and recovers without production traffic',
   await expect(page.getByRole('link', { name: /게시글 A/ })).toBeVisible();
 });
 
+test('게시글을 등록하면 숫자 ID를 받아 새 글 상세로 이동한다', async ({ page, store }) => {
+  await page.goto('/board/free/write');
+  await page.getByTitle('카테고리').selectOption('chat');
+  await page.getByPlaceholder('제목을 입력해주세요').fill('숫자 번호 게시글');
+  await page.getByPlaceholder('내용을 입력해주세요.').fill('새 게시글 본문');
+  await page.getByRole('button', { name: '등록', exact: true }).click();
+
+  await expect(page).toHaveURL(/\/board\/free\/1$/);
+  await expect(page.getByRole('heading', { name: /숫자 번호 게시글/ })).toBeVisible();
+  expect(store.posts.some((post) => post.id === '1')).toBe(true);
+});
+
 test('failed post create and update retain entered values and existing data', async ({ page, store }) => {
   store.fail('create');
   await page.goto('/board/free/write');
@@ -89,7 +101,9 @@ test('a late detail response cannot replace the newly selected post', async ({ p
 
 test('search, sort, pagination, detail and browser back preserve list state', async ({ page, store }) => {
   store.posts = Array.from({ length: 12 }, (_, index) =>
-    makePost(`post-${index + 1}`, `React 글 ${index + 1}`, { postNo: index + 1 }));
+    makePost(String(index + 1), `React 글 ${index + 1}`, {
+      date: new Date(Date.UTC(2026, 9, index + 1)),
+    }));
   await page.goto('/board/free');
   await page.getByRole('navigation', { name: 'Pagination' })
     .getByRole('button', { name: '2', exact: true }).click();
@@ -106,7 +120,7 @@ test('search, sort, pagination, detail and browser back preserve list state', as
   await expect(page.getByRole('link', { name: /React 글 12/ })).toBeVisible();
   await page.getByRole('button', { name: '최신 순', exact: true }).click();
   await expect(page).toHaveURL(/sort=asc/);
-  const resultLinks = page.locator('a[href*="/board/free/post-"]');
+  const resultLinks = page.getByRole('link', { name: /React 글/ });
   await expect(resultLinks.first()).toContainText('React 글 1');
 });
 

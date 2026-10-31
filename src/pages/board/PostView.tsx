@@ -65,7 +65,7 @@ function PostViewContent({ boardType, postId }: {
     activeLocationKeyRef.current = location.key;
     return () => { activeLocationKeyRef.current = null; };
   }, [location.key]);
-  const viewedPostRef = useRef<Set<string>>(new Set());
+  const countedEntryRef = useRef<string | null>(null);
   const {
     data: currentPost,
     isPending: loading,
@@ -156,22 +156,21 @@ function PostViewContent({ boardType, postId }: {
     "overflow-hidden block relative pb-1 whitespace-nowrap overflow-ellipsis after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-gray-500 after:transition-width after:duration-300 group-hover:after:w-full";
 
   useEffect(() => {
-    const viewKey = `${boardType}/${postId}`;
+    const entryKey = `${location.key}:${boardType}/${postId}`;
 
     if (
       !currentPost ||
-      currentPost.__viewed ||
-      viewedPostRef.current.has(viewKey)
+      countedEntryRef.current === entryKey
     ) {
       return;
     }
 
-    viewedPostRef.current.add(viewKey);
+    countedEntryRef.current = entryKey;
 
     void incrementViewCount({ boardType, postId }).catch((error: unknown) => {
       console.error('조회수 기록 실패:', error);
     });
-  }, [boardType, postId, currentPost, incrementViewCount]);
+  }, [boardType, postId, location.key, currentPost, incrementViewCount]);
 
   if (loading) {
     return (

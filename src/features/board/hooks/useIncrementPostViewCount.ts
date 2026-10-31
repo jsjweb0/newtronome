@@ -26,7 +26,6 @@ export function useIncrementPostViewCount() {
                         ? {
                             ...post,
                             viewCount: post.viewCount + 1,
-                            __viewed: true,
                         }
                         : post,
             );

@@ -18,7 +18,6 @@ export interface Post {
     photoURL: string | null;
 
     category: string | null;
-    postNo: number | null;
 
     date: Date | null;
     updatedAt: Date | null;
@@ -28,17 +27,13 @@ export interface Post {
     viewCount: number;
 
     isNotice: boolean;
-    __viewed?: boolean;
 }
 
 export interface CreatePostInput {
     title: string;
     content: string;
-    postNo: number;
-    date: Date;
     category: string | null;
     isNotice: boolean;
-
     authorUid: string;
     displayName: string | null;
     photoURL: string | null;

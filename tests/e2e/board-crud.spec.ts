@@ -7,7 +7,8 @@ test('post create, read, update and delete synchronize list and detail', async (
   await page.getByPlaceholder('제목을 입력해주세요').fill('새 게시글');
   await page.getByPlaceholder('내용을 입력해주세요.').fill('새 본문');
   await page.getByRole('button', { name: '등록', exact: true }).click();
-  await page.getByRole('link', { name: /새 게시글/ }).click();
+  await expect(page).toHaveURL(/\/board\/free\/\d+/);
+  await expect(page.getByRole('heading', { name: /새 게시글/ })).toBeVisible();
   await expect(page.locator('pre')).toHaveText('새 본문');
   await page.getByRole('link', { name: '수정', exact: true }).click();
   await page.getByPlaceholder('제목을 입력해주세요').fill('수정된 게시글');

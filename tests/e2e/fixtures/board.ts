@@ -10,7 +10,7 @@ type Request = { op: Operation; args: unknown[] };
 export function makePost(id: string, title: string, overrides: Partial<Post> = {}): Post {
   return { id, title, content: `${title} 본문`, boardType: 'free', authorUid: user.uid,
     displayName: user.displayName, photoURL: null, category: 'chat',
-    postNo: 1, date: new Date('2026-10-01T00:00:00Z'), updatedAt: null,
+    date: new Date('2026-10-01T00:00:00Z'), updatedAt: null,
     likeCount: 0, likedUsers: [], viewCount: 10, isNotice: false, ...overrides };
 }
 
@@ -22,10 +22,11 @@ export function makeComment(id: string, postId: string, content: string): Commen
 
 // Each browser test owns its store. These are service-contract mocks, not Firebase integration tests.
 export class BoardStore {
-  posts = [makePost('a', '게시글 A', { postNo: 2 }), makePost('b', '게시글 B', { viewCount: 20 })];
+  posts = [makePost('a', '게시글 A'), makePost('b', '게시글 B', { viewCount: 20 })];
   comments = [makeComment('ca', 'a', 'A의 기존 댓글'), makeComment('cb', 'b', 'B의 기존 댓글')];
   requests: Request[] = [];
   private sequence = 0;
+  private postNumber = 0;
   private failures = new Map<Operation, number>();
   private gates = new Map<string, Promise<void>>();
   private releases: (() => void)[] = [];
@@ -68,8 +69,9 @@ export class BoardStore {
     if (gate) await gate;
     switch (op) {
       case 'create': {
-        const created = makePost(`new-${++this.sequence}`, '', { ...args[1] as Partial<Post>, boardType: board as Post['boardType'] });
-        this.posts.unshift(created); return created;
+        const postId = String(++this.postNumber);
+        const created = makePost(postId, '', { ...args[1] as Partial<Post>, boardType: board as Post['boardType'] });
+        this.posts.unshift(created); return postId;
       }
       case 'update': if (!post) throw new Error('Missing post'); Object.assign(post, args[2]); break;
       case 'delete': this.posts = this.posts.filter((item) => !(item.boardType === board && item.id === id)); break;

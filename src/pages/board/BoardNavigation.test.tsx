@@ -57,8 +57,7 @@ const posts: Post[] = Array.from({ length: 12 }, (_, index) => ({
   displayName: '작성자',
   photoURL: null,
   category: 'question',
-  postNo: index + 1,
-  date: null,
+  date: new Date(Date.UTC(2026, 0, index + 1)),
   updatedAt: null,
   likeCount: 0,
   likedUsers: [],
@@ -164,11 +163,11 @@ describe('Board list conditions across routes', () => {
 
   it('uses only posts matching the keyword and category for previous and next navigation', async () => {
     const navigationPosts: Post[] = [
-      { ...posts[0], id: 'matching-1', postNo: 1, title: '리액트 질문 1' },
-      { ...posts[1], id: 'other-keyword', postNo: 2, title: '자바스크립트 질문' },
-      { ...posts[2], id: 'matching-3', postNo: 3, title: '리액트 질문 3' },
-      { ...posts[3], id: 'other-category', postNo: 4, title: '리액트 질문 4', category: 'chat' },
-      { ...posts[4], id: 'matching-5', postNo: 5, title: '리액트 질문 5' },
+      { ...posts[0], id: 'matching-1', title: '리액트 질문 1' },
+      { ...posts[1], id: 'other-keyword', title: '자바스크립트 질문' },
+      { ...posts[2], id: 'matching-3', title: '리액트 질문 3' },
+      { ...posts[3], id: 'other-category', title: '리액트 질문 4', category: 'chat' },
+      { ...posts[4], id: 'matching-5', title: '리액트 질문 5' },
     ];
     const filteredSearch = `?${new URLSearchParams({
       page: '1',

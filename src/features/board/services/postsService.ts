@@ -1,7 +1,17 @@
 import {
-    collection, deleteDoc, doc, getDoc, getDocs,
-    increment, orderBy, query, setDoc, Timestamp,
-    updateDoc, where,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    increment,
+    orderBy,
+    query,
+    runTransaction,
+    serverTimestamp,
+    Timestamp,
+    updateDoc,
+    where,
 } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import { auth, db } from '../../../firebase';
@@ -12,17 +22,6 @@ import type {
     UpdatePostInput,
 } from '../types/post';
 import { isNonNegativeInteger } from '../../../utils/numberValidation';
-
-function getPostNumber(
-    data: DocumentData,
-    documentId: string,
-): number | null {
-    const postNumber = Number(data.postNo ?? documentId);
-
-    return Number.isFinite(postNumber)
-        ? postNumber
-        : null;
-}
 
 function convertTimestamp(value: unknown): Date | null {
     if (value instanceof Timestamp) {
@@ -90,7 +89,6 @@ function convertPostDocument(
                 ? data.category
                 : null,
 
-        postNo: getPostNumber(data, documentId),
         date: convertTimestamp(data.date),
         updatedAt: convertTimestamp(data.updatedAt),
 
@@ -190,32 +188,45 @@ async function fetchMyPostsFromFirestore(
 async function createPostInFirestore(
     boardType: CommunityBoardType,
     input: CreatePostInput,
-): Promise<Post> {
-    const postRef = doc(collection(db, boardType));
+): Promise<string> {
+    const counterRef = doc(db, 'postCounters', boardType);
 
-    const data = {
-        title: input.title,
-        content: input.content,
-        postNo: input.postNo,
-        date: input.date,
-        category: input.category,
-        isNotice: input.isNotice === true,
-        likeCount: 0,
-        likedUsers: [],
-        authorUid: input.authorUid,
-        displayName: input.displayName,
-        photoURL: input.photoURL,
-    };
+    return runTransaction(db, async (transaction) => {
+        const counterSnapshot = await transaction.get(counterRef);
 
-    await setDoc(postRef, data);
+        if (!counterSnapshot.exists()) {
+            throw new Error('게시글 번호 카운터가 없습니다.');
+        }
 
-    return {
-        id: postRef.id,
-        boardType,
-        ...data,
-        updatedAt: null,
-        viewCount: 0,
-    };
+        const current = counterSnapshot.data().current;
+
+        if (!Number.isSafeInteger(current) || current < 0) {
+            throw new Error('게시글 번호 카운터가 올바르지 않습니다.');
+        }
+
+        const nextPostNumber = current + 1;
+        const postId = String(nextPostNumber);
+        const postRef = doc(db, boardType, postId);
+
+        transaction.update(counterRef, {
+            current: nextPostNumber,
+        });
+
+        transaction.set(postRef, {
+            title: input.title,
+            content: input.content,
+            date: serverTimestamp(),
+            category: input.category,
+            isNotice: input.isNotice === true,
+            likeCount: 0,
+            likedUsers: [],
+            authorUid: input.authorUid,
+            displayName: input.displayName,
+            photoURL: input.photoURL,
+        });
+
+        return postId;
+    });
 }
 
 async function updatePostInFirestore(

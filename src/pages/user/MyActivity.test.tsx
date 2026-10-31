@@ -76,7 +76,6 @@ function createPost(
     displayName: testState.user.displayName,
     photoURL: null,
     category: boardType === 'free' ? 'chat' : null,
-    postNo: 1,
     date: new Date('2026-01-01'),
     updatedAt: null,
     likeCount: 0,

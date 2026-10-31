@@ -9,10 +9,13 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  type Firestore,
   getDoc,
+  serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { afterAll, afterEach, beforeAll, describe, it } from 'vitest';
 
@@ -77,8 +80,7 @@ function createValidPostData(uid = 'user-1') {
   return {
     title: '테스트 게시글',
     content: '테스트 본문',
-    postNo: 1,
-    date: Timestamp.fromDate(new Date('2026-01-01')),
+    date: serverTimestamp(),
     category: 'chat',
     isNotice: false,
     likeCount: 0,
@@ -125,45 +127,318 @@ async function createFreeComment(commentId = 'comment-1') {
   });
 }
 
+type TestBoardType = 'free' | 'notice';
+
+async function createPostCounter(
+  boardType: TestBoardType,
+  current = 0,
+) {
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(
+      doc(context.firestore(), 'postCounters', boardType),
+      { current },
+    );
+  });
+}
+
+async function writeNumberedPost(
+  firestore: Firestore,
+  {
+    boardType = 'free',
+    postId = '1',
+    nextCurrent = 1,
+    data = createValidPostData(),
+  }: {
+    boardType?: TestBoardType;
+    postId?: string;
+    nextCurrent?: number;
+    data?: Record<string, unknown>;
+  } = {},
+) {
+  const batch = writeBatch(firestore);
+
+  batch.update(
+    doc(firestore, 'postCounters', boardType),
+    { current: nextCurrent },
+  );
+  batch.set(doc(firestore, boardType, postId), data);
+
+  return batch.commit();
+}
+
 describe('게시글 생성 규칙', () => {
-  it('로그인 사용자가 자신의 UID로 정상 게시글을 생성할 수 있다', async () => {
+  it('카운터를 1 증가시키고 같은 번호의 자유게시글을 생성할 수 있다', async () => {
+    await createPostCounter('free');
+
     const userDb = testEnvironment
       .authenticatedContext('user-1')
       .firestore();
 
     await assertSucceeds(
+      writeNumberedPost(userDb),
+    );
+  });
+
+  it('카운터를 변경하지 않고 게시글만 생성할 수 없다', async () => {
+    await createPostCounter('free');
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
       setDoc(
-        doc(userDb, 'free', 'post-1'),
-        createValidPostData('user-1')
-      )
+        doc(userDb, 'free', '1'),
+        createValidPostData('user-1'),
+      ),
+    );
+  });
+
+  it('게시글을 생성하지 않고 카운터만 증가시킬 수 없다', async () => {
+    await createPostCounter('free');
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(userDb, 'postCounters', 'free'), {
+        current: 1,
+      }),
+    );
+  });
+
+  it('카운터를 2 이상 건너뛸 수 없다', async () => {
+    await createPostCounter('free');
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      writeNumberedPost(userDb, {
+        postId: '2',
+        nextCurrent: 2,
+      }),
+    );
+  });
+
+  it('카운터와 다른 문서 ID로 게시글을 생성할 수 없다', async () => {
+    await createPostCounter('free');
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      writeNumberedPost(userDb, {
+        postId: '2',
+        nextCurrent: 1,
+      }),
+    );
+  });
+
+  it('클라이언트가 정한 작성 시각은 저장할 수 없다', async () => {
+    await createPostCounter('free');
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      writeNumberedPost(userDb, {
+        data: {
+          ...createValidPostData('user-1'),
+          date: Timestamp.fromDate(new Date('2026-01-01')),
+        },
+      }),
+    );
+  });
+
+  it('새 게시글에 postNo 필드를 저장할 수 없다', async () => {
+    await createPostCounter('free');
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      writeNumberedPost(userDb, {
+        data: {
+          ...createValidPostData('user-1'),
+          postNo: 1,
+        },
+      }),
     );
   });
 
   it('게시글에 email 필드를 저장할 수 없다', async () => {
+    await createPostCounter('free');
+
     const userDb = testEnvironment
       .authenticatedContext('user-1')
       .firestore();
 
     await assertFails(
-      setDoc(doc(userDb, 'free', 'post-1'), {
-        ...createValidPostData('user-1'),
-        email: 'user@example.com',
-      })
+      writeNumberedPost(userDb, {
+        data: {
+          ...createValidPostData('user-1'),
+          email: 'user@example.com',
+        },
+      }),
     );
   });
 
   it('다른 사용자의 UID로 게시글을 생성할 수 없다', async () => {
+    await createPostCounter('free');
+
     const userDb = testEnvironment
       .authenticatedContext('user-1')
       .firestore();
 
     await assertFails(
-      setDoc(
-        doc(userDb, 'free', 'post-1'),
-        createValidPostData('other-user')
-      )
+      writeNumberedPost(userDb, {
+        data: createValidPostData('other-user'),
+      }),
     );
   });
+
+  it('일반 사용자는 자유게시판 글을 상단 고정할 수 없다', async () => {
+    await createPostCounter('free');
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      writeNumberedPost(userDb, {
+        data: {
+          ...createValidPostData('user-1'),
+          isNotice: true,
+        },
+      }),
+    );
+  });
+
+  it('관리자는 자유게시판 글을 상단 고정해 생성할 수 있다', async () => {
+    await createPostCounter('free');
+
+    const adminDb = testEnvironment
+      .authenticatedContext('admin-user', { admin: true })
+      .firestore();
+
+    await assertSucceeds(
+      writeNumberedPost(adminDb, {
+        data: {
+          ...createValidPostData('admin-user'),
+          isNotice: true,
+        },
+      }),
+    );
+  });
+
+  it('일반 사용자는 공지 카운터를 증가시킬 수 없다', async () => {
+    await createPostCounter('notice', 7);
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      writeNumberedPost(userDb, {
+        boardType: 'notice',
+        postId: '8',
+        nextCurrent: 8,
+        data: {
+          ...createValidPostData('user-1'),
+          category: null,
+          isNotice: true,
+        },
+      }),
+    );
+  });
+
+  it('관리자는 상단 고정 공지를 생성할 수 있다', async () => {
+    await createPostCounter('notice', 7);
+
+    const adminDb = testEnvironment
+      .authenticatedContext('admin-user', { admin: true })
+      .firestore();
+
+    await assertSucceeds(
+      writeNumberedPost(adminDb, {
+        boardType: 'notice',
+        postId: '8',
+        nextCurrent: 8,
+        data: {
+          ...createValidPostData('admin-user'),
+          category: null,
+          isNotice: true,
+        },
+      }),
+    );
+  });
+
+  it('관리자는 상단에 고정하지 않은 일반 공지도 생성할 수 있다', async () => {
+    await createPostCounter('notice', 7);
+
+    const adminDb = testEnvironment
+      .authenticatedContext('admin-user', { admin: true })
+      .firestore();
+
+    await assertSucceeds(
+      writeNumberedPost(adminDb, {
+        boardType: 'notice',
+        postId: '8',
+        nextCurrent: 8,
+        data: {
+          ...createValidPostData('admin-user'),
+          category: null,
+          isNotice: false,
+        },
+      }),
+    );
+  });
+
+  it('클라이언트가 카운터 문서를 생성할 수 없다', async () => {
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(userDb, 'postCounters', 'free'), {
+        current: 0,
+      }),
+    );
+  });
+});
+
+describe('게시글 상단 고정 수정 규칙', () => {
+  it.each([
+    ['free', false, true],
+    ['notice', true, false],
+  ] as const)(
+    '관리자는 %s 게시글의 상단 고정 상태를 변경할 수 있다',
+    async (boardType, initialValue, nextValue) => {
+      await testEnvironment.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), boardType, '1'), {
+          ...createValidPostData('admin-user'),
+          category: boardType === 'notice' ? null : 'chat',
+          isNotice: initialValue,
+        });
+      });
+
+      const adminDb = testEnvironment
+        .authenticatedContext('admin-user', { admin: true })
+        .firestore();
+
+      await assertSucceeds(
+        updateDoc(doc(adminDb, boardType, '1'), {
+          isNotice: nextValue,
+        }),
+      );
+    },
+  );
 });
 
 describe('댓글 생성 규칙', () => {
@@ -467,6 +742,26 @@ describe('수정 후 문서 유효성 규칙', () => {
     await assertSucceeds(
       updateDoc(doc(publicDb, 'free', 'post-1'), {
         viewCount: 1,
+      })
+    );
+  });
+
+  it('기존 postNo가 남은 게시글도 수정할 수 있다', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'free', 'legacy-post'), {
+        ...createValidPostData('user-1'),
+        postNo: 10,
+      });
+    });
+
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertSucceeds(
+      updateDoc(doc(userDb, 'free', 'legacy-post'), {
+        title: '수정된 기존 글',
+        updatedAt: new Date('2026-02-01').toISOString(),
       })
     );
   });

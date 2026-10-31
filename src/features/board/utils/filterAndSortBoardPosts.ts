@@ -23,17 +23,17 @@ export function filterAndSortBoardPosts(
 
       return matchesKeyword && matchesCategory;
     })
-    .sort((firstPost, secondPost) => {
-      const firstPostNo = Number.isFinite(Number(firstPost.postNo))
-        ? Number(firstPost.postNo)
-        : 0;
+    .sort((a, b) => {
+      const aTime = a.date?.getTime();
+      const bTime = b.date?.getTime();
 
-      const secondPostNo = Number.isFinite(Number(secondPost.postNo))
-        ? Number(secondPost.postNo)
-        : 0;
+      if (aTime == null) return bTime == null ? a.id.localeCompare(b.id) : 1;
+      if (bTime == null) return -1;
 
-      return sort === 'asc'
-        ? firstPostNo - secondPostNo
-        : secondPostNo - firstPostNo;
+      const difference = sort === 'desc'
+        ? bTime - aTime   // 최신 글이 위
+        : aTime - bTime;  // 오래된 글이 위
+
+      return difference || a.id.localeCompare(b.id);
     });
 }

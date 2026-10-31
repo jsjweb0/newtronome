@@ -200,9 +200,9 @@ function BoardContent({
       <PostList
         posts={posts}
         filteredPosts={currentItems}
+        currentPage={currentPage}
         searchKeyword={searchKeyword}
         boardType={boardType}
-        currentPage={currentPage}
         selectedCategory={selectedCategory}
         dateSort={dateSort}
         deletePost={deletePost}

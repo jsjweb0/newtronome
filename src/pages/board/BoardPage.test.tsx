@@ -29,18 +29,17 @@ vi.mock('../../features/board/services/commentsService', () => ({
 }));
 
 const posts: Post[] = Array.from({ length: 12 }, (_, index) => {
-  const postNo = index + 1;
+  const postNumber = index + 1;
   return {
-    id: `post-${postNo}`,
+    id: String(postNumber),
     boardType: 'free',
-    title: `${postNo >= 11 ? '질문' : '일반 글'} ${postNo}`,
+    title: `${postNumber >= 11 ? '질문' : '일반 글'} ${postNumber}`,
     content: '테스트 게시글',
     authorUid: null,
     displayName: '작성자',
     photoURL: null,
-    category: postNo === 12 ? 'question' : 'chat',
-    postNo,
-    date: null,
+    category: postNumber === 12 ? 'question' : 'chat',
+    date: new Date(Date.UTC(2026, 0, postNumber)),
     updatedAt: null,
     likeCount: 0,
     likedUsers: [],

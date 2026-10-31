@@ -15,6 +15,40 @@ service cloud.firestore {
         && request.auth.token.get('admin', false) == true;
     }
 
+    function isNextPostNumber(boardType, postId) {
+      let counterPath =
+        /databases/$(database)/documents/postCounters/$(boardType);
+      let current = get(counterPath).data.current;
+      let next = getAfter(counterPath).data.current;
+
+      return current is int
+        && next is int
+        && next == current + 1
+        && postId == string(next);
+    }
+
+    function isValidCounterUpdate(boardType) {
+      let next = request.resource.data.current;
+      let nextPostId = string(next);
+
+      return isSignedIn()
+        && (
+          boardType == 'free'
+          || (boardType == 'notice' && isAdmin())
+        )
+        && resource.data.keys().hasOnly(['current'])
+        && request.resource.data.keys().hasOnly(['current'])
+        && resource.data.current is int
+        && next is int
+        && next == resource.data.current + 1
+        && !exists(
+          /databases/$(database)/documents/$(boardType)/$(nextPostId)
+        )
+        && existsAfter(
+          /databases/$(database)/documents/$(boardType)/$(nextPostId)
+        );
+    }
+
     function isPostAuthor() {
       return isSignedIn()
         && resource.data.get('authorUid', '') == request.auth.uid;
@@ -31,7 +65,6 @@ service cloud.firestore {
       return data.keys().hasAll([
           'title',
           'content',
-          'postNo',
           'date',
           'category',
           'isNotice',
@@ -44,7 +77,6 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'title',
           'content',
-          'postNo',
           'date',
           'category',
           'isNotice',
@@ -56,8 +88,8 @@ service cloud.firestore {
         ])
         && data.title is string
         && data.content is string
-        && data.postNo is int
         && data.date is timestamp
+        && data.date == request.time
         && (
           data.category == null
           || data.category is string
@@ -138,7 +170,6 @@ service cloud.firestore {
       return data.keys().hasAll([
           'title',
           'content',
-          'postNo',
           'date',
           'category',
           'isNotice',
@@ -151,7 +182,10 @@ service cloud.firestore {
         && hasOnlyAllowedPostFields()
         && data.title is string
         && data.content is string
-        && data.postNo is int
+        && (
+          !data.keys().hasAny(['postNo'])
+          || data.postNo is int
+        )
         && data.date is timestamp
         && (
           data.category == null
@@ -343,12 +377,19 @@ service cloud.firestore {
       }
     }
 
+    match /postCounters/{boardType} {
+      allow read: if isSignedIn();
+      allow update: if isValidCounterUpdate(boardType);
+      allow create, delete: if false;
+    }
+
     match /free/{postId} {
       allow read: if true;
       allow create: if isSignedIn()
+        && isNextPostNumber('free', postId)
         && isValidPostCreate()
         && (
-          request.resource.data.get('isNotice', false) == false
+          request.resource.data.isNotice == false
           || isAdmin()
         );
       allow update: if isValidPostAfterUpdate()
@@ -385,7 +426,8 @@ service cloud.firestore {
     match /notice/{postId} {
       allow read: if true;
       allow create: if isAdmin()
-         && isValidPostCreate();
+        && isNextPostNumber('notice', postId)
+        && isValidPostCreate();
       allow update: if isValidPostAfterUpdate()
         && (
           isAdmin()
