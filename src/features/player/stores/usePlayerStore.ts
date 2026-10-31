@@ -5,7 +5,6 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   tracks: [],
   currentTrack: null,
   playbackMode: 'playlist',
-  currentIndex: 0,
   isPlaying: false,
   currentTime: 0,
   duration: 0,
@@ -15,13 +14,9 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
     set({ playbackMode: mode });
   },
 
-  setPlaylist: (tracks, startIndex = 0) => {
-    const safeIndex =
-      tracks.length === 0 ? 0 : Math.min(Math.max(startIndex, 0), tracks.length - 1);
-
+  setPlaylist: (tracks) => {
     set((state) => ({
       tracks,
-      currentIndex: safeIndex,
       currentTrack:
         tracks.length === 0 && state.playbackMode === 'playlist'
           ? null

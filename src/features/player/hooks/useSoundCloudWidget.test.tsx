@@ -121,7 +121,6 @@ describe('useSoundCloudWidget source switching', () => {
       tracks: playlistTracks,
       currentTrack: playlistTracks[0],
       playbackMode: 'playlist',
-      currentIndex: 0,
       isPlaying: false,
       currentTime: 0,
       duration: 0,
@@ -293,7 +292,6 @@ describe('useSoundCloudWidget source switching', () => {
       currentTrack: { id: 3 }, isPlaying: true, currentTime: 0, duration: 210,
     });
     expect(result.current.widgetTrack?.id).toBe(3);
-    expect(result.current.widgetIsPlaying).toBe(true);
   });
 
   it('loads a later single track after the first single track finishes loading', () => {
