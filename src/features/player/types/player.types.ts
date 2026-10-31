@@ -15,7 +15,6 @@ export interface PlayerState {
   tracks: PlayerTrack[];
   currentTrack: PlayerTrack | null;
   playbackMode: PlaybackMode;
-  currentIndex: number;
   isPlaying: boolean;
   currentTime: number;
   duration: number;
@@ -24,7 +23,7 @@ export interface PlayerState {
 
 export interface PlayerActions {
   setPlaybackMode: (mode: PlaybackMode) => void;
-  setPlaylist: (tracks: PlayerTrack[], startIndex?: number) => void;
+  setPlaylist: (tracks: PlayerTrack[]) => void;
   setCurrentTrack: (track: PlayerTrack | null) => void;
   setPlaying: (isPlaying: boolean) => void;
   setCurrentTime: (time: number) => void;

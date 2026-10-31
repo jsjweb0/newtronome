@@ -15,30 +15,13 @@ import {
 } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import { db } from '../../../firebase';
+import { convertTimestamp } from '../utils/convertTimestamp';
 import type {
     Comment,
     CreateCommentInput,
     MyComment,
 } from '../types/comment';
 import type { CommunityBoardType } from '../types/post';
-
-function convertTimestamp(value: unknown): Date | null {
-    if (value instanceof Timestamp) {
-        return value.toDate();
-    }
-
-    if (value instanceof Date) {
-        return Number.isNaN(value.getTime()) ? null : value;
-    }
-
-    if (typeof value === 'string' || typeof value === 'number') {
-        const date = new Date(value);
-
-        return Number.isNaN(date.getTime()) ? null : date;
-    }
-
-    return null;
-}
 
 function getNullableString(value: unknown): string | null {
     return typeof value === 'string' && value.length > 0 ? value : null;

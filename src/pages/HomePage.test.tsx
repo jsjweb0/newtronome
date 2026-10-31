@@ -48,7 +48,6 @@ describe('HomePage playlist status', () => {
       tracks: [],
       currentTrack: null,
       playbackMode: 'playlist',
-      currentIndex: 0,
       isPlaying: false,
       currentTime: 0,
       duration: 0,

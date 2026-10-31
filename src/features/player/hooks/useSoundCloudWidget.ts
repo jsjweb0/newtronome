@@ -36,7 +36,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
   const [isReady, setIsReady] = useState(false);
   const [playlistStatus, setPlaylistStatus] = useState<PlaylistStatus>('loading');
   const [widgetTrack, setWidgetTrack] = useState<PlayerTrack | null>(null);
-  const [widgetIsPlaying, setWidgetIsPlaying] = useState(false);
   const [widgetError, setWidgetError] = useState<string | null>(null);
 
   const setPlaying = usePlayerStore((state) => state.setPlaying);
@@ -75,7 +74,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
     isSourceSwitchingRef.current = false;
     pendingSelectionRef.current = null;
     setPlaying(false);
-    setWidgetIsPlaying(false);
     setPlaylistStatus('error');
     setWidgetError('SoundCloud를 불러오지 못했습니다. 다시 시도해 주세요.');
   }, [clearLoadTimer, setPlaying]);
@@ -282,7 +280,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
         }
 
         clearLoadTimer();
-        setPlaylist(tracks, 0);
+        setPlaylist(tracks);
         setPlaylistStatus(tracks.length === 0 ? 'empty' : 'ready');
       });
     };
@@ -296,7 +294,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
       const isPlaylistMode = playbackMode === 'playlist';
 
       setIsReady(true);
-      setWidgetIsPlaying(false);
       updateCurrentTrack(true, isPlaylistMode);
       updateDuration();
 
@@ -315,7 +312,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
       const playbackMode = usePlayerStore.getState().playbackMode;
 
       trackRequestIdRef.current += 1;
-      setWidgetIsPlaying(true);
       setPlaying(true);
       updateCurrentTrack(true, playbackMode === 'playlist');
       updateDuration();
@@ -323,7 +319,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
     const handlePause = () => {
       if (widgetRef.current !== widget || isSourceSwitchingRef.current) return;
-      setWidgetIsPlaying(false);
       setPlaying(false);
     };
 
@@ -334,7 +329,6 @@ export function useSoundCloudWidget(playlistUrl: string) {
 
       widget.seekTo(0);
       setCurrentTime(0);
-      setWidgetIsPlaying(false);
       setPlaying(false);
     };
 
@@ -491,6 +485,5 @@ export function useSoundCloudWidget(playlistUrl: string) {
     playSingleTrack,
     selectTrack,
     widgetTrack,
-    widgetIsPlaying,
   };
 }

@@ -9,12 +9,12 @@ import {
     query,
     runTransaction,
     serverTimestamp,
-    Timestamp,
     updateDoc,
     where,
 } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import { auth, db } from '../../../firebase';
+import { convertTimestamp } from '../utils/convertTimestamp';
 import type {
     CommunityBoardType,
     CreatePostInput,
@@ -22,31 +22,6 @@ import type {
     UpdatePostInput,
 } from '../types/post';
 import { isNonNegativeInteger } from '../../../utils/numberValidation';
-
-function convertTimestamp(value: unknown): Date | null {
-    if (value instanceof Timestamp) {
-        return value.toDate();
-    }
-
-    if (value instanceof Date) {
-        return Number.isNaN(value.getTime())
-            ? null
-            : value;
-    }
-
-    if (
-        typeof value === 'string' ||
-        typeof value === 'number'
-    ) {
-        const date = new Date(value);
-
-        return Number.isNaN(date.getTime())
-            ? null
-            : date;
-    }
-
-    return null;
-}
 
 function convertPostDocument(
     documentId: string,
