@@ -114,7 +114,9 @@ function PostItem({
             📌 공지
           </span>
         ) : (
-          <span>{Number.isFinite(post.postNo) ? post.postNo : '번호없음'}</span>
+          <span>
+            {/^[1-9]\d*$/.test(post.id) ? post.id : '번호없음'}
+          </span>
         )}
       </div>
       <div className="flex items-start md:items-center flex-col md:flex-row gap-2 md:col-span-7 text-left">

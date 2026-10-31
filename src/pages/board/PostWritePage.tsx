@@ -12,8 +12,6 @@ import {
   type CreatePostInput,
 } from '../../features/board/types/post';
 import { useCreatePost } from '../../features/board/hooks/useCreatePost';
-import { useBoardPosts } from '../../features/board/hooks/useBoardPosts';
-import RetryErrorState from '../../components/ui/RetryErrorState';
 
 export default function PostWritePage() {
   const { boardType } = useParams();
@@ -30,29 +28,11 @@ function PostWriteContent({
 }: {
   boardType: CommunityBoardType;
 }) {
-  const {
-    data: posts = [],
-    isPending,
-    isError,
-    isFetching,
-    refetch,
-  } = useBoardPosts(boardType);
-
   const { mutateAsync: createPost } = useCreatePost();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const postNumbers = posts
-    .map((post) => Number(post.postNo))
-    .filter((postNo) => Number.isFinite(postNo));
-
-  const maxPostNo = postNumbers.length
-    ? Math.max(...postNumbers)
-    : 0;
-
-  const nextPostNo = maxPostNo + 1;
 
   const handleSubmit = async (
     formData: PostFormValues
@@ -61,16 +41,14 @@ function PostWriteContent({
 
     const newPost: CreatePostInput = {
       ...formData,
-      postNo: nextPostNo,
       content: formData.content,
-      date: new Date(),
       authorUid: user.uid,
       displayName: user.displayName || null,
       photoURL: user.photoURL || null,
     };
 
     try {
-      await createPost({
+      const postId = await createPost({
         boardType,
         input: newPost,
       });
@@ -81,7 +59,7 @@ function PostWriteContent({
         message: '게시글이 등록되었습니다!',
       });
 
-      navigate(`/board/${boardType}`);
+      navigate(`/board/${boardType}/${postId}`);
     } catch {
       const notification = {
         notificationId: Date.now(),
@@ -100,20 +78,6 @@ function PostWriteContent({
 
   if (!isCommunityBoardType(boardType)) {
     return <Navigate to="/board/free" replace />;
-  }
-
-  if (isPending) return <p role="status" className="mt-10 text-center text-sm text-textSub">글쓰기 정보를 불러오는 중입니다.</p>;
-
-  if (isError) {
-    return (
-      <RetryErrorState
-        message="글쓰기 정보를 불러오지 못했습니다."
-        isRetrying={isFetching}
-        onRetry={() => {
-          void refetch();
-        }}
-      />
-    );
   }
 
   return <PostForm mode="create" boardType={boardType} onSubmit={handleSubmit} />;

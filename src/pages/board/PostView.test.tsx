@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,7 +52,6 @@ const post: Post = {
   displayName: '작성자',
   photoURL: null,
   category: 'chat',
-  postNo: 1,
   date: new Date('2026-01-01'),
   updatedAt: null,
   likeCount: 0,
@@ -63,7 +62,13 @@ const post: Post = {
 
 function NavigationControl() {
   const navigate = useNavigate();
-  return <button onClick={() => navigate('/board/free/post-2')}>다른 글 열기</button>;
+  return (
+    <>
+      <button onClick={() => navigate('/board/free/post-2')}>다른 글 열기</button>
+      <button onClick={() => navigate('/board/free')}>목록 열기</button>
+      <button onClick={() => navigate(-1)}>이전 화면</button>
+    </>
+  );
 }
 
 function renderPostView(
@@ -77,6 +82,7 @@ function renderPostView(
       <MemoryRouter initialEntries={['/board/free/post-1']}>
         <NavigationControl />
         <Routes>
+          <Route path="/board/free" element={<p>목록 화면</p>} />
           <Route path="/board/:boardType/:id" element={<PostView />} />
         </Routes>
       </MemoryRouter>
@@ -201,6 +207,22 @@ describe('PostView independent requests', () => {
 
     expect(incrementPostViewCount)
       .toHaveBeenCalledWith('free', 'post-1');
+  });
+
+  it('목록으로 나갔다가 같은 글에 다시 진입하면 조회수를 한 번 더 증가시킨다', async () => {
+    renderPostView();
+
+    await screen.findByText('조회수 4');
+    expect(incrementPostViewCount).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: '목록 열기' }));
+    expect(screen.queryByText('게시글 본문')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '이전 화면' }));
+
+    await waitFor(() => {
+      expect(incrementPostViewCount).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('댓글 목록 캐시가 바뀌면 상세 댓글 개수도 갱신한다', async () => {
