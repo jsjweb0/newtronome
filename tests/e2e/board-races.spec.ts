@@ -42,7 +42,8 @@ test('late A view mutation does not increment B', async ({ page, store }) => {
   releaseB();
   await expect(page.getByText('조회수 21', { exact: true })).toBeVisible();
   await page.goBack();
-  await expect(page.getByText('조회수 11', { exact: true })).toBeVisible();
+  await expect.poll(() => store.count('view', 'a')).toBe(2);
+  await expect(page.getByText('조회수 12', { exact: true })).toBeVisible();
 });
 
 test('repeated delete clicks send one request while deletion is pending', async ({ page, store }) => {
