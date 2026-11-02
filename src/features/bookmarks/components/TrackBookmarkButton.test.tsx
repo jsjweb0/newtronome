@@ -75,7 +75,7 @@ describe('TrackBookmarkButton subscription failures', () => {
     act(() => subscriptions[1].onSuccess(true));
     expect(screen.getByRole('button', { name: '북마크 삭제' })).toBe(button);
     expect(button.disabled).toBe(false);
-    expect(button.getAttribute('title')).toBeNull();
+    expect(button.getAttribute('title')).toBe('북마크 삭제');
     expect(button.querySelector('svg')?.classList.contains('fill-primary')).toBe(true);
     await act(async () => { fireEvent.click(button); });
     expect(removeSavedTrack).toHaveBeenCalledWith('user-1', track.id);
@@ -161,5 +161,61 @@ describe('TrackBookmarkButton subscription failures', () => {
     });
     expect(saveTrack).not.toHaveBeenCalled();
     expect(removeSavedTrack).not.toHaveBeenCalled();
+  });
+});
+
+describe('TrackBookmarkButton playback restrictions', () => {
+  const blockedTrack: PlayerTrack = { ...track, playbackStatus: 'blocked' };
+
+  it('disables adding a blocked track and explains why', () => {
+    render(<TrackBookmarkButton track={blockedTrack} />);
+    act(() => subscriptions[0].onSuccess(false));
+
+    const button = screen.getByRole<HTMLButtonElement>('button', {
+      name: '재생 불가 곡은 북마크에 추가할 수 없습니다',
+    });
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('title')).toBe('재생 불가 곡은 북마크에 추가할 수 없습니다');
+    fireEvent.click(button);
+    expect(saveTrack).not.toHaveBeenCalled();
+    expect(removeSavedTrack).not.toHaveBeenCalled();
+  });
+
+  it('prevents saving a blocked track even when the hook is called directly', async () => {
+    const { result } = renderHook(() => useTrackBookmark(blockedTrack));
+    act(() => subscriptions[0].onSuccess(false));
+
+    await act(async () => { await result.current.toggleBookmark(); });
+
+    expect(saveTrack).not.toHaveBeenCalled();
+    expect(removeSavedTrack).not.toHaveBeenCalled();
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      message: '재생할 수 없는 곡은 북마크에 추가할 수 없습니다.',
+      type: 'warning',
+    });
+  });
+
+  it('allows removing a blocked track that is already bookmarked', async () => {
+    render(<TrackBookmarkButton track={blockedTrack} />);
+    act(() => subscriptions[0].onSuccess(true));
+
+    const button = screen.getByRole<HTMLButtonElement>('button', { name: '북마크 삭제' });
+    expect(button.disabled).toBe(false);
+    await act(async () => { fireEvent.click(button); });
+
+    expect(removeSavedTrack).toHaveBeenCalledWith('user-1', track.id);
+    expect(saveTrack).not.toHaveBeenCalled();
+  });
+
+  it('allows bookmarking a preview track', async () => {
+    const previewTrack: PlayerTrack = { ...track, playbackStatus: 'preview' };
+    render(<TrackBookmarkButton track={previewTrack} />);
+    act(() => subscriptions[0].onSuccess(false));
+
+    const button = screen.getByRole<HTMLButtonElement>('button', { name: '북마크 추가' });
+    expect(button.disabled).toBe(false);
+    await act(async () => { fireEvent.click(button); });
+
+    expect(saveTrack).toHaveBeenCalledWith('user-1', previewTrack);
   });
 });
