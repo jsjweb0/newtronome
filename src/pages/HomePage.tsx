@@ -201,7 +201,7 @@ export default function HomePage() {
                 key={`${track.id}-${idx}`}
                 idx={idx}
                 track={track}
-                currentTrack={currentTrack}
+                currentTrack={playbackMode === 'playlist' ? currentTrack : null}
                 viewMode={viewMode}
                 isPlaying={isPlaying}
                 onTrackClick={handleTrackClick}

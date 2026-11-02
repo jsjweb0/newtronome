@@ -9,6 +9,7 @@ export interface PlayerTrack {
   durationMs: number;
   genre: string;
   tags: string[];
+  playbackStatus?: 'allowed' | 'preview' | 'blocked' | 'unknown';
 }
 
 export interface PlayerState {

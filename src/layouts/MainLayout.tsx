@@ -224,7 +224,7 @@ export default function MainLayout() {
       <footer
         inert={isMobilePanelOpen}
         className={clsx(
-          'z-100 xl:z-50 fixed left-3 bottom-3 w-full max-w-[calc(100%-1.5rem)] xl:h-29 bg-background/90 backdrop-blur-xs rounded-2xl transition-all',
+          'z-500 xl:z-50 fixed left-3 bottom-3 w-full max-w-[calc(100%-1.5rem)] xl:h-29 bg-background/90 backdrop-blur-xs rounded-2xl transition-all',
           'border border-textThr dark:border-none',
           isSidebarCollapsed
             ? 'lg:left-25 lg:max-w-[calc(100%-7rem)]'

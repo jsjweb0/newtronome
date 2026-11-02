@@ -38,7 +38,7 @@ export default function TrackItem({
     footerActions,
     ariaLabel,
 }: TrackItemProps) {
-    const isThisTrack = currentTrack?.id === track.id;
+    const isThisTrack = currentTrack != null && String(currentTrack.id) === String(track.id);
     const isPlayingTrack = isThisTrack && isPlaying;
     const isPaused = isThisTrack && !isPlaying;
 
