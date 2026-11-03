@@ -90,7 +90,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="px-3">
+    <div className="md:px-3">
       <div className="flex max-lg:flex-col gap-x-10 items-center z-0 relative py-14">
         {currentTrack?.artworkUrl && (
           <img
@@ -192,7 +192,7 @@ export default function HomePage() {
           className={
             viewMode === 'grid'
               ? 'grid grid-cols-3 md:grid-cols-5 gap-x-4 gap-y-8 lg:gap-y-14 mt-6'
-              : 'flex flex-col gap-2'
+              : 'flex flex-col'
           }
         >
           {filteredTracks.map((track, idx) => {

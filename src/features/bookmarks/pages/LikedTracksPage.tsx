@@ -69,7 +69,9 @@ export default function LikedTracksPage() {
       return;
     }
 
-    onPlaySingleTrack(track);
+    onPlaySingleTrack(track, () => {
+      showToast({ message: '곡을 재생할 수 없습니다.', type: 'error' });
+    });
   };
 
   const handleRemove = async (track: SavedTrack) => {

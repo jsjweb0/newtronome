@@ -32,22 +32,45 @@ function renderControls(widget: SoundCloudWidgetInstance) {
   const widgetRef: RefObject<SoundCloudWidgetInstance | null> = {
     current: widget,
   };
-  const trackRequestIdRef: RefObject<number> = { current: 0 };
+  const selectTrack = vi.fn();
   const renderedHook = renderHook(() =>
-    useSoundCloudControls({ widgetRef, trackRequestIdRef })
+    useSoundCloudControls({ widgetRef, selectTrack })
   );
 
-  return { ...renderedHook, trackRequestIdRef };
+  return { ...renderedHook, selectTrack };
 }
 
 describe('useSoundCloudControls', () => {
   beforeEach(() => {
-    usePlayerStore.setState({ isMuted: false, currentTime: 0 });
+    const firstTrack = {
+      id: 1, title: 'A', artist: 'Artist', artworkUrl: null,
+      permalinkUrl: null, durationMs: 60_000, genre: '', tags: [],
+    };
+
+    usePlayerStore.setState({
+      isMuted: false,
+      currentTime: 0,
+      playbackMode: 'playlist',
+      currentTrack: firstTrack,
+      tracks: [
+        firstTrack,
+        { ...firstTrack, id: 2, title: 'B', playbackStatus: 'blocked' },
+        { ...firstTrack, id: 3, title: 'C', playbackStatus: 'preview' },
+      ],
+    });
   });
 
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+  });
+
+  it('다음 버튼은 차단 곡을 건너뛰고 미리듣기 곡의 원래 인덱스를 선택한다', () => {
+    const { result, selectTrack } = renderControls(createWidgetMock());
+
+    act(() => result.current.nextTrack());
+
+    expect(selectTrack).toHaveBeenCalledWith(2);
   });
 
   it('forwards basic playback commands to the widget', () => {
@@ -83,44 +106,41 @@ describe('useSoundCloudControls', () => {
     expect(usePlayerStore.getState().currentTime).toBe(12.5);
   });
 
-  it('invalidates pending track requests before moving between tracks', () => {
-    const widget = createWidgetMock();
-    const { result, trackRequestIdRef } = renderControls(widget);
+  it('이전 버튼은 차단 곡을 건너뛰고 앞 곡의 원래 인덱스를 선택한다', () => {
+    const { tracks } = usePlayerStore.getState();
+    usePlayerStore.setState({ currentTrack: tracks[2] });
+    const { result, selectTrack } = renderControls(createWidgetMock());
 
-    act(() => {
-      result.current.previousTrack();
-      result.current.nextTrack();
-    });
+    act(() => result.current.previousTrack());
 
-    expect(trackRequestIdRef.current).toBe(2);
-    expect(widget.prev).toHaveBeenCalledOnce();
-    expect(widget.next).toHaveBeenCalledOnce();
+    expect(selectTrack.mock.calls).toEqual([[0]]);
   });
 
-  it('skips to a random track only when getSounds returns a non-empty array', () => {
-    const widget = createWidgetMock();
-    const getSounds = vi.mocked(widget.getSounds);
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.6);
-    const { result, trackRequestIdRef } = renderControls(widget);
-
-    getSounds
-      .mockImplementationOnce((callback) => callback({}))
-      .mockImplementationOnce((callback) => callback([]))
-      .mockImplementationOnce((callback) => callback([{}, {}, {}]));
+  it('랜덤 재생 후보에서 현재 곡과 차단 곡을 제외한다', () => {
+    const { result, selectTrack } = renderControls(createWidgetMock());
+    vi.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0.99);
 
     act(() => {
       result.current.playRandomTrack();
       result.current.playRandomTrack();
-      result.current.playRandomTrack();
     });
 
-    expect(randomSpy).toHaveBeenCalledOnce();
-    expect(widget.skip).toHaveBeenCalledOnce();
-    expect(widget.skip).toHaveBeenCalledWith(1);
-    expect(trackRequestIdRef.current).toBe(1);
+    expect(selectTrack.mock.calls).toEqual([[2], [2]]);
   });
 
-  it('updates both widget volume and the player mute state', () => {
+  it('다른 곡이 모두 차단되면 랜덤 재생을 멈춘다', () => {
+    const { tracks } = usePlayerStore.getState();
+    usePlayerStore.setState({ tracks: tracks.slice(0, 2) });
+    const widget = createWidgetMock();
+    const { result, selectTrack } = renderControls(widget);
+
+    act(() => result.current.playRandomTrack());
+
+    expect(widget.pause).toHaveBeenCalledOnce();
+    expect(selectTrack).not.toHaveBeenCalled();
+  });
+
+  it('위젯 볼륨과 플레이어 음소거 상태를 모두 업데이트합니다.', () => {
     const widget = createWidgetMock();
     const { result } = renderControls(widget);
 

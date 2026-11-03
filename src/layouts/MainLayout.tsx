@@ -71,7 +71,7 @@ export interface PlayerOutletContext {
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
   onPauseSoundCloud: () => void;
-  onPlaySingleTrack: (track: PlayerTrack) => void;
+  onPlaySingleTrack: (track: PlayerTrack, onFailure?: () => void) => void;
 
   playlistStatus: ReturnType<typeof useSoundCloudWidget>['playlistStatus'];
   widgetError: string | null;
@@ -193,7 +193,7 @@ export default function MainLayout() {
           tabIndex={-1}
           inert={isMobilePanelOpen}
           className={clsx(
-            'transition-all duration-300',
+            'py-4 lg:py-10 transition-all duration-300',
             isPanelCollapsed ? 'xl:max-w-[calc(100%-300px-0.75rem)]' : 'xl:max-w-full'
           )}
         >
@@ -224,7 +224,7 @@ export default function MainLayout() {
       <footer
         inert={isMobilePanelOpen}
         className={clsx(
-          'z-500 xl:z-50 fixed left-3 bottom-3 w-full max-w-[calc(100%-1.5rem)] xl:h-29 bg-background/90 backdrop-blur-xs rounded-2xl transition-all',
+          'z-50 fixed left-3 bottom-3 w-full max-w-[calc(100%-1.5rem)] xl:h-29 bg-background/90 backdrop-blur-xs rounded-2xl transition-all',
           'border border-textThr dark:border-none',
           isSidebarCollapsed
             ? 'lg:left-25 lg:max-w-[calc(100%-7rem)]'

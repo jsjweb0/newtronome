@@ -14,6 +14,7 @@ import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCl
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
 import RetryErrorState from '../ui/RetryErrorState';
 import { RefObject, useEffect, useRef } from 'react';
+import AudioLinesOffIcon from '../icons/AudioLinesOffIcon';
 
 interface PlaylistPanelProps {
   playlistUrl: string;
@@ -300,6 +301,16 @@ export default function PlaylistPanel({
                         isPlaylistMode &&
                         String(track.id) === String(playlistTrack?.id);
 
+                      const isBlocked = track.playbackStatus === 'blocked';
+
+                      let playbackLabel = '';
+
+                      if (isBlocked) {
+                        playbackLabel = '재생 불가';
+                      } else if (track.playbackStatus === 'preview') {
+                        playbackLabel = '미리듣기';
+                      }
+
                       return (
                         <li
                           key={track.id}
@@ -315,14 +326,21 @@ export default function PlaylistPanel({
 
                               onSelect(index);
                             }}
-                            aria-label={`${track.title} ${isActive && isPlaying ? '일시정지' : '재생'}`}
+                            disabled={isBlocked}
+                            aria-label={[
+                              `${track.title} ${isActive && isPlaying ? '일시정지' : '재생'}`,
+                              playbackLabel,
+                            ].filter(Boolean).join(', ')}
                             className={clsx(
                               'group grid min-w-0 grid-cols-[3rem_1fr_30px] grid-rows-2 gap-x-2.5 items-center w-full text-left',
                               'hover:text-primary focus-visible:text-primary',
-                              isActive && 'text-primary'
+                              isActive && 'text-primary',
+                              isBlocked && 'opacity-60',
                             )}
                           >
-                            <span className="row-span-2 overflow-hidden flex relative size-12 rounded-lg">
+                            <span className={clsx(
+                              'row-span-2 overflow-hidden flex relative size-12 rounded-lg',
+                            )}>
                               <img
                                 src={toHighResArtwork(track.artworkUrl)}
                                 alt=""
@@ -342,7 +360,8 @@ export default function PlaylistPanel({
                               className={clsx(
                                 'col-start-2 block w-full text-sm text-textBase truncate',
                                 'group-hover:text-primary group-focus-visible:text-primary',
-                                isActive && 'text-primary!'
+                                isActive && 'text-primary!',
+                                isBlocked && 'group-hover:text-textBase group-focus-visible:text-textBase',
                               )}
                             >
                               {track.title}
@@ -351,7 +370,8 @@ export default function PlaylistPanel({
                               className={clsx(
                                 'col-start-2 block text-[11px] text-textSub truncate',
                                 'group-hover:text-primary group-focus-visible:text-primary',
-                                isActive && 'text-primary!'
+                                isActive && 'text-primary!',
+                                isBlocked && 'group-hover:text-textSub group-focus-visible:text-textSub',
                               )}
                             >
                               {track.artist}
@@ -360,10 +380,15 @@ export default function PlaylistPanel({
                               className={clsx(
                                 'col-start-3 row-span-2 row-start-1 flex justify-center font-inter text-[11px] font-light text-textSub',
                                 'group-hover:text-primary group-focus-visible:text-primary',
-                                isActive && 'text-primary!'
+                                isActive && 'text-primary!',
+                                isBlocked && 'group-hover:text-textSub group-focus-visible:text-textSub',
                               )}
                             >
-                              {formatTime(track.durationMs)}
+                              {isBlocked ? (
+                                isBlocked && <AudioLinesOffIcon aria-hidden="true" className="size-4" />
+                              ) :
+                                formatTime(track.durationMs)
+                              }
                             </span>
                           </button>
                           <TrackBookmarkButton

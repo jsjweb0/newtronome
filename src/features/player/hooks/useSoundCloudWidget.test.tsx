@@ -216,8 +216,100 @@ describe('useSoundCloudWidget source switching', () => {
     expect(widget.load).not.toHaveBeenCalled();
   });
 
-  it('waits for playlist loading before applying a later track selection', () => {
+  it('다음 곡을 선택해도 위젯에서 재생을 확인한 뒤에 현재 곡을 바꾼다', () => {
+    const { widget, events, listeners } = createWidgetMock();
+    const { result } = renderWidgetHook();
+    const firstTrack = playlistTracks[0];
+    const secondTrack = playlistTracks[1];
+
+    // 1. 사용자가 두 번째 곡을 클릭한다.
+    act(() => result.current.selectTrack(1));
+
+    // 위젯에 B를 요청했지만, 화면의 현재 곡은 아직 A다.
+    expect(widget.skip).toHaveBeenCalledWith(1);
+    expect(usePlayerStore.getState().currentTrack?.id).toBe(firstTrack.id);
+
+    // 2. 위젯에 현재 곡을 물으면 B라고 답하도록 준비한다.
+    vi.mocked(widget.getCurrentSound).mockImplementation((reply) => {
+      reply({ id: secondTrack.id, title: secondTrack.title });
+    });
+
+    // 3. 위젯에서 재생 시작 신호가 들어온다.
+    act(() => listeners.get(events.PLAY)?.());
+
+    expect(usePlayerStore.getState().currentTrack?.id).toBe(secondTrack.id);
+  });
+
+  it('새 곡을 확인할 때까지 일시정지된 곡의 재생 표시와 시간을 유지한다', () => {
+    const { widget, events, listeners } = createWidgetMock();
+    const { result } = renderWidgetHook();
+    const [first, second] = playlistTracks;
+    usePlayerStore.setState({ currentTime: 12, duration: first.durationMs / 1000 });
+    act(() => result.current.selectTrack(1));
+
+    vi.mocked(widget.getCurrentSound)
+      .mockImplementationOnce(reply => reply({ id: first.id, title: first.title }))
+      .mockImplementationOnce(reply => reply({ id: second.id, title: second.title, duration: second.durationMs }));
+    vi.mocked(widget.getDuration).mockImplementation(reply => reply(second.durationMs));
+
+    act(() => {
+      listeners.get(events.PLAY)?.();
+      listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 13_000 });
+    });
+    expect.soft(usePlayerStore.getState()).toMatchObject({
+      currentTrack: { id: first.id }, isPlaying: false, currentTime: 12, duration: first.durationMs / 1000,
+    });
+
+    act(() => listeners.get(events.PLAY)?.());
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTrack: { id: second.id }, isPlaying: true, currentTime: 0, duration: second.durationMs / 1000,
+    });
+  });
+
+  it('ignores a blocked selection without interrupting the playing track', () => {
+    usePlayerStore.setState({
+      tracks: [playlistTracks[0], { ...playlistTracks[1], playbackStatus: 'blocked' }],
+      isPlaying: true,
+      currentTime: 12,
+    });
     const { widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+
+    act(() => result.current.selectTrack(1));
+
+    expect(widget.skip).not.toHaveBeenCalled();
+    expect(widget.load).not.toHaveBeenCalled();
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTrack: playlistTracks[0],
+      isPlaying: true,
+      currentTime: 12,
+    });
+  });
+
+  it('selects a preview at its original playlist index', () => {
+    const previewTrack: PlayerTrack = { ...playlistTracks[1], playbackStatus: 'preview' };
+    usePlayerStore.setState({
+      tracks: [{ ...playlistTracks[0], playbackStatus: 'blocked' }, previewTrack],
+    });
+    const { widget, events, listeners } = createWidgetMock();
+    const { result } = renderWidgetHook();
+
+    act(() => result.current.selectTrack(1));
+
+    expect(widget.skip).toHaveBeenCalledWith(1);
+    expect(usePlayerStore.getState().currentTrack?.id).toBe(playlistTracks[0].id);
+
+    vi.mocked(widget.getCurrentSound).mockImplementation(reply => reply({
+      id: previewTrack.id, title: previewTrack.title, policy: 'SNIP',
+    }));
+    act(() => listeners.get(events.PLAY)?.());
+    expect(usePlayerStore.getState().currentTrack).toMatchObject({
+      id: previewTrack.id, playbackStatus: 'preview',
+    });
+  });
+
+  it('waits for playlist loading before applying a later track selection', () => {
+    const { widget, events, listeners } = createWidgetMock();
     const { result } = renderWidgetHook();
 
     usePlayerStore.setState({ playbackMode: 'single' });
@@ -242,7 +334,13 @@ describe('useSoundCloudWidget source switching', () => {
 
     expect(widget.skip).toHaveBeenCalledTimes(1);
     expect(widget.skip).toHaveBeenCalledWith(1);
-    expect(usePlayerStore.getState().currentTrack).toEqual(playlistTracks[1]);
+    expect(usePlayerStore.getState().currentTrack?.id).toBe(playlistTracks[0].id);
+
+    vi.mocked(widget.getCurrentSound).mockImplementation(reply => reply({
+      id: playlistTracks[1].id, title: playlistTracks[1].title,
+    }));
+    act(() => listeners.get(events.PLAY)?.());
+    expect(usePlayerStore.getState().currentTrack?.id).toBe(playlistTracks[1].id);
   });
 
   it('applies only the latest selection when several tracks are chosen during loading', () => {
@@ -281,8 +379,14 @@ describe('useSoundCloudWidget source switching', () => {
 
     expect(widget.skip).toHaveBeenCalledTimes(1);
     expect(widget.skip).toHaveBeenCalledWith(2);
-    expect(usePlayerStore.getState().currentTrack).toEqual(thirdTrack);
+    expect(usePlayerStore.getState().currentTrack?.id).toBe(playlistTracks[0].id);
     expect(usePlayerStore.getState().isPlaying).toBe(false);
+    vi.mocked(widget.getCurrentSound).mockImplementationOnce(reply => reply({
+      id: playlistTracks[1].id, title: playlistTracks[1].title,
+    }));
+    act(() => listeners.get(events.PLAY)?.());
+    expect(usePlayerStore.getState().currentTrack?.id).toBe(playlistTracks[0].id);
+
     vi.mocked(widget.getCurrentSound).mockImplementation((callback) => callback({
       id: 3, title: thirdTrack.title, duration: thirdTrack.durationMs,
     }));
@@ -400,9 +504,9 @@ describe('useSoundCloudWidget source switching', () => {
     act(() => listeners.get(events.ERROR)?.());
     act(() => onFailedLoad?.());
 
-    expect(result.current.widgetError).toBeTruthy();
+    expect(result.current.widgetError).toBeNull();
     expect(widget.load).toHaveBeenCalledTimes(1);
-    expect(usePlayerStore.getState().currentTrack).toEqual(bookmarkTrack);
+    expect(usePlayerStore.getState().currentTrack).toBeNull();
   });
 
   it('discards a pending selection when the hook is cleaned up', () => {
@@ -587,28 +691,49 @@ describe('useSoundCloudWidget source switching', () => {
     expect(widget.skip).not.toHaveBeenCalled();
   });
 
-  it('reports a saved track playback failure separately from its bookmark status', () => {
+  it('pauses a failed bookmark once, preserves the playlist and allows the same track to retry', () => {
     const { events, listeners, widget } = createWidgetMock();
+    vi.mocked(widget.getSounds).mockImplementation(callback => callback(playlistTracks));
     const { result } = renderWidgetHook();
-
-    act(() => result.current.playSingleTrack(bookmarkTrack));
-    expect(widget.load).toHaveBeenCalledWith(
-      bookmarkTrack.permalinkUrl,
-      expect.objectContaining({ auto_play: true })
-    );
-
-    act(() => listeners.get(events.ERROR)?.());
-
-    expect(result.current.playlistStatus).toBe('error');
-    expect(result.current.widgetError).toBeTruthy();
-    expect(usePlayerStore.getState()).toMatchObject({
-      playbackMode: 'single',
-      currentTrack: bookmarkTrack,
-      isPlaying: false,
+    const onFailure = vi.fn();
+    act(() => listeners.get(events.READY)?.());
+    act(() => result.current.playSingleTrack(bookmarkTrack, onFailure));
+    act(() => vi.mocked(widget.load).mock.calls[0][1]?.callback?.());
+    act(() => {
+      listeners.get(events.ERROR)?.();
+      listeners.get(events.ERROR)?.();
+      listeners.get(events.PLAY)?.();
     });
 
-    act(() => result.current.retryLoad());
+    expect(widget.pause).toHaveBeenCalledOnce();
+    expect(onFailure).toHaveBeenCalledOnce();
+    expect(result.current.playlistStatus).toBe('ready');
+    expect(result.current.widgetError).toBeNull();
+    expect(usePlayerStore.getState()).toMatchObject({ currentTrack: null, isPlaying: false });
+
+    act(() => result.current.playSingleTrack(bookmarkTrack, onFailure));
     expect(widget.load).toHaveBeenCalledTimes(2);
+    expect(usePlayerStore.getState().currentTrack).toEqual(bookmarkTrack);
+  });
+
+  it('recovers the initial playlist after a bookmark load times out before READY', () => {
+    vi.useFakeTimers();
+    usePlayerStore.setState({ tracks: [], currentTrack: null });
+    const { events, listeners, widget } = createWidgetMock();
+    const { result } = renderWidgetHook();
+    const onFailure = vi.fn();
+    act(() => result.current.playSingleTrack(bookmarkTrack, onFailure));
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(onFailure).toHaveBeenCalledOnce();
+    expect(result.current.playlistStatus).toBe('error');
+    expect(result.current.widgetError).toBeNull();
+
+    act(() => result.current.retryLoad());
+    expect(result.current.playlistStatus).toBe('loading');
+    vi.mocked(widget.getSounds).mockImplementation(callback => callback(playlistTracks));
+    act(() => listeners.get(events.READY)?.());
+    expect(result.current.playlistStatus).toBe('ready');
+    expect(usePlayerStore.getState().tracks).toHaveLength(2);
   });
 
   it('times out a missing load callback and ignores its late response', () => {
