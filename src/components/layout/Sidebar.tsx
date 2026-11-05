@@ -129,7 +129,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
               className="inline-flex justify-start p-0.5 text-primary lg:p-2 max-lg:h-4 max-lg:pl-2"
               aria-label="NEWTRONOME"
             >
-              <LogoIcon className="h-4 w-auto lg:hidden" />
+              <LogoIcon className="h-full lg:h-4 w-auto lg:hidden" />
               {collapsed ? <LogoMoIcon className="w-8 max-lg:hidden" /> : <LogoIcon className="w-full max-lg:hidden" />}
             </Link>
           </h1>
@@ -168,7 +168,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
             'z-50 w-full transition-[opacity,margin] duration-300',
             // 모바일: 헤더 아래에 겹쳐서 표시
             'max-lg:absolute',
-            'max-lg:top-[calc(100%+0.25rem)]',
+            'max-lg:top-[calc(100%+1px)]',
             'max-lg:left-0 max-lg:right-0',
             'max-lg:max-h-[calc(100dvh-4.5rem)]',
             'max-lg:overflow-y-auto',

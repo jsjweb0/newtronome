@@ -85,12 +85,13 @@ describe('PlayerBar single-track controls', () => {
     expect((randomButton as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('disables playback controls during a Widget error without adding a retry button', () => {
+  it('disables playback controls during a Widget error and keeps retry available', () => {
     usePlayerStore.setState({ playbackMode: 'playlist', isPlaying: false });
     const widgetWithError = {
       ...soundCloudWidget,
       widgetError: 'SoundCloud를 불러오지 못했습니다.',
       playlistStatus: 'error',
+      retryLoad: vi.fn(),
     } as ReturnType<typeof useSoundCloudWidget>;
     renderPlayerBar(widgetWithError);
 
@@ -107,7 +108,10 @@ describe('PlayerBar single-track controls', () => {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
     }
     expect((screen.getByRole('slider') as HTMLInputElement).disabled).toBe(true);
-    expect(screen.queryByRole('button', { name: '다시 시도' })).toBeNull();
+    const retryButton = screen.getByRole('button', { name: '다시 시도' });
+    expect((retryButton as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(retryButton);
+    expect(widgetWithError.retryLoad).toHaveBeenCalledOnce();
 
     fireEvent.click(screen.getByRole('button', { name: '재생' }));
     expect(soundCloudWidget.toggle).not.toHaveBeenCalled();
@@ -173,4 +177,19 @@ describe('PlayerBar single-track controls', () => {
     expect(screen.queryByRole('button', { name: '재생' })).toBeNull();
     expect(container.firstChild).toBeNull();
   });
+});
+
+
+it('재생 시간 초과 안내에서 다시 시도를 실행한다', () => {
+  usePlayerStore.setState({ currentTrack, playbackMode: 'playlist' });
+  const retryLoad = vi.fn();
+  renderPlayerBar({
+    ...soundCloudWidget,
+    widgetError: '곡의 재생을 확인하지 못했습니다. 다시 시도해 주세요.',
+    retryLoad,
+  });
+  expect(screen.getByRole('alert').textContent).toContain('재생을 확인하지 못했습니다');
+  fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+  expect(retryLoad).toHaveBeenCalledOnce();
+  cleanup();
 });

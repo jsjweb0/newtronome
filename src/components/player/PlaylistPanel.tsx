@@ -14,6 +14,7 @@ import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCl
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
 import RetryErrorState from '../ui/RetryErrorState';
 import { RefObject, useEffect, useRef } from 'react';
+import AudioLinesOffIcon from '../icons/AudioLinesOffIcon';
 
 interface PlaylistPanelProps {
   playlistUrl: string;
@@ -128,7 +129,6 @@ export default function PlaylistPanel({
         tabIndex={isModal ? -1 : undefined}
         className={clsx(
           'z-51 fixed top-0 lg:top-3 right-0 lg:right-3 h-full xl:max-h-[calc(100%-116px-2.25rem)] transform transition-transform duration-300 w-full max-w-md lg:max-w-75 rounded-2xl',
-          isModal ? 'z-160' : 'z-51',
           collapsed ? 'translate-x-0' : 'translate-x-full'
         )}
       >
@@ -153,7 +153,7 @@ export default function PlaylistPanel({
           <div
             className={clsx(
               'overflow-y-auto grow relative bg-background rounded-2xl scrollbar transition-all transition-duration-600',
-              'max-xl:pb-28',
+              'max-xl:pb-3',
               'border border-textThr dark:border-none',
               collapsed ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
             )}
@@ -265,7 +265,7 @@ export default function PlaylistPanel({
                 </ul>
               )}
             </div>
-            <div className="p-4">
+            <div className="py-4 pl-4 pr-2.5">
               <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-b-textThr">
                 <h4 className="font-semibold">All Playlists</h4>
                 <ListMusic className="size-5.5" />
@@ -286,85 +286,121 @@ export default function PlaylistPanel({
               ) : (
                 <ol className="space-y-4">
                   {soundCloudWidget.playlistStatus === 'error' ? (
-                  <li>
-                    <RetryErrorState
-                      message={
-                        soundCloudWidget.widgetError ??
-                        '플레이리스트를 불러오지 못했습니다.'
+                    <li>
+                      <RetryErrorState
+                        message={
+                          soundCloudWidget.widgetError ??
+                          '플레이리스트를 불러오지 못했습니다.'
+                        }
+                        onRetry={soundCloudWidget.retryLoad}
+                      />
+                    </li>
+                  ) : soundCloudWidget.playlistStatus === 'ready' ? (
+                    tracks.map((track, index) => {
+                      const isActive =
+                        isPlaylistMode &&
+                        String(track.id) === String(playlistTrack?.id);
+
+                      const isBlocked = track.playbackStatus === 'blocked';
+
+                      let playbackLabel = '';
+
+                      if (isBlocked) {
+                        playbackLabel = '재생 불가';
+                      } else if (track.playbackStatus === 'preview') {
+                        playbackLabel = '미리듣기';
                       }
-                      onRetry={soundCloudWidget.retryLoad}
-                    />
-                  </li>
-                ) : soundCloudWidget.playlistStatus === 'ready' ? (
-                  tracks.map((track, index) => {
-                    const isActive =
-                      isPlaylistMode &&
-                      String(track.id) === String(playlistTrack?.id);
 
-                    return (
-                      <li key={track.id}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isActive) {
-                              soundCloudWidget.toggle();
-                              return;
-                            }
-
-                            onSelect(index);
-                          }}
-                          aria-label={`${track.title} ${isActive && isPlaying ? '일시정지' : '재생'}`}
-                          className={clsx(
-                            'group grid grid-cols-[3rem_1fr_30px] grid-rows-2 gap-x-2.5 items-center w-full text-left hover:text-primary',
-                            isActive && 'text-primary'
-                          )}
+                      return (
+                        <li
+                          key={track.id}
+                          className="grid grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-0.5"
                         >
-                          <span className="row-span-2 overflow-hidden flex relative size-12 rounded-lg">
-                            <img
-                              src={toHighResArtwork(track.artworkUrl)}
-                              alt=""
-                              className="size-full object-cover"
-                              onError={(event) => {
-                                event.currentTarget.src = noImage;
-                                event.currentTarget.onerror = null;
-                              }}
-                            />
-                            {isActive && (
-                              <i className="flex justify-center items-center absolute inset-0 bg-primary/45">
-                                <AudioEqualizerIcon isPlaying={isPlaying} className="text-white" />
-                              </i>
-                            )}
-                          </span>
-                          <span
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isActive) {
+                                soundCloudWidget.toggle();
+                                return;
+                              }
+
+                              onSelect(index);
+                            }}
+                            disabled={isBlocked}
+                            aria-label={[
+                              `${track.title} ${isActive && isPlaying ? '일시정지' : '재생'}`,
+                              playbackLabel,
+                            ].filter(Boolean).join(', ')}
                             className={clsx(
-                              'col-start-2 block w-full text-sm text-textBase truncate group-hover:text-primary',
-                              isActive && 'text-primary!'
+                              'group grid min-w-0 grid-cols-[3rem_1fr_30px] grid-rows-2 gap-x-2.5 items-center w-full text-left',
+                              'hover:text-primary focus-visible:text-primary',
+                              isActive && 'text-primary',
+                              isBlocked && 'opacity-60',
                             )}
                           >
-                            {track.title}
-                          </span>
-                          <span
-                            className={clsx(
-                              'col-start-2 block text-[11px] text-textSub truncate group-hover:text-primary',
-                              isActive && 'text-primary!'
-                            )}
-                          >
-                            {track.artist}
-                          </span>
-                          <span
-                            className={clsx(
-                              'col-start-3 row-span-2 row-start-1 flex justify-center font-inter text-[11px] font-light text-textSub group-hover:text-primary',
-                              isActive && 'text-primary!'
-                            )}
-                          >
-                            {formatTime(track.durationMs)}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })
-                ) : (
-                  <li className="text-sm text-gray-500">플레이리스트가 비어 있어요</li>
+                            <span className={clsx(
+                              'row-span-2 overflow-hidden flex relative size-12 rounded-lg',
+                            )}>
+                              <img
+                                src={toHighResArtwork(track.artworkUrl)}
+                                alt=""
+                                className="size-full object-cover"
+                                onError={(event) => {
+                                  event.currentTarget.src = noImage;
+                                  event.currentTarget.onerror = null;
+                                }}
+                              />
+                              {isActive && (
+                                <i className="flex justify-center items-center absolute inset-0 bg-primary/45">
+                                  <AudioEqualizerIcon isPlaying={isPlaying} className="text-white" />
+                                </i>
+                              )}
+                            </span>
+                            <span
+                              className={clsx(
+                                'col-start-2 block w-full text-sm text-textBase truncate',
+                                'group-hover:text-primary group-focus-visible:text-primary',
+                                isActive && 'text-primary!',
+                                isBlocked && 'group-hover:text-textBase group-focus-visible:text-textBase',
+                              )}
+                            >
+                              {track.title}
+                            </span>
+                            <span
+                              className={clsx(
+                                'col-start-2 block text-[11px] text-textSub truncate',
+                                'group-hover:text-primary group-focus-visible:text-primary',
+                                isActive && 'text-primary!',
+                                isBlocked && 'group-hover:text-textSub group-focus-visible:text-textSub',
+                              )}
+                            >
+                              {track.artist}
+                            </span>
+                            <span
+                              className={clsx(
+                                'col-start-3 row-span-2 row-start-1 flex justify-center font-inter text-[11px] font-light text-textSub',
+                                'group-hover:text-primary group-focus-visible:text-primary',
+                                isActive && 'text-primary!',
+                                isBlocked && 'group-hover:text-textSub group-focus-visible:text-textSub',
+                              )}
+                            >
+                              {isBlocked ? (
+                                isBlocked && <AudioLinesOffIcon aria-hidden="true" className="size-4" />
+                              ) :
+                                formatTime(track.durationMs)
+                              }
+                            </span>
+                          </button>
+                          <TrackBookmarkButton
+                            track={track}
+                            className="size-9 rounded-lg hover:bg-textThr"
+                            iconClassName="size-3!"
+                          />
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li className="text-sm text-gray-500">플레이리스트가 비어 있어요</li>
                   )}
                 </ol>
               )}
@@ -374,7 +410,7 @@ export default function PlaylistPanel({
       </aside>
       {isModal && collapsed && (
         <div
-          className="fixed inset-0 z-150 bg-black/40"
+          className="fixed inset-0 z-1 bg-black/40"
           aria-hidden="true"
           onMouseDown={onClose}
         />

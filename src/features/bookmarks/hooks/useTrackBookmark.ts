@@ -14,6 +14,8 @@ export function useTrackBookmark(track: PlayerTrack) {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  const isBookmarkBlocked = track.playbackStatus === 'blocked' && !isBookmarked;
+
   useEffect(() => {
     setError(null);
 
@@ -60,6 +62,14 @@ export function useTrackBookmark(track: PlayerTrack) {
 
     if (isLoading || isSaving || error !== null) return;
 
+    if (isBookmarkBlocked) {
+      showToast({
+        message: '재생할 수 없는 곡은 북마크에 추가할 수 없습니다.',
+        type: 'warning',
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -90,6 +100,7 @@ export function useTrackBookmark(track: PlayerTrack) {
 
   return {
     isBookmarked,
+    isBookmarkBlocked,
     isLoading,
     isSaving,
     error,
