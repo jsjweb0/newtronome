@@ -79,7 +79,20 @@ export default function PlayerBar({
     if (rangeRef.current) updateRangeBackground(rangeRef.current);
   }, [currentTime, duration, updateRangeBackground]);
 
-  if (!currentTrack) return null;
+  const playbackError = soundCloudWidget.widgetError && (
+    <div className="text-xs">
+      <p role="alert">{soundCloudWidget.widgetError}</p>
+      <button
+        type="button"
+        onClick={soundCloudWidget.retryLoad}
+        className="mt-1 rounded px-2 py-1 underline focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        다시 시도
+      </button>
+    </div>
+  );
+
+  if (!currentTrack) return playbackError ? <div className="p-3">{playbackError}</div> : null;
 
   return (
     <div className="flex gap-x-3 xl:gap-x-20 items-center max-xl:justify-between relative w-full h-full text-textBase p-3 xl:p-4">
@@ -95,6 +108,7 @@ export default function PlayerBar({
         <div className="overflow-hidden lg:grow max-xl:mb-2">
           <div className="text-xs xl:text-base font-medium truncate">{currentTrack.title}</div>
           <p className="text-[11px] xl:text-sm text-textSub">{currentTrack.artist}</p>
+          {playbackError}
         </div>
       </div>
 

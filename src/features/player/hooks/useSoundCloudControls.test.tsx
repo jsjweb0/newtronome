@@ -34,7 +34,7 @@ function renderControls(widget: SoundCloudWidgetInstance) {
   };
   const selectTrack = vi.fn();
   const renderedHook = renderHook(() =>
-    useSoundCloudControls({ widgetRef, selectTrack })
+    useSoundCloudControls({ widgetRef, selectTrack, pendingTrackIdRef: { current: null } })
   );
 
   return { ...renderedHook, selectTrack };

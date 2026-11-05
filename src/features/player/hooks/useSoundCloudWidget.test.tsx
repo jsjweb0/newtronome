@@ -266,6 +266,147 @@ describe('useSoundCloudWidget source switching', () => {
     });
   });
 
+  it('빠르게 다음을 두 번 누르면 마지막 요청 곡을 확인하고 이전 응답은 무시한다', () => {
+    const { widget, events, listeners } = createWidgetMock();
+    const { result } = renderWidgetHook();
+    const third = { ...playlistTracks[1], id: 3, title: 'Third track' };
+    usePlayerStore.setState({ tracks: [...playlistTracks, third] });
+
+    act(() => result.current.nextTrack());
+    act(() => listeners.get(events.PLAY)?.());
+    const replyForSecond = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
+    act(() => result.current.nextTrack());
+    expect(vi.mocked(widget.skip).mock.calls).toEqual([[1], [2]]);
+    act(() => replyForSecond({ id: 2, title: 'Second track', duration: 210_000 }));
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTrack: { id: 1 }, isPlaying: false,
+    });
+
+    act(() => listeners.get(events.PLAY)?.());
+    act(() => vi.mocked(widget.getCurrentSound).mock.calls[1][0]({
+      id: third.id, title: third.title, duration: third.durationMs,
+    }));
+    expect(usePlayerStore.getState()).toMatchObject({
+      currentTrack: { id: 3 }, isPlaying: true, currentTime: 0, duration: 210,
+    });
+  });
+
+  it('곡 조회 도중 일시정지하면 늦은 응답으로 재생 표시가 켜지지 않는다', () => {
+    const { widget, events, listeners } = createWidgetMock();
+    const { result } = renderWidgetHook();
+    act(() => result.current.selectTrack(1));
+    act(() => listeners.get(events.PLAY)?.());
+    const reply = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
+    act(() => listeners.get(events.PAUSE)?.());
+    act(() => reply({ id: 2, title: 'Second track', duration: 210_000 }));
+    expect(usePlayerStore.getState().isPlaying).toBe(false);
+  });
+
+  describe('플레이리스트 곡의 재생 확인 대기 시간', () => {
+    function setupReadyPlaylist() {
+      vi.useFakeTimers();
+      const mock = createWidgetMock();
+      vi.mocked(mock.widget.getSounds).mockImplementation(reply => reply([
+        { id: 1, title: 'First track', duration: 180_000 },
+        { id: 2, title: 'Second track', duration: 210_000 },
+        { id: 3, title: 'Third track', duration: 240_000 },
+      ]));
+      const hook = renderWidgetHook();
+      act(() => mock.listeners.get(mock.events.READY)?.());
+      expect(hook.result.current.playlistStatus).toBe('ready');
+      return { ...mock, ...hook };
+    }
+
+    it('10초 동안 재생 확인이 없으면 실제 위젯을 정지한다', () => {
+      const { widget, result } = setupReadyPlaylist();
+      usePlayerStore.setState({ isPlaying: true });
+      act(() => result.current.selectTrack(1));
+
+      act(() => vi.advanceTimersByTime(9_999));
+      expect(widget.pause).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(1));
+
+      expect(widget.pause).toHaveBeenCalledOnce();
+      expect(usePlayerStore.getState().isPlaying).toBe(false);
+    });
+
+    it('시간 초과 뒤 늦은 이벤트를 차단하고 같은 곡을 재시도할 수 있다', () => {
+      const { widget, result, events, listeners } = setupReadyPlaylist();
+      act(() => result.current.selectTrack(1));
+      act(() => vi.advanceTimersByTime(10_000));
+      const error = result.current.widgetError;
+      expect(error).toContain('재생을 확인하지 못했습니다');
+      expect(result.current.playlistStatus).toBe('ready');
+      act(() => {
+        listeners.get(events.PLAY)?.();
+        listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 99_000 });
+        listeners.get(events.READY)?.();
+        listeners.get(events.ERROR)?.();
+      });
+      expect(widget.pause).toHaveBeenCalledTimes(2);
+      expect(result.current.widgetError).toBe(error);
+      expect(usePlayerStore.getState()).toMatchObject({ isPlaying: false, currentTime: 0 });
+
+      act(() => result.current.retryLoad());
+      expect(widget.load).toHaveBeenCalledWith(PLAYLIST_URL, expect.objectContaining({
+        auto_play: true, start_track: 1,
+      }));
+      act(() => vi.mocked(widget.load).mock.calls[0][1]?.callback?.());
+      vi.mocked(widget.getCurrentSound).mockImplementation(reply => reply({
+        id: 2, title: 'Second track', duration: 210_000,
+      }));
+      act(() => listeners.get(events.PLAY)?.());
+      expect(result.current.widgetError).toBeNull();
+      expect(usePlayerStore.getState()).toMatchObject({ currentTrack: { id: 2 }, isPlaying: true });
+    });
+
+    it('시간 초과 뒤 다른 곡을 선택하면 정상 재생으로 복구한다', () => {
+      const { widget, result, events, listeners } = setupReadyPlaylist();
+      act(() => result.current.selectTrack(1));
+      act(() => vi.advanceTimersByTime(10_000));
+      act(() => result.current.selectTrack(2));
+      vi.mocked(widget.getCurrentSound).mockImplementation(reply => reply({
+        id: 3, title: 'Third track', duration: 240_000,
+      }));
+      act(() => listeners.get(events.PLAY)?.());
+      act(() => vi.advanceTimersByTime(10_000));
+      expect(widget.pause).toHaveBeenCalledOnce();
+      expect(result.current.widgetError).toBeNull();
+      expect(usePlayerStore.getState()).toMatchObject({ currentTrack: { id: 3 }, isPlaying: true });
+    });
+
+    it('제한 시간 안에 요청한 곡이 확인되면 재생을 계속한다', () => {
+      const { widget, result, events, listeners } = setupReadyPlaylist();
+      act(() => result.current.selectTrack(1));
+      act(() => vi.advanceTimersByTime(5_000));
+      vi.mocked(widget.getCurrentSound).mockImplementation(reply => reply({
+        id: 2, title: 'Second track', duration: 210_000,
+      }));
+      act(() => listeners.get(events.PLAY)?.());
+      act(() => vi.advanceTimersByTime(10_000));
+
+      expect(widget.pause).not.toHaveBeenCalled();
+      expect(usePlayerStore.getState()).toMatchObject({
+        currentTrack: { id: 2 }, isPlaying: true,
+      });
+    });
+
+    it('새 곡을 선택하면 그 시점부터 10초를 기다린다', () => {
+      const { widget, result } = setupReadyPlaylist();
+      act(() => result.current.selectTrack(1));
+      act(() => vi.advanceTimersByTime(6_000));
+      act(() => result.current.selectTrack(2));
+
+      act(() => vi.advanceTimersByTime(4_000));
+      expect(widget.pause).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(5_999));
+      expect(widget.pause).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(1));
+      expect(widget.pause).toHaveBeenCalledOnce();
+      expect(widget.skip).toHaveBeenLastCalledWith(2);
+    });
+  });
+
   it('ignores a blocked selection without interrupting the playing track', () => {
     usePlayerStore.setState({
       tracks: [playlistTracks[0], { ...playlistTracks[1], playbackStatus: 'blocked' }],
@@ -635,10 +776,9 @@ describe('useSoundCloudWidget source switching', () => {
       });
       act(() => listeners.get(events.PLAY)?.());
       const latestTrack = vi.mocked(widget.getCurrentSound).mock.calls[1][0];
-      const latestDuration = vi.mocked(widget.getDuration).mock.calls[1][0];
       act(() => {
         latestTrack({ id: 2, title: 'Second track', duration: 210_000 });
-        latestDuration(210_000);
+        vi.mocked(widget.getDuration).mock.calls[1][0](210_000);
         listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 5_000, relativePosition: 0.02, loadProgress: 1 });
       });
       act(() => {

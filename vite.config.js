@@ -1,9 +1,13 @@
 import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { configDefaults } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
+    test: {
+        exclude: [...configDefaults.exclude, '.claude/**'],
+    },
     base: process.env.VITE_BASE_PATH || '/',
     server: {
         proxy: {

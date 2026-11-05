@@ -2,15 +2,18 @@ import { useCallback, type RefObject } from 'react';
 import { usePlayerStore } from '../stores/usePlayerStore';
 import type { SoundCloudWidgetInstance } from '../types/soundcloud-widget.types';
 import { isNonNegativeFiniteNumber } from '../../../utils/numberValidation';
+import type { PlayerTrack } from '../types/player.types';
 
 interface UseSoundCloudControlsParams {
     widgetRef: RefObject<SoundCloudWidgetInstance | null>;
     selectTrack: (index: number) => void;
+    pendingTrackIdRef: RefObject<PlayerTrack['id'] | null>;
 }
 
 export function useSoundCloudControls({
     widgetRef,
     selectTrack,
+    pendingTrackIdRef,
 }: UseSoundCloudControlsParams) {
     const isMuted = usePlayerStore(
         (state) => state.isMuted
@@ -63,8 +66,9 @@ export function useSoundCloudControls({
 
         if (!widget || playbackMode !== 'playlist') return;
 
+        const navigationTrackId = pendingTrackIdRef.current ?? currentTrack?.id;
         const currentIndex = tracks.findIndex(
-            (track) => currentTrack != null && String(track.id) === String(currentTrack.id)
+            (track) => navigationTrackId != null && String(track.id) === String(navigationTrackId)
         );
 
         const candidates: number[] = [];
@@ -92,7 +96,7 @@ export function useSoundCloudControls({
         }
 
         selectTrack(candidates[position]);
-    }, [selectTrack, widgetRef]);
+    }, [selectTrack, widgetRef, pendingTrackIdRef]);
 
     const previousTrack = useCallback(() => moveTrack('previous'), [moveTrack]);
     const nextTrack = useCallback(() => moveTrack('next'), [moveTrack]);
