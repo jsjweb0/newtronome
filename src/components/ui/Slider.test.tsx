@@ -3,9 +3,18 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ImageSlider from './Slider';
 
-vi.mock('react-slick', () => ({
-  default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+vi.mock('swiper/react', () => ({
+  Swiper: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  SwiperSlide: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
+vi.mock('swiper/modules', () => ({
+  A11y: {},
+  Autoplay: {},
+  EffectCoverflow: {},
+  Keyboard: {},
+}));
+vi.mock('swiper/css', () => ({}));
+vi.mock('swiper/css/effect-coverflow', () => ({}));
 
 afterEach(() => {
   cleanup();

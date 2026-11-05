@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
 import TrackItem from '../../../components/track/TrackItem';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -13,6 +13,7 @@ import { selectCurrentTrack, usePlayerStore } from '../../player/stores/usePlaye
 import type { PlayerOutletContext } from '../../../layouts/MainLayout';
 import type { PlayerTrack } from '../../player/types/player.types';
 import RetryErrorState from '../../../components/ui/RetryErrorState';
+import { SoundCloudTrackLink, trackActionButtonClass } from '../../../components/track/TrackItemActions';
 
 export default function LikedTracksPage() {
   const { user, loading: isAuthLoading } = useAuth();
@@ -162,7 +163,7 @@ export default function LikedTracksPage() {
       ) : (
         <>
           <p className="mb-3 text-sm text-textSub">저장된 트랙 {tracks.length}개</p>
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 xl:grid-cols-5 text-center">
+          <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-x-3 md:gap-x-5 gap-y-6 md:gap-y-7">
             {tracks.map((track, index) => {
               const trackId = String(track.id);
               const isRemoving = removingTrackId === trackId;
@@ -176,22 +177,8 @@ export default function LikedTracksPage() {
                     currentTrack={currentTrack}
                     isPlaying={isPlaying}
                     onTrackClick={handleTrackClick}
-                    footerActions={
-                      <div className="flex items-center justify-center gap-2">
-                        {track.permalinkUrl ? (
-                          <a
-                            href={track.permalinkUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`${track.title} 원곡을 SoundCloud에서 열기 (새 창)`}
-                            className="inline-flex size-8 items-center justify-center hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                          >
-                            <ExternalLink aria-hidden="true" className="size-3.5" />
-                          </a>
-                        ) : (
-                          <span className="text-xs text-textSub">원곡 링크 없음</span>
-                        )}
-
+                    actions={
+                      <>
                         <button
                           type="button"
                           onClick={() => handleRemove(track)}
@@ -202,11 +189,16 @@ export default function LikedTracksPage() {
                               : `${track.title} 저장 해제`
                           }
                           aria-busy={isRemoving}
-                          className="inline-flex size-8 items-center justify-center hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-50"
+                          className={`${trackActionButtonClass} text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-50`}
                         >
-                          <Heart aria-hidden="true" className="size-4 fill-primary stroke-primary" />
+                          <Heart aria-hidden="true" className="size-[18px] fill-primary stroke-primary" />
                         </button>
-                      </div>
+                        {track.permalinkUrl ? (
+                          <SoundCloudTrackLink track={track} />
+                        ) : (
+                          <span className="px-1 text-[11px] text-textSub">원곡 링크 없음</span>
+                        )}
+                      </>
                     }
                   />
                 </li>

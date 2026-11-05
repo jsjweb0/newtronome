@@ -10,7 +10,7 @@ import {
   LogIn,
   LogOut,
   Activity,
-  Disc3,
+  Bell,
   Heart,
   Search as SearchIcon
 } from 'lucide-react';
@@ -53,7 +53,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
     { label: 'Browse', path: ROUTES.home.path, icon: Music },
     { label: 'Search', path: ROUTES.search.path, icon: SearchIcon },
     { label: 'Likes', path: ROUTES.likes.path, icon: Heart },
-    { label: 'Notice', path: createBoardPath('notice'), icon: Disc3 },
+    { label: 'Notice', path: createBoardPath('notice'), icon: Bell },
     { label: 'Free Board', path: createBoardPath('free'), icon: Activity },
     { label: 'My Account', path: ROUTES.account.path, icon: Turntable, requiresAuth: true },
     { label: 'My Activity', path: ROUTES.mypage.path, icon: MusicLibrary, requiresAuth: true },
@@ -68,7 +68,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
   });
 
   const navBaseClasses =
-    'flex items-center gap-x-2 w-full px-3 py-3 rounded-full text-sm lg:text-base transition-all duration-300';
+    'flex items-center gap-x-3 w-full px-3 py-3 rounded-full text-sm lg:text-[15px] transition-all duration-300';
   const navActiveClasses = 'bg-primary/6 text-primary font-semibold';
   const navInactiveClasses = 'hover:text-primary hover:bg-primary/6';
   const getNavItemClass = (isActive: boolean) =>
@@ -77,7 +77,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
       isActive ? navActiveClasses : navInactiveClasses,
       !isMobile && collapsed && 'lg:w-[48px]'
     );
-  const navIconClasses = 'shrink-0 size-5 lg:size-6 transition-colors';
+  const navIconClasses = 'shrink-0 size-5 transition-colors';
 
   const profileImage = () => {
     if (user?.photoURL) {
