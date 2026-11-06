@@ -103,6 +103,58 @@ function createValidCommentData(uid = 'user-1') {
   };
 }
 
+function createValidSavedTrackData() {
+  return {
+    id: 123,
+    title: '테스트 트랙',
+    artist: '테스트 아티스트',
+    artworkUrl: null,
+    permalinkUrl: 'https://soundcloud.com/example/track',
+    durationMs: 180_000,
+    genre: 'House',
+    tags: [],
+    savedAt: serverTimestamp(),
+  };
+}
+
+describe('북마크 재생 상태 규칙', () => {
+  it('소유자는 기존 형식의 북마크를 만들고 확인된 상태를 갱신할 수 있다', async () => {
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+    const trackRef = doc(userDb, 'users', 'user-1', 'savedTracks', '123');
+
+    await assertSucceeds(setDoc(trackRef, createValidSavedTrackData()));
+    await assertSucceeds(
+      updateDoc(trackRef, {
+        playbackStatus: 'blocked',
+        playbackStatusCheckedAt: serverTimestamp(),
+      })
+    );
+  });
+
+  it('unknown 상태나 확인 시각이 없는 상태는 저장할 수 없다', async () => {
+    const userDb = testEnvironment
+      .authenticatedContext('user-1')
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(userDb, 'users', 'user-1', 'savedTracks', '123'), {
+        ...createValidSavedTrackData(),
+        playbackStatus: 'unknown',
+        playbackStatusCheckedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      setDoc(doc(userDb, 'users', 'user-1', 'savedTracks', '456'), {
+        ...createValidSavedTrackData(),
+        id: 456,
+        playbackStatus: 'blocked',
+      })
+    );
+  });
+});
+
 async function createFreePost(postId = 'post-1') {
   await testEnvironment.withSecurityRulesDisabled(async (context) => {
     await setDoc(

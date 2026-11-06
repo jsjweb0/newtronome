@@ -1,5 +1,11 @@
 export type PlaybackMode = 'playlist' | 'single';
 
+export type PlaybackStatus =
+  | 'allowed'
+  | 'preview'
+  | 'blocked'
+  | 'unknown';
+
 export interface PlayerTrack {
   id: number | string;
   title: string;
@@ -9,7 +15,7 @@ export interface PlayerTrack {
   durationMs: number;
   genre: string;
   tags: string[];
-  playbackStatus?: 'allowed' | 'preview' | 'blocked' | 'unknown';
+  playbackStatus?: PlaybackStatus;
 }
 
 export interface PlayerState {
@@ -33,3 +39,8 @@ export interface PlayerActions {
 }
 
 export type PlayerStore = PlayerState & PlayerActions;
+
+export interface PlaySingleTrackOptions {
+  onResolved?: (track: PlayerTrack) => void;
+  onFailure?: () => void;
+}
