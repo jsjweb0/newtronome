@@ -229,7 +229,7 @@ function PostViewContent({ boardType, postId }: {
     'min-w-0 flex flex-col justify-center gap-0.5 min-h-15 px-3.5 py-2 rounded-xl bg-surface hover:bg-field focus-visible:outline-2 focus-visible:outline-primary';
 
   return (
-    <section aria-label="게시글" className="w-full max-w-225 mx-auto flex flex-col gap-4 md:gap-5 px-1 md:px-7 pb-6">
+    <section aria-label="게시글" className="w-full flex flex-col gap-4 md:gap-5 px-1 md:px-7 pb-6">
       <Link
         to={`/board/${boardType}${boardSearch}`}
         className="self-start inline-flex items-center gap-1 min-h-11 pr-2 text-sm text-textSub hover:text-textBase"
