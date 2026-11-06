@@ -18,11 +18,9 @@ export default function WriteButton({ boardType }: BoardTypeProps) {
   if (!canWrite) return null;
 
   return (
-    <div className="flex justify-center items-center mt-8">
-      <BaseButton as="link" to={`/board/${boardType}/write`} className="gap-2" variant="outline">
-        <Pencil className="shrink-0 size-4 text-gray-600 group-hover:text-blue-600 dark:text-white/60" />
-        글쓰기
-      </BaseButton>
-    </div>
+    <BaseButton as="link" to={`/board/${boardType}/write`} className="px-4.5">
+      <Pencil aria-hidden="true" className="shrink-0 size-4" />
+      글쓰기
+    </BaseButton>
   );
 }

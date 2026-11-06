@@ -36,8 +36,18 @@ export default function PostList({
     const listItems = [...fixedPosts, ...normalPosts];
 
     return (
-        <div className="mt-4">
-            <div className="divide-y divide-gray-200 border border-gray-200 rounded-md overflow-hidden text-gray-500 text-xs md:text-base text-left md:text-center dark:border-neutral-700 dark:text-neutral-400">
+        <div role="table" aria-label="게시글 목록" className="flex flex-col">
+            <div
+                role="row"
+                className="max-md:hidden grid grid-cols-[64px_minmax(0,1fr)_150px_96px_64px] items-center gap-x-4 px-4 min-h-10.5 border-y border-textThr text-xs font-medium text-textSub"
+            >
+                <span role="columnheader" className="text-center">번호</span>
+                <span role="columnheader">제목</span>
+                <span role="columnheader">작성자</span>
+                <span role="columnheader" className="text-center">작성일</span>
+                <span role="columnheader" className="text-right">조회</span>
+            </div>
+            <div role="rowgroup" className="max-md:border-t max-md:border-textThr">
                 {listItems.map(post => (
                     <PostItem
                         key={post.id}

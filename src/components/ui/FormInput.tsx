@@ -1,10 +1,16 @@
-import { useId, type ComponentPropsWithRef } from "react";
+import { useId, type ComponentPropsWithRef, type ReactNode } from "react";
 import { CircleAlert } from "lucide-react";
 import clsx from "clsx";
 
 type FormInputProps = ComponentPropsWithRef<"input"> & {
     label?: string;
     error?: string;
+    /** 입력칸 왼쪽에 보이는 장식용 아이콘 */
+    icon?: ReactNode;
+    /** 입력칸 아래 도움말 */
+    hint?: string;
+    /** 라벨 오른쪽에 붙는 보조 정보 */
+    labelAside?: ReactNode;
 };
 
 export default function FormInput({
@@ -12,6 +18,9 @@ export default function FormInput({
     id,
     required,
     error,
+    icon,
+    hint,
+    labelAside,
     className = "",
     "aria-describedby": ariaDescribedBy,
     "aria-invalid": ariaInvalid,
@@ -20,19 +29,37 @@ export default function FormInput({
     const generatedId = useId();
     const inputId = id ?? generatedId;
     const errorId = `${inputId}-error`;
-    const describedBy = [ariaDescribedBy, error ? errorId : undefined]
+    const hintId = `${inputId}-hint`;
+    const describedBy = [ariaDescribedBy, hint ? hintId : undefined, error ? errorId : undefined]
         .filter(Boolean)
         .join(" ") || undefined;
 
     return (
-        <div>
-            {label && (
-                <label htmlFor={inputId} className="block text-sm mb-2">
-                    {label}
-                    {required && <span className="inline-block text-red-500 ml-1">*</span>}
-                </label>
+        <div className="flex flex-col gap-2">
+            {(label || labelAside) && (
+                <div className="flex items-baseline justify-between gap-2">
+                    {label && (
+                        <label htmlFor={inputId} className="text-sm font-bold text-textBase">
+                            {label}
+                            {required && <span aria-hidden="true" className="ml-1 text-primary">*</span>}
+                        </label>
+                    )}
+                    {labelAside}
+                </div>
             )}
-            <div className="relative">
+            <div
+                className={clsx(
+                    "flex items-center gap-2 min-h-13 pr-1.5 rounded-xl border bg-field transition-colors focus-within:border-primary",
+                    icon ? "pl-3.5" : "pl-4",
+                    error ? "border-danger" : "border-textThr",
+                    props.readOnly && "opacity-80"
+                )}
+            >
+                {icon && (
+                    <span aria-hidden="true" className="shrink-0 flex text-textSub/70 [&_svg]:size-4.5">
+                        {icon}
+                    </span>
+                )}
                 <input
                     {...props}
                     id={inputId}
@@ -40,19 +67,19 @@ export default function FormInput({
                     aria-invalid={error ? true : ariaInvalid}
                     aria-describedby={describedBy}
                     className={clsx(
-                        "py-2.5 sm:py-3 px-4 block w-full rounded-lg text-xs md:text-base disabled:opacity-50 disabled:pointer-events-none dark:bg-black border-textThr placeholder-neutral-500 focus:ring-neutral-600",
-                        error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-gray-200",
+                        "flex-1 min-w-0 min-h-11 p-0 border-0 bg-transparent text-[15px] text-textBase placeholder:text-textSub/70 focus:ring-0 disabled:opacity-50",
                         className
                     )}
                 />
-                {error && (
-                    <div className="flex items-center absolute inset-y-0 inset-e-0 pointer-events-none pe-3">
-                        <CircleAlert className="shrink-0 size-4 text-red-500" aria-hidden="true" />
-                    </div>
-                )}
             </div>
+            {hint && (
+                <p id={hintId} className="text-xs text-textSub">
+                    {hint}
+                </p>
+            )}
             {error && (
-                <p id={errorId} className="text-xs md:text-sm text-red-600 my-2">
+                <p id={errorId} className="flex items-center gap-1 text-xs text-danger">
+                    <CircleAlert className="shrink-0 size-3.5" aria-hidden="true" />
                     {error}
                 </p>
             )}

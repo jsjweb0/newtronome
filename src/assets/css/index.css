@@ -17,6 +17,11 @@
   --color-textBase: #000;
   --color-textSub: #696868;
   --color-textThr: #ebebeb;
+  --color-surface: #f7f7f8;
+  --color-field: #f1f1f3;
+  --color-line: #efefef;
+  --color-onPrimary: #23060f;
+  --color-danger: #d93636;
 
   --animate-fade-in: fade-in 200ms ease-out forwards;
   --animate-fade-out: fade-out 200ms ease-out forwards;
@@ -91,6 +96,11 @@
     --color-textBase: #ffffff;
     --color-textSub: #d0d0d0;
     --color-textThr: #333;
+    --color-surface: #0f0f0f;
+    --color-field: #161616;
+    --color-line: #1c1c1c;
+    --color-onPrimary: #04140d;
+    --color-danger: #ff8a8a;
   }
 }
 

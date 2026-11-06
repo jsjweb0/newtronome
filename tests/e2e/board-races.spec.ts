@@ -28,22 +28,22 @@ test('late A view mutation does not increment B', async ({ page, store }) => {
   const releaseA = store.hold('view', 'a');
   const releaseB = store.hold('view', 'b');
   await page.goto('/board/free/a');
-  await expect(page.getByText('조회수 10', { exact: true })).toBeVisible();
+  await expect(page.getByText('조회 10', { exact: true })).toBeVisible();
   await expect.poll(() => store.count('view', 'a')).toBe(1);
   await page.getByRole('link', { name: /다음글.*게시글 B/ }).click();
-  await expect(page.getByText('조회수 20', { exact: true })).toBeVisible();
+  await expect(page.getByText('조회 20', { exact: true })).toBeVisible();
   await expect.poll(() => store.count('view', 'b')).toBe(1);
   const responseA = page.waitForResponse((response) => response.url().endsWith('/__board_test_rpc')
     && response.request().postDataJSON().op === 'view' && response.request().postDataJSON().args[1] === 'a');
   releaseA();
   await responseA;
   await page.getByRole('heading', { name: /게시글 B/ }).click();
-  await expect(page.getByText('조회수 20', { exact: true })).toBeVisible();
+  await expect(page.getByText('조회 20', { exact: true })).toBeVisible();
   releaseB();
-  await expect(page.getByText('조회수 21', { exact: true })).toBeVisible();
+  await expect(page.getByText('조회 21', { exact: true })).toBeVisible();
   await page.goBack();
   await expect.poll(() => store.count('view', 'a')).toBe(2);
-  await expect(page.getByText('조회수 12', { exact: true })).toBeVisible();
+  await expect(page.getByText('조회 12', { exact: true })).toBeVisible();
 });
 
 test('repeated delete clicks send one request while deletion is pending', async ({ page, store }) => {
@@ -81,6 +81,6 @@ test('late deletion does not navigate away from a newly selected board', async (
     && response.request().postDataJSON().op === 'delete');
   release();
   await response;
-  await expect(page.getByRole('heading', { name: '공지사항', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Notice', exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/board\/notice/);
 });

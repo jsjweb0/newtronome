@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
-import { ThumbsUp, FileX2 } from 'lucide-react';
-import { BaseButton } from '../ui/BaseButton';
+import { ThumbsUp, FileX2, Trash2 } from 'lucide-react';
+import clsx from 'clsx';
+import { getBoardBadge } from './boardBadge';
 import { useToast } from '../../contexts/ToastContext';
 import Pagination from './Pagination';
 import { formatDate } from '../../utils/format';
@@ -98,7 +99,7 @@ export default function MyCommentSection({
     return (
       <p
         role="status"
-        className="mt-4 text-center text-sm text-textSub"
+        className="py-8 text-center text-sm text-textSub border-t border-textThr"
       >
         댓글을 불러오는 중입니다.
       </p>
@@ -117,7 +118,7 @@ export default function MyCommentSection({
 
   if (!filteredComments.length) {
     return (
-      <p role="status" className="mt-4 py-10 text-center text-sm text-textSub">
+      <p role="status" className="py-8 text-center text-sm text-textSub border-t border-textThr">
         작성한 댓글이 없습니다.
       </p>
     );
@@ -125,68 +126,70 @@ export default function MyCommentSection({
 
   return (
     <>
-      <ul className="divide-y divide-gray-200 border border-gray-200 rounded-md overflow-hidden text-gray-500 text-xs md:text-base text-left md:text-center dark:border-neutral-700 dark:text-neutral-400">
-        {currentComments.map((comment, idx) => (
-          <li
-            key={comment.id}
-            className="grid grid-cols-1 md:grid-cols-12 md:gap-2 px-4 py-3 text-xs md:text-base sm:items-center hover:bg-gray-50 dark:hover:bg-neutral-800 dark:border-neutral-700"
-          >
-            <div className="md:col-span-2 flex gap-2">
-              <div className="md:grow">{(currentPage - 1) * pageSize + idx + 1}</div>
-              <div className="w-2/3">
-                {comment.boardType === 'free'
-                  ? '자유게시판'
-                  : comment.boardType === 'notice'
-                    ? '공지사항'
-                    : comment.boardType}
+      <ul className="border-t border-textThr">
+        {currentComments.map((comment) => {
+          const badge = getBoardBadge(comment.boardType);
+
+          return (
+            <li
+              key={comment.id}
+              className="flex flex-col gap-1.5 px-1.5 md:px-2.5 py-3.5 border-b border-line hover:bg-field/60"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={clsx('shrink-0 px-2 py-0.5 rounded-md text-[11px] font-bold whitespace-nowrap', badge.className)}>
+                      {badge.label}
+                    </span>
+                    {!comment.postExists && (
+                      <span className="inline-flex items-center gap-1 text-[13px] italic text-textSub">
+                        <FileX2 aria-hidden="true" className="size-3.5" />
+                        원본 삭제됨
+                      </span>
+                    )}
+                  </div>
+                  {comment.postExists ? (
+                    <Link
+                      to={`/board/${comment.boardType}/${comment.postId}`}
+                      className="line-clamp-2 text-[15px] leading-relaxed text-textBase hover:text-primary"
+                    >
+                      {comment.content}
+                    </Link>
+                  ) : (
+                    <p className="line-clamp-2 text-[15px] leading-relaxed text-textBase/80">
+                      {comment.content}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  aria-label="댓글 삭제"
+                  className="shrink-0 flex items-center justify-center size-10 md:size-11 rounded-[10px] text-textSub hover:bg-field hover:text-danger focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
+                  onClick={() => handleDelete(comment)}
+                  disabled={deleteComment.isPending}
+                >
+                  <Trash2 aria-hidden="true" className="size-4.5" />
+                </button>
               </div>
-            </div>
-
-            {comment.postExists ? (
-              <Link
-                to={`/board/${comment.boardType}/${comment.postId}`}
-                className="flex items-start gap-2 md:col-span-6 text-left max-w-full py-2 font-medium text-gray-900 dark:text-white"
-              >
-                {comment.content}
-              </Link>
-            ) : (
-              <div className="md:col-span-6 py-2 text-left">
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {comment.content}
-                </p>
-
-                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-textSub/60 dark:bg-textThr">
-                  <FileX2 aria-hidden="true" className="size-3" />
-                  원본 삭제됨
+              <div className="flex items-center gap-3 text-xs text-textSub tabular-nums">
+                <span>{formatDate(comment.createdAt, true)}</span>
+                <span className="inline-flex items-center gap-1">
+                  <ThumbsUp aria-hidden="true" className="size-3.5" />
+                  <span className="sr-only">좋아요</span>
+                  {comment.likeCount ?? 0}
                 </span>
               </div>
-            )}
-
-            <div className="md:col-span-2">{formatDate(comment.createdAt, true)}</div>
-            <div className="flex items-center gap-2">
-              <ThumbsUp className={`shrink-0 size-4 fill-blue-600 stroke-blue-600 text-blue-600`} />
-              {comment.likeCount ?? 0}
-            </div>
-            <div className="max-md:mt-2">
-              <BaseButton
-                variant="cancel"
-                className="px-3! py-1! min-w-max"
-                onClick={() => handleDelete(comment)}
-                disabled={deleteComment.isPending}
-              >
-                삭제
-              </BaseButton>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
-      {/* 페이징 */}
       <Pagination
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+        label="댓글 페이지"
       />
     </>
   );

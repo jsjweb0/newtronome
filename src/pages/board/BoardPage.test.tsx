@@ -94,8 +94,8 @@ async function renderBoard(url = '/board/free', boardPosts = posts) {
 function visiblePostTitles() {
   // 제목·카테고리만 비교하고 비동기로 변하는 댓글 개수 표시는 제외한다.
   return screen.queryAllByRole('link').map((link) =>
-    Array.from(link.querySelectorAll(':scope > span.inline-block'))
-      .map((element) => element.textContent).join(''),
+    Array.from(link.querySelectorAll(':scope > [data-title-part]'))
+      .map((element) => element.textContent).join(' '),
   );
 }
 
@@ -156,7 +156,7 @@ describe('BoardPage URL navigation', () => {
     expect(params.get('category')).toBe('question');
     expect(params.get('sort')).toBe('asc');
     expect(params.get('page')).toBe('1');
-    expect(visiblePostTitles()).toEqual(['[질문]질문 12']);
+    expect(visiblePostTitles()).toEqual(['질문 질문 12']);
   });
 
   it('restores the previous page and sort with a single back navigation per action', async () => {
@@ -170,7 +170,7 @@ describe('BoardPage URL navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: '최신 순' }));
     await waitFor(() => expect(screen.queryByRole('button', { name: '오래된 순' })).not.toBeNull());
     expect(new URLSearchParams(currentSearch()).get('page')).toBe('1');
-    expect(visiblePostTitles()[0]).toBe('[수다]일반 글 1');
+    expect(visiblePostTitles()[0]).toBe('수다 일반 글 1');
 
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '이전 기록' })); });
     expect(new URLSearchParams(currentSearch()).get('page')).toBe('2');
@@ -187,7 +187,7 @@ describe('BoardPage URL navigation', () => {
     const originalUrl = currentSearch();
     const originalTitles = visiblePostTitles();
     fireEvent.click(screen.getByRole('button', { name: '질문' }));
-    await waitFor(() => expect(visiblePostTitles()).toEqual(['[질문]질문 12']));
+    await waitFor(() => expect(visiblePostTitles()).toEqual(['질문 질문 12']));
     expect(screen.getByRole('button', { name: '질문' }).getAttribute('aria-pressed')).toBe('true');
     const params = new URLSearchParams(currentSearch());
     expect(params.get('keyword')).toBe('질문');
@@ -202,11 +202,11 @@ describe('BoardPage URL navigation', () => {
   });
 
   it.each([
-    ['-1', 10, '[수다]일반 글 3'],
-    ['0', 10, '[수다]일반 글 3'],
-    ['abc', 10, '[수다]일반 글 3'],
-    ['1.5', 10, '[수다]일반 글 3'],
-    ['999', 2, '[수다]일반 글 1'],
+    ['-1', 10, '수다 일반 글 3'],
+    ['0', 10, '수다 일반 글 3'],
+    ['abc', 10, '수다 일반 글 3'],
+    ['1.5', 10, '수다 일반 글 3'],
+    ['999', 2, '수다 일반 글 1'],
   ])('shows a valid page for a direct URL with page=%s', async (page, count, lastTitle) => {
     await renderBoard(`/board/free?page=${page}`);
     expect(visiblePostTitles()).toHaveLength(count);
@@ -317,7 +317,7 @@ describe('BoardPage request failures and stale responses', () => {
         else oldRequest.reject(new Error('이전 게시판 조회 실패'));
       });
 
-      expect(screen.queryByRole('heading', { name: '공지사항' })).not.toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Notice' })).not.toBeNull();
       expect(screen.queryByRole('textbox', { name: '검색어' })).toBeNull();
       expect(screen.queryByRole('alert')).toBeNull();
       expect(screen.queryByText('아직 등록된 게시글이 없습니다.')).toBeNull();
@@ -354,7 +354,7 @@ describe('BoardPage request failures and stale responses', () => {
 
       expect(visiblePostTitles()).toEqual(currentTitles);
       expect(screen.queryByRole('alert')).toBeNull();
-      expect(screen.queryByRole('heading', { name: '공지사항' })).not.toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Notice' })).not.toBeNull();
     }
   );
 

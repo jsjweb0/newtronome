@@ -105,7 +105,7 @@ describe('PostCommentSection request state', () => {
     renderSection();
     expect((await screen.findByRole('alert')).textContent).toContain('댓글을 불러오지 못했습니다.');
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
-    expect(await screen.findByText('Comments')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: '댓글 0' })).toBeTruthy();
     expect(screen.getByText('0')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
   });
@@ -127,7 +127,7 @@ describe('PostCommentSection request state', () => {
     renderSection();
     const textbox = await screen.findByRole('textbox');
     fireEvent.change(textbox, { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: '작성' }));
+    fireEvent.click(screen.getByRole('button', { name: '등록' }));
     expect(commentMocks.createCommentInFirestore).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(textbox);
   });
@@ -161,14 +161,14 @@ describe('PostCommentSection request state', () => {
     renderSection();
     const textbox = await screen.findByRole('textbox') as HTMLTextAreaElement;
     fireEvent.change(textbox, { target: { value: '보존할 입력' } });
-    fireEvent.click(screen.getByRole('button', { name: '작성' }));
+    fireEvent.click(screen.getByRole('button', { name: '등록' }));
     await waitFor(() => expect(state.showToast).toHaveBeenCalledWith({
       message: '댓글 등록에 실패했습니다.', type: 'error',
     }));
     await waitFor(() => expect(textbox.disabled).toBe(false));
     expect(textbox.value).toBe('보존할 입력');
     expect(commentMocks.fetchComments).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: '작성' }));
+    fireEvent.click(screen.getByRole('button', { name: '등록' }));
     await waitFor(() => expect(commentMocks.createCommentInFirestore).toHaveBeenCalledTimes(2));
   });
 });

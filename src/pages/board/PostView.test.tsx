@@ -120,7 +120,7 @@ describe('PostView request state', () => {
     ).toBeTruthy();
 
     expect(screen.getByText('게시글 본문')).toBeTruthy();
-    expect(screen.getByText('조회수 3')).toBeTruthy();
+    expect(screen.getByText('조회 3')).toBeTruthy();
   });
 
   it('ends loading on a failed read and recovers when retried', async () => {
@@ -197,10 +197,10 @@ describe('PostView independent requests', () => {
     }
   );
 
-  it('조회수 증가 성공 후 상세 캐시를 갱신한다', async () => {
+  it('조회 증가 성공 후 상세 캐시를 갱신한다', async () => {
     renderPostView();
 
-    expect(await screen.findByText('조회수 4')).toBeTruthy();
+    expect(await screen.findByText('조회 4')).toBeTruthy();
 
     expect(incrementPostViewCount)
       .toHaveBeenCalledTimes(1);
@@ -212,7 +212,7 @@ describe('PostView independent requests', () => {
   it('목록으로 나갔다가 같은 글에 다시 진입하면 조회수를 한 번 더 증가시킨다', async () => {
     renderPostView();
 
-    await screen.findByText('조회수 4');
+    await screen.findByText('조회 4');
     expect(incrementPostViewCount).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: '목록 열기' }));
@@ -233,14 +233,13 @@ describe('PostView independent requests', () => {
     };
     const { queryClient } = renderPostView();
     await screen.findByText('게시글 본문');
-    const countElement = screen.getByRole('tooltip', { name: 'Comment', hidden: true }).parentElement;
-    expect(countElement?.textContent).toContain('0');
+    expect(screen.getByText('댓글 0')).toBeTruthy();
     act(() => {
       queryClient.setQueryData(
         commentQueryKeys.postForViewer('free', post.id), [comment, { ...comment, id: 'comment-2' }],
       );
     });
-    expect(await screen.findByText('2', { exact: true })).toBeTruthy();
+    expect(await screen.findByText('댓글 2')).toBeTruthy();
     expect(fetchComments).toHaveBeenCalledWith('free', post.id, undefined);
   });
 
