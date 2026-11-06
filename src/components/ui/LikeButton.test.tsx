@@ -200,15 +200,18 @@ describe('댓글 좋아요와 Query 캐시 동기화', () => {
 });
 
 describe('LikeButton request state', () => {
-  it('exposes the server-confirmed like state with aria-pressed', () => {
-    const button = renderLikeButton();
+  it.each(['heart', 'thumb'] as const)(
+    'exposes the server-confirmed like state with aria-pressed (%s)',
+    (type) => {
+      const button = renderLikeButton({ type });
 
-    publishLikeSnapshot([], 0);
-    expect(button.getAttribute('aria-pressed')).toBe('false');
+      publishLikeSnapshot([], 0);
+      expect(button.getAttribute('aria-pressed')).toBe('false');
 
-    publishLikeSnapshot(['user-1'], 1);
-    expect(button.getAttribute('aria-pressed')).toBe('true');
-  });
+      publishLikeSnapshot(['user-1'], 1);
+      expect(button.getAttribute('aria-pressed')).toBe('true');
+    },
+  );
 
   it('does not write before the first subscription response', () => {
     const button = renderLikeButton();
@@ -241,7 +244,7 @@ describe('LikeButton request state', () => {
     });
 
     expect(screen.getByText('0')).toBeTruthy();
-    expect(button.querySelector('svg')?.classList.contains('fill-red-500!')).toBe(false);
+    expect(button.querySelector('svg')?.classList.contains('fill-primary!')).toBe(false);
     expect(mocks.showToast).toHaveBeenCalledWith({
       message: '좋아요 처리에 실패했습니다.',
       type: 'error',
@@ -274,13 +277,13 @@ describe('LikeButton request state', () => {
       metadata: { hasPendingWrites: true },
     }));
     expect(screen.getByText('0')).toBeTruthy();
-    expect(button.querySelector('svg')?.classList.contains('fill-red-500!')).toBe(false);
+    expect(button.querySelector('svg')?.classList.contains('fill-primary!')).toBe(false);
 
     act(() => mocks.subscriptions[0].onSuccess({
       data: () => ({ likedUsers: ['user-1'], likeCount: 1 }),
       metadata: { hasPendingWrites: false },
     }));
     expect(screen.getByText('1')).toBeTruthy();
-    expect(button.querySelector('svg')?.classList.contains('fill-red-500!')).toBe(true);
+    expect(button.querySelector('svg')?.classList.contains('fill-primary!')).toBe(true);
   });
 });

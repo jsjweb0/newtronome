@@ -100,7 +100,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="px-3">
+    <div className="md:px-3">
       <section
         aria-label="플레이리스트 정보"
         className="relative isolate flex max-lg:flex-col items-center gap-10 lg:gap-12 px-5 pt-12 pb-14 lg:px-11 lg:pt-[94px] lg:pb-12"
@@ -256,7 +256,7 @@ export default function HomePage() {
                 key={`${track.id}-${idx}`}
                 idx={idx}
                 track={track}
-                currentTrack={currentTrack}
+                currentTrack={playbackMode === 'playlist' ? currentTrack : null}
                 viewMode={viewMode}
                 isPlaying={isPlaying}
                 onTrackClick={handleTrackClick}

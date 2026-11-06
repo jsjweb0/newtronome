@@ -42,7 +42,31 @@ export default function TrackItem({
     ariaLabel,
 }: TrackItemProps) {
     const isList = viewMode === "list";
-    const isThisTrack = currentTrack?.id === track.id;
+    const isBlocked = track.playbackStatus === 'blocked';
+
+    let playbackLabel = '';
+
+    if (isBlocked) {
+        playbackLabel = '재생 불가';
+    } else if (track.playbackStatus === 'preview') {
+        playbackLabel = '미리듣기';
+    }
+
+    // 재생 상태 배지 (미리듣기 / 재생 불가)
+    const playbackBadge = playbackLabel ? (
+        <i
+            className={clsx(
+                'shrink-0 inline-block rounded-full px-1.5 py-0.5 text-[11px] font-bold not-italic leading-tight whitespace-nowrap',
+                isBlocked
+                    ? 'bg-textThr text-textBase'
+                    : 'border border-primary/50 text-primary',
+            )}
+        >
+            {playbackLabel}
+        </i>
+    ) : null;
+
+    const isThisTrack = currentTrack != null && String(currentTrack.id) === String(track.id);
     const isPlayingTrack = isThisTrack && isPlaying;
     const isPaused = isThisTrack && !isPlaying;
 
@@ -66,7 +90,8 @@ export default function TrackItem({
     const duration = (
         <span className={clsx(
             "block shrink-0 text-textSub text-xs font-inter tabular-nums",
-            isList && "md:text-[13px] text-right"
+            isList && "md:text-[13px] text-right",
+            isBlocked && "opacity-50",
         )}>
             {formatTime(track.durationMs)}
         </span>
@@ -79,7 +104,8 @@ export default function TrackItem({
                 viewModeMultiClass(viewMode, {
                     grid: "pt-[100%] rounded-xl",
                     list: "size-10 md:size-12 rounded-lg"
-                })
+                }),
+                isBlocked && 'opacity-50',
             )}>
                 <img src={toHighResArtwork(track.artworkUrl)}
                     alt=""
@@ -93,7 +119,12 @@ export default function TrackItem({
                         event.currentTarget.onerror = null;
                     }}
                 />
-                {interactive && (
+                {!isList && playbackBadge && (
+                    <span className="absolute top-2 left-2 z-1 flex rounded-full bg-black/70">
+                        {playbackBadge}
+                    </span>
+                )}
+                {(interactive && !isBlocked) && (
                     <i className={clsx(
                         "hidden items-center justify-center absolute inset-0 bg-white/30 ",
                         "opacity-0 transition-all duration-300",
@@ -122,13 +153,16 @@ export default function TrackItem({
                     </i>
                 )}
             </span>
-            <span className={clsx("block min-w-0", !isList && "mt-2.5")}>
-                <span className={clsx(
-                    "block text-sm md:text-[15px] font-bold",
-                    "group-[.isThisTrack]:text-primary",
-                    (isList || actions) && "truncate"
-                )}>
-                    {track.title}
+            <span className={clsx("block min-w-0", !isList && "mt-2.5", isBlocked && "opacity-50")}>
+                <span className="flex items-center gap-1.5 min-w-0">
+                    <span className={clsx(
+                        "block min-w-0 text-sm md:text-[15px] font-bold",
+                        "group-[.isThisTrack]:text-primary",
+                        (isList || actions) && "truncate"
+                    )}>
+                        {track.title}
+                    </span>
+                    {isList && playbackBadge}
                 </span>
                 <span
                     className={clsx(
@@ -152,10 +186,12 @@ export default function TrackItem({
                 onTrackClick?.(track);
             }}
             className={contentClassName}
-            aria-label={
+            disabled={isBlocked}
+            aria-label={[
                 ariaLabel ??
-                `${track.title} ${isPlayingTrack || isPlayingPreview ? '일시정지' : '재생'}`
-            }
+                `${track.title} ${isPlayingTrack || isPlayingPreview ? '일시정지' : '재생'}`,
+                playbackLabel,
+            ].filter(Boolean).join(', ')}
         >
             {trackContent}
         </button>
@@ -171,9 +207,12 @@ export default function TrackItem({
                 "grid items-center min-h-15 md:min-h-17 px-1 md:px-3 rounded-[10px]",
                 "grid-cols-[20px_40px_minmax(0,1fr)_34px_auto] gap-x-2",
                 "md:grid-cols-[44px_48px_minmax(0,1fr)_72px_auto] md:gap-x-3",
-                interactive && "hover:bg-textSub/10"
+                interactive && !isBlocked && "hover:bg-textSub/10"
             )}>
-                <span className="block text-center text-textSub text-xs md:text-sm font-inter tabular-nums">
+                <span className={clsx(
+                    "block text-center text-textSub text-xs md:text-sm font-inter tabular-nums",
+                    isBlocked && "opacity-50",
+                )}>
                     {idx + 1}
                 </span>
                 {trackButton}

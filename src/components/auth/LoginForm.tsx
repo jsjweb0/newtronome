@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
 import useForm from '../../hooks/useForm';
-import clsx from 'clsx';
+import { CircleAlert, Lock, Mail, UserPlus } from 'lucide-react';
+import AuthCard, { authSubmitClasses } from './AuthCard';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { FirebaseError } from 'firebase/app';
 
@@ -132,88 +133,72 @@ export default function LoginForm() {
   }, [setForm]);
 
   return (
-    <div className="mt-7 px-4">
-      <div className="w-full max-w-md mx-auto p-4 sm:p-7 border border-textThr rounded-xl shadow-2xs">
-        <div className="text-center">
-          <h1 className="block text-xl md:text-2xl font-bold">로그인</h1>
-        </div>
+    <AuthCard title="로그인" description="다시 만나서 반가워요. 저장한 음악이 기다리고 있어요.">
+      <form noValidate onSubmit={handleSubmit(handleLogin)} className="flex flex-col gap-4.5">
+        <FormInput
+          label="이메일"
+          type="email"
+          id="email"
+          icon={<Mail />}
+          value={form.email}
+          onChange={handleChange}
+          placeholder="test@email.com"
+          required
+          error={errors.email}
+          ref={emailRef}
+          autoComplete="username"
+        />
+        <FormInput
+          label="비밀번호"
+          type="password"
+          id="password"
+          icon={<Lock />}
+          autoComplete="current-password"
+          value={form.password}
+          onChange={handleChange}
+          placeholder="비밀번호를 입력하세요."
+          required
+          error={errors.password}
+          ref={passwordRef}
+        />
 
-        <div className="mt-10">
-          {/* Form */}
-          <form noValidate onSubmit={handleSubmit(handleLogin)}>
-            <div className="grid gap-y-4">
-              <FormInput
-                label="이메일"
-                type="email"
-                id="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="test@email.com"
-                required
-                error={errors.email}
-                ref={emailRef}
-                autoComplete="username"
-              />
-              <FormInput
-                label="비밀번호"
-                type="password"
-                id="password"
-                autoComplete="current-password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="비밀번호를 입력하세요."
-                required
-                error={errors.password}
-                ref={passwordRef}
-              />
+        <label htmlFor="rememberMe" className="self-start flex items-center gap-2.5 min-h-11 cursor-pointer">
+          <input
+            id="rememberMe"
+            name="rememberMe"
+            type="checkbox"
+            checked={rememberMe}
+            onChange={() => setRememberMe((prev) => !prev)}
+            className="shrink-0 size-5.5 rounded-md border-[1.5px] border-textSub/60 bg-transparent text-primary focus:ring-primary focus:ring-offset-0 checked:border-primary checked:bg-primary"
+          />
+          <span className="text-sm text-textSub">아이디 저장</span>
+        </label>
+        <button
+          type="submit"
+          className={authSubmitClasses}
+          disabled={!isDirty || isSubmitting}
+        >
+          {isSubmitting ? '로그인 중...' : '로그인'}
+        </button>
+        {loginError && (
+          <p role="alert" className="flex items-center gap-1 text-sm text-danger">
+            <CircleAlert aria-hidden="true" className="shrink-0 size-4" />
+            {loginError}
+          </p>
+        )}
+      </form>
 
-              <div className="flex items-center">
-                <div className="flex">
-                  <input
-                    id="rememberMe"
-                    name="rememberMe"
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={() => setRememberMe((prev) => !prev)}
-                    className="shrink-0 mt-0.5 size-5 border border-textThr rounded-sm focus:ring-primary dark:bg-black checked:bg-primary"
-                  />
-                </div>
-                <div className="ms-3">
-                  <label htmlFor="rememberMe" className="text-sm">
-                    아이디 저장
-                  </label>
-                </div>
-              </div>
-              <button
-                type="submit"
-                className={clsx(
-                  'w-full py-3 px-4 inline-flex justify-center items-center gap-x-2  rounded-lg border border-transparent',
-                  'text-sm font-medium text-white dark:text-black bg-primary',
-                  'disabled:pointer-events-none disabled:bg-textThr disabled:text-neutral-500'
-                )}
-                disabled={!isDirty || isSubmitting}
-              >
-                {isSubmitting ? '로그인 중...' : '로그인'}
-              </button>
-            </div>
-          </form>
-          {/* End Form */}
-          {loginError && <div className="text-red-500 text-sm mt-2">{loginError}</div>}
-        </div>
-
-        <div className="my-8 py-3 flex items-center text-xs text-gray-400 uppercase before:flex-1 before:border-t before:border-gray-200 before:me-6 after:flex-1 after:border-t after:border-gray-200 after:ms-6 dark:text-neutral-500 dark:before:border-neutral-600 dark:after:border-neutral-600">
-          또는
-        </div>
-
-        <div>
-          <Link
-            to="/signup"
-            className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
-          >
-            이메일로 회원가입
-          </Link>
-        </div>
+      <div aria-hidden="true" className="flex items-center gap-3 text-xs text-textSub/80 before:h-px before:flex-1 before:bg-textThr after:h-px after:flex-1 after:bg-textThr">
+        또는
       </div>
-    </div>
+
+      <Link
+        to="/signup"
+        className="w-full min-h-13 inline-flex items-center justify-center gap-2 rounded-xl border border-textThr text-[15px] font-bold text-textBase hover:bg-field focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        <UserPlus aria-hidden="true" className="size-4.5" />
+        이메일로 회원가입
+      </Link>
+    </AuthCard>
   );
 }

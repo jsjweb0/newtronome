@@ -12,7 +12,7 @@ test('list read failure shows retry UI and recovers without production traffic',
 
 test('게시글을 등록하면 숫자 ID를 받아 새 글 상세로 이동한다', async ({ page, store }) => {
   await page.goto('/board/free/write');
-  await page.getByTitle('카테고리').selectOption('chat');
+  await page.getByRole('radio', { name: '수다', exact: true }).click();
   await page.getByPlaceholder('제목을 입력해주세요').fill('숫자 번호 게시글');
   await page.getByPlaceholder('내용을 입력해주세요.').fill('새 게시글 본문');
   await page.getByRole('button', { name: '등록', exact: true }).click();
@@ -25,7 +25,7 @@ test('게시글을 등록하면 숫자 ID를 받아 새 글 상세로 이동한�
 test('failed post create and update retain entered values and existing data', async ({ page, store }) => {
   store.fail('create');
   await page.goto('/board/free/write');
-  await page.getByTitle('카테고리').selectOption('chat');
+  await page.getByRole('radio', { name: '수다', exact: true }).click();
   await page.getByPlaceholder('제목을 입력해주세요').fill('실패해도 남을 제목');
   await page.getByPlaceholder('내용을 입력해주세요.').fill('실패해도 남을 본문');
   await page.getByRole('button', { name: '등록', exact: true }).click();
@@ -49,15 +49,15 @@ test('failed comment mutations retain input and server-backed rows', async ({ pa
   const composer = page.getByPlaceholder('내용을 입력해주세요.');
   store.fail('createComment');
   await composer.fill('등록 실패 댓글');
-  await page.getByRole('button', { name: '작성', exact: true }).click();
+  await page.getByRole('button', { name: '등록', exact: true }).click();
   await expect(page.getByText('댓글 등록에 실패했습니다.', { exact: true })).toBeVisible();
   await expect(composer).toHaveValue('등록 실패 댓글');
   await expect(page.getByText('A의 기존 댓글', { exact: true })).toBeVisible();
 
-  const originalRow = page.getByText('A의 기존 댓글', { exact: true }).locator('xpath=../../..');
+  const originalRow = page.getByText('A의 기존 댓글', { exact: true }).locator('xpath=ancestor::li[1]');
   store.fail('updateComment');
-  await originalRow.getByRole('button', { name: 'Dropdown', exact: true }).click();
-  await originalRow.getByRole('button', { name: '수정', exact: true }).click();
+  await originalRow.getByRole('button', { name: '댓글 메뉴 (수정, 삭제)', exact: true }).click();
+  await originalRow.getByRole('menuitem', { name: '수정', exact: true }).click();
   const editor = page.locator('textarea').last();
   await editor.fill('수정 실패 댓글');
   await page.getByRole('button', { name: '수정', exact: true }).click();
@@ -68,8 +68,8 @@ test('failed comment mutations retain input and server-backed rows', async ({ pa
   // Cancel editing, then verify a failed delete keeps the existing row.
   await page.getByRole('button', { name: '취소', exact: true }).click();
   store.fail('deleteComment');
-  await originalRow.getByRole('button', { name: 'Dropdown', exact: true }).click();
-  await originalRow.getByRole('button', { name: '삭제', exact: true }).click();
+  await originalRow.getByRole('button', { name: '댓글 메뉴 (수정, 삭제)', exact: true }).click();
+  await originalRow.getByRole('menuitem', { name: '삭제', exact: true }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: '확인', exact: true }).click();
   await expect(page.getByText('삭제에 실패했습니다.', { exact: true })).toBeVisible();
   await expect(page.getByText('A의 기존 댓글', { exact: true })).toBeVisible();
@@ -105,8 +105,8 @@ test('search, sort, pagination, detail and browser back preserve list state', as
       date: new Date(Date.UTC(2026, 9, index + 1)),
     }));
   await page.goto('/board/free');
-  await page.getByRole('navigation', { name: 'Pagination' })
-    .getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('navigation', { name: '페이지' })
+    .getByRole('button', { name: '2페이지', exact: true }).click();
   await expect(page).toHaveURL(/page=2/);
   await expect(page.getByRole('link', { name: /React 글 2/ })).toBeVisible();
   await page.getByRole('link', { name: /React 글 2/ }).click();

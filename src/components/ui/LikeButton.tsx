@@ -176,7 +176,7 @@ export default function LikeButton({
   };
 
   return (
-    <div className="inline-flex items-center relative text-sm text-gray-500">
+    <div className="inline-flex items-center relative text-sm text-textSub">
       {type === 'heart' && (
         <>
           <button
@@ -196,7 +196,7 @@ export default function LikeButton({
               className={clsx(
                 'shrink-0 size-4 transition-[fill] duration-300 stroke-textBase',
                 svgClassName,
-                liked ? 'fill-red-500! stroke-red-500!' : '',
+                liked ? 'fill-primary! stroke-primary!' : '',
                 animate ? 'animate-like' : ''
               )}
               aria-hidden="true"
@@ -217,23 +217,22 @@ export default function LikeButton({
                 : '좋아요'
             }
             aria-describedby={ariaDescribedBy}
-            aria-pressed={!liked}
+            aria-pressed={liked}
             className={clsx(
-              'group flex items-center text-xs md:text-sm hover:text-gray-800 focus:text-gray-800',
-              'dark:hover:text-neutral-200 dark:focus:text-neutral-200',
-              liked ? 'text-blue-600 font-medium' : 'text-gray-500 dark:text-neutral-400'
+              'group flex items-center justify-center min-h-9 min-w-9 rounded-full text-[13px] hover:bg-field hover:text-textBase focus-visible:outline-2 focus-visible:outline-primary',
+              liked ? 'text-primary font-bold' : 'text-textSub'
             )}
           >
             <ThumbsUp
               className={clsx(
-                'shrink-0 size-4 group-hover:text-gray-800 dark:group-hover:text-neutral-200',
+                'shrink-0 size-4',
                 'transition-all duration-300',
-                liked ? 'fill-blue-600 stroke-blue-600 text-blue-600' : ''
+                liked ? 'fill-primary/30 stroke-primary text-primary' : ''
               )}
               aria-hidden="true"
             />
           </button>
-          {showCount && <span className="inline-block ml-1.5">{count}</span>}
+          {showCount && <span className="inline-block -ml-1 mr-1.5 text-[13px] text-textSub tabular-nums">{count}</span>}
         </>
       )}
     </div>

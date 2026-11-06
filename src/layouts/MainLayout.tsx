@@ -14,7 +14,8 @@ import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton';
 import LoadingLogo from '../components/ui/LoadingLogo';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle';
-import type { PlayerTrack } from '../features/player/types/player.types';
+import type { PlayerTrack, PlaySingleTrackOptions } from '../features/player/types/player.types';
+import { PLAYLISTS } from '../features/playlists/data/playlists';
 
 const getPageTitle = (pathname: string) => {
   const [section, boardType, action] =
@@ -45,25 +46,6 @@ const getPageTitle = (pathname: string) => {
   return matchedRoute?.title ?? '페이지를 찾을 수 없음';
 };
 
-const PLAYLIST_URLS = [
-  'https://soundcloud.com/ssu-1/sets/2025-summer',
-  'https://soundcloud.com/ssu-1/sets/2024-spring',
-  'https://soundcloud.com/ssu-1/sets/2023-spring',
-  'https://soundcloud.com/ssu-1/sets/2022-summer',
-  'https://soundcloud.com/ssu-1/sets/2020-spring',
-  'https://soundcloud.com/ssu-1/sets/2019-spring',
-  'https://soundcloud.com/ssu-1/sets/2018-disco',
-  'https://soundcloud.com/ssu-1/sets/2017-summer',
-  'https://soundcloud.com/ssu-1/sets/2017-spring',
-  'https://soundcloud.com/ssu-1/sets/2017spring',
-  'https://soundcloud.com/ssu-1/sets/m3stc8ixvqcw',
-  'https://soundcloud.com/ssu-1/sets/lkuriahk4u4p',
-  'https://soundcloud.com/ssu-1/sets/1j886wtueuzr',
-  'https://soundcloud.com/ssu-1/sets/spring-disco',
-  'https://soundcloud.com/ssu-1/sets/autumn-disco',
-  'https://soundcloud.com/ssu-1/sets/summer-disco2',
-];
-
 export interface PlayerOutletContext {
   isSidebarCollapsed: boolean;
 
@@ -71,7 +53,10 @@ export interface PlayerOutletContext {
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
   onPauseSoundCloud: () => void;
-  onPlaySingleTrack: (track: PlayerTrack) => void;
+  onPlaySingleTrack: (
+    track: PlayerTrack,
+    options?: PlaySingleTrackOptions
+  ) => void;
 
   playlistStatus: ReturnType<typeof useSoundCloudWidget>['playlistStatus'];
   widgetError: string | null;
@@ -85,11 +70,11 @@ export default function MainLayout() {
     document.title = `${getPageTitle(location.pathname)} | NEWTRONOME`;
   }, [location.pathname]);
 
-  const [playlistUrl] = useState(() => {
-    const randomIndex = Math.floor(Math.random() * PLAYLIST_URLS.length);
-    return PLAYLIST_URLS[randomIndex];
+  const [selectedPlaylist] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * PLAYLISTS.length);
+    return PLAYLISTS[randomIndex];
   });
-  const soundCloudWidget = useSoundCloudWidget(playlistUrl);
+  const soundCloudWidget = useSoundCloudWidget(selectedPlaylist.soundCloudUrl);
 
   const tracks = usePlayerStore((state) => state.tracks);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
@@ -130,7 +115,7 @@ export default function MainLayout() {
   const outletContext: PlayerOutletContext = {
     isSidebarCollapsed,
 
-    playlistUrl,
+    playlistUrl: selectedPlaylist.soundCloudUrl,
     onSelectTrack: soundCloudWidget.selectTrack,
     onToggleTrack: soundCloudWidget.toggle,
     onPauseSoundCloud: soundCloudWidget.pause,
@@ -193,7 +178,7 @@ export default function MainLayout() {
           tabIndex={-1}
           inert={isMobilePanelOpen}
           className={clsx(
-            'transition-all duration-300',
+            'py-4 lg:py-10 transition-all duration-300',
             isPanelCollapsed ? 'xl:max-w-[calc(100%-300px-0.75rem)]' : 'xl:max-w-full'
           )}
         >
@@ -208,7 +193,7 @@ export default function MainLayout() {
 
         {/* 오른쪽 고정 플레이리스트 패널 */}
         <PlaylistPanel
-          playlistUrl={playlistUrl}
+          playlistUrl={selectedPlaylist.soundCloudUrl}
           collapsed={isPanelCollapsed}
           tracks={tracks}
           onSelect={soundCloudWidget.selectTrack}
@@ -224,7 +209,7 @@ export default function MainLayout() {
       <footer
         inert={isMobilePanelOpen}
         className={clsx(
-          'z-100 xl:z-50 fixed left-3 bottom-3 w-full max-w-[calc(100%-1.5rem)] xl:h-29 bg-background/90 backdrop-blur-xs rounded-2xl transition-all',
+          'z-50 fixed left-3 bottom-3 w-full max-w-[calc(100%-1.5rem)] xl:h-29 bg-background/90 backdrop-blur-xs rounded-2xl transition-all',
           'border border-textThr dark:border-none',
           isSidebarCollapsed
             ? 'lg:left-25 lg:max-w-[calc(100%-7rem)]'

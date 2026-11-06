@@ -17,12 +17,22 @@ import {
 } from '../../utils/profile';
 import FormInput from '../../components/ui/FormInput';
 import { formatDate } from '../../utils/format';
-import { LogOut, Mail, Calendar } from 'lucide-react';
+import {
+  Calendar,
+  Image as ImageIcon,
+  KeyRound,
+  Lock,
+  LogOut,
+  Mail,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react';
+import Avatar from '../../components/ui/Avatar';
 import { useNotifications } from '../../contexts/NotificationContext';
 import RetryErrorState from '../../components/ui/RetryErrorState';
 
 export default function AccountProfile() {
-  const { user, logout, loading, avatarUrl, nicknameUrl } = useAuth();
+  const { user, logout, loading } = useAuth();
   const db = getFirestore();
   const auth = getAuth();
   const { showToast } = useToast();
@@ -224,128 +234,152 @@ export default function AccountProfile() {
 
   if (loading || !user) return null;
 
+  const displayName = nickname.trim() || user.displayName?.trim() || user.email || '사용자';
+  const fieldsetClasses =
+    'min-w-0 m-0 flex flex-col gap-4.5 px-4 py-4.5 md:p-6 rounded-2xl border border-line bg-surface';
+  const legendClasses = 'float-left w-full mb-0.5 p-0 text-base font-extrabold text-textBase';
+
   return (
-    <div className="text-textSub">
-      <div className="lg:w-md p-4 sm:p-7 m-auto lg:border lg:border-textThr rounded-xl">
-        <h2 className="block mb-4 text-xl md:text-2xl font-bold text-textBase text-center">
-          PROFILE
-        </h2>
-        <div className="flex justify-center items-center">
-          <div className="relative inline-block w-28 h-28">
-            <img
-              src={photoURL || nicknameUrl || avatarUrl}
-              alt={nickname || user?.email || ''}
-              className="inline-block rounded-full w-full h-full object-cover object-center"
-            />
-            {profileChanged && (
-              <span className="animate-fade-in absolute top-1 inset-e-2 block size-4 rounded-full bg-red-500 dark:ring-neutral-900"></span>
-            )}
-          </div>
-        </div>
-        <div className="mt-6 space-y-3">
-          <div className="flex items-center">
-            <p className="shrink-0 basis-20 flex items-center gap-x-1 text-sm">
-              <Mail className="shrink-0 size-4" />
+    <section aria-labelledby="account-title" className="w-full max-w-190 mx-auto flex flex-col gap-4 md:gap-5 px-1 md:px-7 pb-6">
+      <div>
+        <p className="font-inter text-xs font-extrabold tracking-[0.14em] text-primary">PROFILE</p>
+        <h1 id="account-title" className="mt-1 text-[28px] leading-tight font-extrabold tracking-tight text-textBase">
+          My Account
+        </h1>
+      </div>
+
+      <div className="flex items-center gap-4.5 px-4 py-4.5 md:px-6 md:py-5.5 rounded-2xl border border-line bg-linear-135 from-primary/10 to-surface to-70%">
+        <Avatar
+          name={displayName}
+          photoURL={photoURL || user.photoURL}
+          className="size-18 text-[28px] ring-2 ring-primary ring-offset-3 ring-offset-surface"
+        />
+        <div className="min-w-0 flex flex-col gap-1">
+          <strong className="truncate text-xl text-textBase">{displayName}</strong>
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 text-[13px]">
+            <dt className="flex items-center gap-1 text-textSub/80">
+              <Mail aria-hidden="true" className="size-3.5" />
               이메일
-            </p>
-            <div className="text-xs md:text-base">{user.email}</div>
-          </div>
-          <div className="flex items-center mb-6">
-            <p className="shrink-0 basis-20 flex items-center gap-x-1 text-sm">
-              <Calendar className="shrink-0 size-4" />
+            </dt>
+            <dd className="truncate text-textSub">{user.email}</dd>
+            <dt className="flex items-center gap-1 text-textSub/80">
+              <Calendar aria-hidden="true" className="size-3.5" />
               가입일
-            </p>
-            <div className="text-xs md:text-base">{formatDate(user.createdAt, true)}</div>
-          </div>
-
-          {profileLoading ? (
-            <p role="status">프로필을 불러오는 중입니다.</p>
-          ) : profileError ? (
-            <RetryErrorState
-              message={profileError}
-              onRetry={() => {
-                setProfileLoading(true);
-                setRetryCount((count) => count + 1);
-              }}
-            />
-          ) : (
-            <form onSubmit={handleSave}>
-              <div className="grid gap-y-5">
-                <FormInput
-                  label="이름"
-                  id="nickname"
-                  name="nickname"
-                  autoComplete="username"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  error={errors.nickname}
-                />
-
-                <FormInput
-                  label="사진 URL"
-                  id="photoURL"
-                  name="photoURL"
-                  autoComplete="off"
-                  value={photoURL}
-                  onChange={(e) => setPhotoURL(e.target.value)}
-                  error={errors.photoURL}
-                />
-
-                <FormInput
-                  label="현재 비밀번호"
-                  type="password"
-                  id="currentPassword"
-                  name="currentPassword"
-                  autoComplete="current-password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  error={errors.currentPassword}
-                />
-
-                <FormInput
-                  label="새 비밀번호"
-                  type="password"
-                  id="newPassword"
-                  name="newPassword"
-                  autoComplete="new-password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  error={errors.password}
-                />
-
-                <FormInput
-                  label="새 비밀번호 확인"
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  error={errors.confirmPassword}
-                />
-
-                <button
-                  type="submit"
-                  className="w-full mt-4 py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-primary text-white disabled:bg-textThr"
-                  disabled={saving || !isDirty}
-                >
-                  저장하기
-                </button>
-              </div>
-            </form>
-          )}
+            </dt>
+            <dd className="text-textSub">{formatDate(user.createdAt, true)}</dd>
+          </dl>
         </div>
       </div>
 
-      <div className="flex items-center justify-center my-4">
-        <button
-          type="button"
-          onClick={logout}
-          className="flex items-center gap-x-1 text-primary text-sm md:text-base"
-        >
-          <LogOut className="size-3 md:size-4" /> LogOut
-        </button>
-      </div>
-    </div>
+      {profileLoading ? (
+        <p role="status" className="py-8 text-center text-sm text-textSub">프로필을 불러오는 중입니다.</p>
+      ) : profileError ? (
+        <RetryErrorState
+          message={profileError}
+          onRetry={() => {
+            setProfileLoading(true);
+            setRetryCount((count) => count + 1);
+          }}
+        />
+      ) : (
+        <form onSubmit={handleSave} noValidate className="flex flex-col gap-4">
+          <fieldset className={fieldsetClasses}>
+            <legend className={legendClasses}>프로필</legend>
+            <FormInput
+              label="이름"
+              id="nickname"
+              name="nickname"
+              icon={<UserRound />}
+              autoComplete="username"
+              placeholder="이름을 입력하세요"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              error={errors.nickname}
+            />
+
+            <FormInput
+              label="사진 URL"
+              id="photoURL"
+              name="photoURL"
+              icon={<ImageIcon />}
+              autoComplete="off"
+              placeholder="https://example.com/profile.jpg"
+              value={photoURL}
+              onChange={(e) => setPhotoURL(e.target.value)}
+              error={errors.photoURL}
+            />
+          </fieldset>
+
+          <fieldset className={fieldsetClasses}>
+            <legend className={legendClasses}>
+              비밀번호 변경 <span className="text-xs font-medium text-textSub">· 바꿀 때만 입력하세요</span>
+            </legend>
+            <FormInput
+              label="현재 비밀번호"
+              type="password"
+              id="currentPassword"
+              name="currentPassword"
+              icon={<Lock />}
+              autoComplete="current-password"
+              placeholder="현재 비밀번호"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              error={errors.currentPassword}
+            />
+
+            <FormInput
+              label="새 비밀번호"
+              type="password"
+              id="newPassword"
+              name="newPassword"
+              icon={<KeyRound />}
+              autoComplete="new-password"
+              placeholder="6자 이상"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              error={errors.password}
+            />
+
+            <FormInput
+              label="새 비밀번호 확인"
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              icon={<ShieldCheck />}
+              autoComplete="new-password"
+              placeholder="새 비밀번호를 다시 입력"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={errors.confirmPassword}
+            />
+          </fieldset>
+
+          <div className="flex max-md:flex-col-reverse md:items-center justify-between gap-3 pt-1">
+            <button
+              type="button"
+              onClick={logout}
+              className="inline-flex items-center justify-center gap-2 min-h-12 px-4.5 rounded-full border border-danger/40 text-sm font-bold text-danger hover:bg-danger/10 focus-visible:outline-2 focus-visible:outline-danger"
+            >
+              <LogOut aria-hidden="true" className="size-4" />
+              LogOut
+            </button>
+            <div className="flex max-md:flex-col md:items-center gap-3">
+              {isDirty && (
+                <span role="status" className="text-xs text-amber-600 dark:text-[#FFB54A] max-md:text-center">
+                  저장하지 않은 변경 사항이 있어요
+                </span>
+              )}
+              <button
+                type="submit"
+                className="min-h-12 px-7 rounded-full bg-primary text-[15px] font-extrabold text-onPrimary hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:bg-textThr disabled:text-textSub"
+                disabled={saving || !isDirty}
+              >
+                저장하기
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+    </section>
   );
 }

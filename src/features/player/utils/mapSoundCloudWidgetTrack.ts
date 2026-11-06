@@ -39,8 +39,19 @@ export function mapSoundCloudWidgetTrack(
     ? value.user.username.trim()
     : '';
 
+  let playbackStatus: NonNullable<PlayerTrack['playbackStatus']> = 'unknown';
+
+  if (value.policy === 'BLOCK' || value.playable === false) {
+    playbackStatus = 'blocked';
+  } else if (value.policy === 'SNIP') {
+    playbackStatus = 'preview';
+  } else if (value.policy === 'ALLOW' && value.playable === true) {
+    playbackStatus = 'allowed';
+  }
+
   return {
     id,
+    playbackStatus,
     title: value.title.trim(),
     artist: artist || '알 수 없는 아티스트',
     artworkUrl: typeof value.artwork_url === 'string' ? value.artwork_url : null,

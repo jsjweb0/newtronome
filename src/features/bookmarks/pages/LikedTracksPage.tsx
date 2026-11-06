@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
 import TrackItem from '../../../components/track/TrackItem';
@@ -7,13 +7,15 @@ import { useToast } from '../../../contexts/ToastContext';
 import {
   removeSavedTrack,
   subscribeToSavedTracks,
+  updateSavedTrackPlaybackStatus,
 } from '../services/savedTracks';
 import type { SavedTrack } from '../types/saved-track.types';
 import { selectCurrentTrack, usePlayerStore } from '../../player/stores/usePlayerStore';
 import type { PlayerOutletContext } from '../../../layouts/MainLayout';
-import type { PlayerTrack } from '../../player/types/player.types';
+import type { PlaybackStatus, PlayerTrack } from '../../player/types/player.types';
 import RetryErrorState from '../../../components/ui/RetryErrorState';
 import { SoundCloudTrackLink, trackActionButtonClass } from '../../../components/track/TrackItemActions';
+import { getCachedPlaybackStatus } from '../../player/utils/getCachedPlaybackStatus';
 
 export default function LikedTracksPage() {
   const { user, loading: isAuthLoading } = useAuth();
@@ -23,6 +25,13 @@ export default function LikedTracksPage() {
   const playbackMode = usePlayerStore((state) => state.playbackMode);
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
+
+  const playlistTracks = usePlayerStore((state) => state.tracks);
+
+  const [resolvedStatuses, setResolvedStatuses] = useState<
+    Record<string, PlaybackStatus>
+  >({});
+  const persistedPlaylistStatusesRef = useRef(new Set<string>());
 
   const [tracks, setTracks] = useState<SavedTrack[]>([]);
   const [loadedUserUid, setLoadedUserUid] = useState<string | null>(null);
@@ -60,7 +69,62 @@ export default function LikedTracksPage() {
     );
   }, [isAuthLoading, user?.uid, retryCount]);
 
+  const playlistStatusById = useMemo(() => {
+    const statusMap = new Map<string, PlaybackStatus>();
+
+    for (const track of playlistTracks) {
+      if (track.playbackStatus) {
+        statusMap.set(String(track.id), track.playbackStatus);
+      }
+    }
+
+    return statusMap;
+  }, [playlistTracks]);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    for (const track of tracks) {
+      const trackId = String(track.id);
+      const status = playlistStatusById.get(trackId);
+
+      if (!status || status === 'unknown') continue;
+      if (getCachedPlaybackStatus(track) === status) continue;
+
+      const persistenceKey = `${user.uid}:${trackId}:${status}`;
+
+      if (persistedPlaylistStatusesRef.current.has(persistenceKey)) continue;
+
+      persistedPlaylistStatusesRef.current.add(persistenceKey);
+      void updateSavedTrackPlaybackStatus(user.uid, track.id, status).catch(
+        () => {
+          persistedPlaylistStatusesRef.current.delete(persistenceKey);
+        }
+      );
+    }
+  }, [playlistStatusById, tracks, user?.uid]);
+
+  const displayedTracks = useMemo(
+    () =>
+      tracks.map((track) => {
+        const trackId = String(track.id);
+
+        return {
+          ...track,
+          playbackStatus:
+            resolvedStatuses[trackId] ??
+            playlistStatusById.get(trackId) ??
+            getCachedPlaybackStatus(track),
+        };
+      }),
+    [playlistStatusById, resolvedStatuses, tracks]
+  );
+
   const handleTrackClick = (track: PlayerTrack) => {
+    if (track.playbackStatus === 'blocked') {
+      return;
+    }
+
     const isCurrentSingleTrack =
       playbackMode === 'single' &&
       String(currentTrack?.id) === String(track.id);
@@ -70,7 +134,47 @@ export default function LikedTracksPage() {
       return;
     }
 
-    onPlaySingleTrack(track);
+    onPlaySingleTrack(track, {
+      onResolved: (resolvedTrack) => {
+        const status =
+          resolvedTrack.playbackStatus ?? 'unknown';
+
+        setResolvedStatuses((current) => ({
+          ...current,
+          [String(resolvedTrack.id)]: status,
+        }));
+
+        if (
+          user?.uid &&
+          status !== 'unknown'
+        ) {
+          void updateSavedTrackPlaybackStatus(
+            user.uid,
+            resolvedTrack.id,
+            status
+          ).catch(() => {
+            showToast({
+              message: '곡 상태를 저장하지 못했습니다.',
+              type: 'error',
+            });
+          });
+        }
+
+        if (status === 'blocked') {
+          showToast({
+            message: '재생할 수 없는 곡입니다.',
+            type: 'warning',
+          });
+        }
+      },
+
+      onFailure: () => {
+        showToast({
+          message: '곡 상태를 확인하지 못했습니다.',
+          type: 'error',
+        });
+      },
+    });
   };
 
   const handleRemove = async (track: SavedTrack) => {
@@ -152,7 +256,7 @@ export default function LikedTracksPage() {
             setRetryCount((count) => count + 1);
           }}
         />
-      ) : tracks.length === 0 ? (
+      ) : displayedTracks.length === 0 ? (
         <div className="rounded-xl border border-textThr px-4 py-16 text-center">
           <Heart aria-hidden="true" className="mx-auto mb-3 size-8 text-textSub" />
           <p className="font-medium text-textBase">좋아하는 음악을 위한 자리.</p>
@@ -162,9 +266,9 @@ export default function LikedTracksPage() {
         </div>
       ) : (
         <>
-          <p className="mb-3 text-sm text-textSub">저장된 트랙 {tracks.length}개</p>
+          <p className="mb-3 text-sm text-textSub">저장된 트랙 {displayedTracks.length}개</p>
           <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-x-3 md:gap-x-5 gap-y-6 md:gap-y-7">
-            {tracks.map((track, index) => {
+            {displayedTracks.map((track, index) => {
               const trackId = String(track.id);
               const isRemoving = removingTrackId === trackId;
 
@@ -174,7 +278,7 @@ export default function LikedTracksPage() {
                     idx={index}
                     track={track}
                     interactive={Boolean(track.permalinkUrl)}
-                    currentTrack={currentTrack}
+                    currentTrack={playbackMode === 'single' ? currentTrack : null}
                     isPlaying={isPlaying}
                     onTrackClick={handleTrackClick}
                     actions={

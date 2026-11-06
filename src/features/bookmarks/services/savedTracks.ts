@@ -8,12 +8,17 @@ import {
   serverTimestamp,
   setDoc,
   Timestamp,
+  updateDoc,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../../../firebase';
-import type { PlayerTrack } from '../../player/types/player.types';
+import type { PlayerTrack, PlaybackStatus } from '../../player/types/player.types';
 import type { SavedTrack, SavedTrackWrite } from '../types/saved-track.types';
 
+type ConfirmedPlaybackStatus = Exclude<
+  PlaybackStatus,
+  'unknown'
+>;
 type SavedTrackStatusCallback = (isSaved: boolean) => void;
 type SavedTracksCallback = (tracks: SavedTrack[]) => void;
 type SavedTracksErrorCallback = (error: Error) => void;
@@ -21,10 +26,28 @@ type SavedTracksErrorCallback = (error: Error) => void;
 const getSavedTrackRef = (uid: string, trackId: PlayerTrack['id']) =>
   doc(db, 'users', uid, 'savedTracks', String(trackId));
 
+const validPlaybackStatuses: readonly PlaybackStatus[] = [
+  'allowed',
+  'preview',
+  'blocked',
+  'unknown',
+];
+
+const isPlaybackStatus = (value: unknown): value is PlaybackStatus =>
+  typeof value === 'string' &&
+  validPlaybackStatuses.includes(value as PlaybackStatus);
+
 const isSavedTrack = (value: unknown): value is SavedTrack => {
   if (typeof value !== 'object' || value === null) return false;
 
   const track = value as Record<string, unknown>;
+  const hasValidPlaybackStatus =
+    track.playbackStatus === undefined ||
+    isPlaybackStatus(track.playbackStatus);
+  const hasValidPlaybackStatusCheckedAt =
+    track.playbackStatusCheckedAt === undefined ||
+    track.playbackStatusCheckedAt === null ||
+    track.playbackStatusCheckedAt instanceof Timestamp;
 
   return (
     (typeof track.id === 'string' || typeof track.id === 'number') &&
@@ -38,12 +61,29 @@ const isSavedTrack = (value: unknown): value is SavedTrack => {
     typeof track.genre === 'string' &&
     Array.isArray(track.tags) &&
     track.tags.every((tag) => typeof tag === 'string') &&
-    (track.savedAt === null || track.savedAt instanceof Timestamp)
+    (track.savedAt === null || track.savedAt instanceof Timestamp) &&
+    hasValidPlaybackStatus &&
+    hasValidPlaybackStatusCheckedAt
   );
 };
 
+export async function updateSavedTrackPlaybackStatus(
+  uid: string,
+  trackId: PlayerTrack['id'],
+  playbackStatus: ConfirmedPlaybackStatus
+): Promise<void> {
+  await updateDoc(getSavedTrackRef(uid, trackId), {
+    playbackStatus,
+    playbackStatusCheckedAt: serverTimestamp(),
+  });
+}
+
 export async function saveTrack(uid: string, track: PlayerTrack): Promise<void> {
   const trackRef = getSavedTrackRef(uid, track.id);
+
+  const hasConfirmedStatus =
+    track.playbackStatus &&
+    track.playbackStatus !== 'unknown';
 
   const savedTrack: SavedTrackWrite = {
     id: track.id,
@@ -55,6 +95,13 @@ export async function saveTrack(uid: string, track: PlayerTrack): Promise<void> 
     genre: track.genre,
     tags: track.tags,
     savedAt: serverTimestamp(),
+
+    ...(hasConfirmedStatus
+      ? {
+        playbackStatus: track.playbackStatus,
+        playbackStatusCheckedAt: serverTimestamp(),
+      }
+      : {}),
   };
 
   await setDoc(trackRef, savedTrack);

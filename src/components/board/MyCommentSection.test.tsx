@@ -70,7 +70,7 @@ describe('내 댓글 삭제 및 조회 상태', () => {
     expect(await screen.findByText('원본 삭제됨')).toBeTruthy();
     expect(screen.queryByRole('link', { name: deletedPostComment.content })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '삭제' }));
+    fireEvent.click(screen.getByRole('button', { name: '댓글 삭제' }));
 
     expect(await screen.findByText('작성한 댓글이 없습니다.')).toBeTruthy();
     expect(deleteCommentFromFirestore).toHaveBeenCalledWith('free', 'p1', 'c1');
@@ -79,7 +79,7 @@ describe('내 댓글 삭제 및 조회 상태', () => {
   it('삭제 확인을 취소하면 요청하지 않고 목록을 유지한다', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderSection();
-    fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
+    fireEvent.click(await screen.findByRole('button', { name: '댓글 삭제' }));
     expect(deleteCommentFromFirestore).not.toHaveBeenCalled();
     expect(screen.getByRole('link', { name: comment.content })).toBeTruthy();
   });
@@ -89,7 +89,7 @@ describe('내 댓글 삭제 및 조회 상태', () => {
     vi.mocked(fetchMyComments).mockResolvedValueOnce([comment]).mockResolvedValueOnce([]);
     vi.mocked(deleteCommentFromFirestore).mockResolvedValue(undefined);
     renderSection();
-    fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
+    fireEvent.click(await screen.findByRole('button', { name: '댓글 삭제' }));
     expect(await screen.findByText('작성한 댓글이 없습니다.')).toBeTruthy();
     expect(deleteCommentFromFirestore).toHaveBeenCalledWith('free', 'p1', 'c1');
     expect(fetchMyComments).toHaveBeenCalledTimes(2);
@@ -100,7 +100,7 @@ describe('내 댓글 삭제 및 조회 상태', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.mocked(deleteCommentFromFirestore).mockRejectedValue(new Error('offline'));
     renderSection();
-    fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
+    fireEvent.click(await screen.findByRole('button', { name: '댓글 삭제' }));
     await waitFor(() => expect(showToast).toHaveBeenCalledWith({ message: '삭제에 실패했습니다.', type: 'error' }));
     expect(screen.getByRole('link', { name: comment.content })).toBeTruthy();
     expect(fetchMyComments).toHaveBeenCalledTimes(1);

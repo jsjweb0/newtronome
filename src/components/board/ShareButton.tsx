@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { Link as LinkIcon, Share } from 'lucide-react';
+import { Link as LinkIcon, Share2 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 
 type ShareButtonProps = {
@@ -41,28 +41,27 @@ export default function ShareButton({ url, className = '' }: ShareButtonProps) {
       <button
         type="button"
         id={buttonId}
-        className="flex items-center gap-x-2 text-sm text-gray-500 hover:text-gray-800 focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
+        className="inline-flex items-center gap-2 min-h-11 px-4.5 rounded-full border border-textThr text-sm font-bold text-textBase hover:bg-field focus-visible:outline-2 focus-visible:outline-primary"
         aria-expanded={showCopy && !closing}
         aria-controls={panelId}
-        aria-label="Dropdown"
         onClick={toggleCopyBox}
       >
-        <Share className="shrink-0 size-4" />
-        Share
+        <Share2 aria-hidden="true" className="shrink-0 size-4" />
+        공유
       </button>
       {(showCopy || closing) && (
         <div
-          className={`transform absolute top-8 max-lg:right-0 z-10 w-52 bg-gray-900 shadow-md rounded-xl p-2 text-sm md:text-base dark:border dark:border-neutral-800 dark:bg-neutral-950 ${closing ? 'animate-fade-slide-out' : 'animate-fade-slide-in'}`}
+          className={`transform absolute bottom-13 right-0 z-10 w-52 p-1.5 rounded-xl border border-textThr bg-background shadow-lg text-sm dark:bg-field ${closing ? 'animate-fade-slide-out' : 'animate-fade-slide-in'}`}
           id={panelId}
           aria-labelledby={buttonId}
         >
           <button
             type="button"
-            className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-400 hover:bg-white/10 focus:bg-white/10 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:focus:bg-neutral-900"
+            className="flex items-center gap-x-2.5 w-full min-h-10 px-3 rounded-lg text-sm text-textBase hover:bg-textThr/60 focus-visible:bg-textThr/60"
             onClick={handleCopy}
           >
-            <LinkIcon className="shrink-0 size-4" />
-            Copy link
+            <LinkIcon aria-hidden="true" className="shrink-0 size-4" />
+            링크 복사
           </button>
         </div>
       )}

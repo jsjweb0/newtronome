@@ -119,7 +119,7 @@ function createTestView() {
 
 function totalPostCount() {
   const label = screen.getByText('총 게시물');
-  return label.parentElement?.parentElement?.querySelector('h3')?.textContent;
+  return label.nextElementSibling?.textContent;
 }
 
 beforeEach(() => {
@@ -253,8 +253,7 @@ describe('MyActivity 사용자 및 삭제 동기화', () => {
     expect(await screen.findByRole('link', { name: '삭제할 글' })).toBeTruthy();
     expect(totalPostCount()).toBe('2');
 
-    const deleteButtons = screen.getAllByRole('button', { name: '삭제' });
-    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(screen.getByRole('button', { name: '삭제할 글 삭제' }));
 
     await waitFor(() => {
       expect(screen.queryByText('삭제할 글')).toBeNull();
