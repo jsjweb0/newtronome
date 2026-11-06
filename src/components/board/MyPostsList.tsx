@@ -5,7 +5,6 @@ import { useToast } from '../../contexts/ToastContext';
 import Pagination from './Pagination';
 import MyPostItem from './MyPostItem';
 import {
-  DEFAULT_ITEMS_PER_PAGE,
   getCurrentPageItems,
   getTotalPages,
 } from '../../utils/pagination';
@@ -79,38 +78,31 @@ export default function MyPostsList({
 
   if (!filteredPosts.length) {
     return (
-      <p role="status" className="mt-4 py-10 text-center text-sm text-textSub">
+      <p role="status" className="py-8 text-center text-sm text-textSub border-t border-textThr">
         작성한 글이 없습니다.
       </p>
     );
   }
 
   return (
-    <div className="mb-5">
-      {/* 내 글 목록 */}
-      <div className="divide-y divide-gray-200 border border-gray-200 rounded-md overflow-hidden text-gray-500 text-xs md:text-base text-left md:text-center dark:border-neutral-700 dark:text-neutral-400">
-        {currentItems.map((post, idx) => {
-          const itemNumber =
-            (currentPage - 1) * DEFAULT_ITEMS_PER_PAGE + (currentItems.length - idx);
+    <>
+      <ul className="border-t border-textThr">
+        {currentItems.map((post) => (
+          <MyPostItem
+            key={`${post.boardType}-${post.id}`}
+            post={post}
+            onDelete={() => handleDelete(post.boardType, post.id)}
+          />
+        ))}
+      </ul>
 
-          return (
-            <MyPostItem
-              key={`${post.boardType}-${post.id}`}
-              idx={itemNumber}
-              post={post}
-              onDelete={() => handleDelete(post.boardType, post.id)}
-            />
-          );
-        })}
-      </div>
-
-      {/* 페이징 */}
       <Pagination
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+        label="게시물 페이지"
       />
-    </div>
+    </>
   );
 }
