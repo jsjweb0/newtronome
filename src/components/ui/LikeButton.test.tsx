@@ -241,7 +241,7 @@ describe('LikeButton request state', () => {
     });
 
     expect(screen.getByText('0')).toBeTruthy();
-    expect(button.querySelector('svg')?.classList.contains('fill-red-500!')).toBe(false);
+    expect(button.querySelector('svg')?.classList.contains('fill-primary!')).toBe(false);
     expect(mocks.showToast).toHaveBeenCalledWith({
       message: '좋아요 처리에 실패했습니다.',
       type: 'error',
@@ -274,13 +274,13 @@ describe('LikeButton request state', () => {
       metadata: { hasPendingWrites: true },
     }));
     expect(screen.getByText('0')).toBeTruthy();
-    expect(button.querySelector('svg')?.classList.contains('fill-red-500!')).toBe(false);
+    expect(button.querySelector('svg')?.classList.contains('fill-primary!')).toBe(false);
 
     act(() => mocks.subscriptions[0].onSuccess({
       data: () => ({ likedUsers: ['user-1'], likeCount: 1 }),
       metadata: { hasPendingWrites: false },
     }));
     expect(screen.getByText('1')).toBeTruthy();
-    expect(button.querySelector('svg')?.classList.contains('fill-red-500!')).toBe(true);
+    expect(button.querySelector('svg')?.classList.contains('fill-primary!')).toBe(true);
   });
 });

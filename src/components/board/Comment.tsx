@@ -8,6 +8,7 @@ import { Ellipsis, PenLine, Trash2 } from 'lucide-react';
 import { AuthAccess } from '../auth/AuthAccess';
 import LikeButton from '../ui/LikeButton';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import Avatar from '../ui/Avatar';
 import type { Comment as CommentData } from '../../features/board/types/comment';
 import { CommunityBoardType } from '../../features/board/types/post';
 import { useUpdateComment } from '../../features/board/hooks/useUpdateComment';
@@ -45,11 +46,6 @@ export default function Comment({
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const writerName = data.displayName?.trim() || '알 수 없는 사용자';
-  const fallbackAvatar = writerName
-    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(writerName)}&size=128&length=1&background=random&color=ffffff&font-size=0.5&bold=true&uppercase=true`
-    : null;
-  const validPhotoURL =
-    data.photoURL && data.photoURL.trim() !== '' ? data.photoURL : fallbackAvatar;
 
   const toggleDropdown = (id: string) => {
     setOpenDropdownId((prev) => (prev === id ? null : id));
@@ -144,130 +140,115 @@ export default function Comment({
     }
   };
 
-  return (
-    <div className="flex items-start gap-4 mb-6 px-0 md:pt-3 md:px-5">
-      <div className={`shrink-0 flex items-center justify-center`}>
-        <img
-          src={validPhotoURL || undefined}
-          alt={writerName || '댓글 작성자'}
-          className="size-8 md:size-12 rounded-full"
-        />
-      </div>
-      <div className="grow">
-        <div className="flex items-center gap-x-3 max-md:flex-wrap">
-          <strong className="inline-block text-sm md:text-base font-medium text-gray-500 dark:text-neutral-500">
-            {data.displayName || writerName}
-          </strong>
-          <p className="mt-1 text-xs md:text-sm uppercase text-gray-500 dark:text-neutral-500">
-            {dayjs(data.createdAt).format('YYYY-MM-DD A hh:mm:ss')}
-            <span className="inline-block ml-2">{dayjs(data.createdAt).fromNow()}</span>
-          </p>
-        </div>
-        {/* 댓글 내용 수정 폼 */}
-        {isEditing === data.id ? (
-          <div className="relative mt-4">
-            <label htmlFor="comment-edit-input" className="sr-only">작성된 댓글</label>
-            <textarea
-              id="comment-edit-input"
-              className="resize-none p-3 md:p-4 pb-12 md:pb-12 block w-full border-gray-200 rounded-lg text-xs md:text-base focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              disabled={isSaving}
-              ref={editTextareaRef}
-              placeholder="내용을 입력해주세요."
-            />
-            <div className="inline-flex gap-1.5 absolute bottom-0 right-0 p-2">
-              <BaseButton type="button" className="py-2!" onClick={handleEditSubmit} disabled={isSaving}>
-                {isSaving ? '수정 중...' : '수정'}
-              </BaseButton>
-              <BaseButton
-                variant="cancel"
-                type="button"
-                className="py-2!"
-                onClick={handleCancelEdit}
-                disabled={isSaving}
-              >
-                취소
-              </BaseButton>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-3">
-            <div className="text-sm md:text-base whitespace-pre-wrap text-gray-800 dark:text-neutral-200">
-              {data.content}
-            </div>
-            <div className="flex items-center gap-6 mt-3">
-              <LikeButton
-                type="thumb"
-                collection={boardType}
-                parentId={postId}
-                subCollection="comments"
-                docId={data.id}
-                initialCount={data.likeCount}
-                showCount
-              />
-              <button
-                type="button"
-                className="text-xs md:text-sm text-gray-500 hover:text-gray-800 focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200"
-              >
-                Reply
-              </button>
-              <AuthAccess allow={['admin']} ownerUid={data.writerUid}>
-                {/* dropdown menu */}
-                <div className="relative mt-0.5">
-                  <button
-                    id={'commentMenu' + idx}
-                    type="button"
-                    className="group flex justify-center items-center size-7 text-sm font-semibold rounded-lg bg-white text-gray-800 hover:bg-gray-50 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
-                    onClick={() => toggleDropdown(data.id)}
-                    aria-haspopup="menu"
-                    aria-expanded={openDropdownId === data.id ? 'true' : 'false'}
-                    aria-label="Dropdown"
-                  >
-                    <Ellipsis className="size-5 text-gray-600 dark:text-neutral-500" aria-hidden="true" />
-                    <span
-                      className="pacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity inline-block absolute z-10 left-1/2 -translate-x-1/2 -translate-y-full py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-md shadow-2xs dark:bg-neutral-700"
-                      role="tooltip"
-                    >
-                      Menu
-                    </span>
-                  </button>
+  const createdAt = dayjs(data.createdAt);
 
-                  <div
-                    className={`transition-all duration-200 transform origin-top-right z-999 absolute top-7 w-30 h-fit bg-white shadow-md rounded-lg dark:bg-neutral-800 dark:border dark:border-neutral-700 ${openDropdownId === data.id
-                      ? 'opacity-100 visible scale-100'
-                      : 'opacity-0 invisible scale-95'
-                      }`}
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby={data.postId + idx}
+  return (
+    <li className="flex flex-col gap-1.5 px-1 py-4 border-b border-line">
+      <div className="flex items-center justify-between gap-2.5">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+          <Avatar name={writerName} photoURL={data.photoURL} className="size-7 text-xs" />
+          <strong className="text-sm font-bold text-textBase">{writerName}</strong>
+          <time
+            dateTime={createdAt.toISOString()}
+            title={createdAt.format('YYYY-MM-DD A hh:mm:ss')}
+            className="text-xs text-textSub tabular-nums"
+          >
+            {createdAt.format('YYYY.MM.DD HH:mm')}
+            <span className="ml-1.5">{createdAt.fromNow()}</span>
+          </time>
+        </p>
+        {isEditing !== data.id && (
+          <div className="shrink-0 flex items-center">
+            <LikeButton
+              type="thumb"
+              collection={boardType}
+              parentId={postId}
+              subCollection="comments"
+              docId={data.id}
+              initialCount={data.likeCount}
+              showCount
+            />
+            <AuthAccess allow={['admin']} ownerUid={data.writerUid}>
+              <div className="relative ml-1">
+                <button
+                  id={'commentMenu' + idx}
+                  type="button"
+                  className="flex justify-center items-center size-9 rounded-full text-textSub hover:bg-field hover:text-textBase focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
+                  onClick={() => toggleDropdown(data.id)}
+                  aria-haspopup="menu"
+                  aria-expanded={openDropdownId === data.id ? 'true' : 'false'}
+                  aria-label="댓글 메뉴 (수정, 삭제)"
+                >
+                  <Ellipsis className="size-5" aria-hidden="true" />
+                </button>
+
+                <div
+                  className={`transition-all duration-200 transform origin-top-right z-999 absolute right-0 top-10 w-30 h-fit p-1 rounded-xl border border-textThr bg-background shadow-lg dark:bg-field ${openDropdownId === data.id
+                    ? 'opacity-100 visible scale-100'
+                    : 'opacity-0 invisible scale-95'
+                    }`}
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby={'commentMenu' + idx}
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex items-center gap-x-2.5 w-full min-h-10 px-3 rounded-lg text-sm text-textBase hover:bg-textThr/60"
+                    onClick={() => handleEditClick(data.id)}
                   >
-                    <div className="p-1 space-y-0.5">
-                      <button
-                        type="button"
-                        className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700"
-                        onClick={() => handleEditClick(data.id)}
-                      >
-                        <PenLine className="shrink-0 size-4" />
-                        수정
-                      </button>
-                      <button
-                        type="button"
-                        className="flex items-center gap-x-3.5 w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700"
-                        onClick={() => setShowConfirm(true)}
-                      >
-                        <Trash2 className="shrink-0 size-4" />
-                        삭제
-                      </button>
-                    </div>
-                  </div>
+                    <PenLine aria-hidden="true" className="shrink-0 size-4" />
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex items-center gap-x-2.5 w-full min-h-10 px-3 rounded-lg text-sm text-danger hover:bg-textThr/60"
+                    onClick={() => setShowConfirm(true)}
+                  >
+                    <Trash2 aria-hidden="true" className="shrink-0 size-4" />
+                    삭제
+                  </button>
                 </div>
-                {/* dropdown menu */}
-              </AuthAccess>
-            </div>
+              </div>
+            </AuthAccess>
           </div>
         )}
       </div>
+      {/* 댓글 내용 수정 폼 */}
+      {isEditing === data.id ? (
+        <div className="flex flex-col gap-2.5 mt-1 p-3.5 rounded-[14px] border border-primary/60 bg-surface">
+          <label htmlFor="comment-edit-input" className="sr-only">작성된 댓글</label>
+          <textarea
+            id="comment-edit-input"
+            rows={3}
+            className="resize-y min-h-21 px-0.5 py-1 border-0 bg-transparent text-[15px] leading-relaxed text-textBase placeholder:text-textSub/70 focus:ring-0 disabled:opacity-60"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            disabled={isSaving}
+            ref={editTextareaRef}
+            placeholder="내용을 입력해주세요."
+          />
+          <div className="flex justify-end gap-2">
+            <BaseButton
+              variant="cancel"
+              type="button"
+              className="min-h-10 px-4.5"
+              onClick={handleCancelEdit}
+              disabled={isSaving}
+            >
+              취소
+            </BaseButton>
+            <BaseButton type="button" className="min-h-10 px-4.5" onClick={handleEditSubmit} disabled={isSaving}>
+              {isSaving ? '수정 중...' : '수정'}
+            </BaseButton>
+          </div>
+        </div>
+      ) : (
+        <p className="text-[15px] leading-[1.7] whitespace-pre-wrap break-words text-textBase/90">
+          {data.content}
+        </p>
+      )}
       <ConfirmDialog
         isOpen={showConfirm}
         title="삭제"
@@ -275,6 +256,6 @@ export default function Comment({
         onConfirm={handleDelete}
         onDismiss={() => setShowConfirm(false)}
       />
-    </div>
+    </li>
   );
 }
