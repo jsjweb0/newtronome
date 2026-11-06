@@ -14,7 +14,7 @@ import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton';
 import LoadingLogo from '../components/ui/LoadingLogo';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle';
-import type { PlayerTrack } from '../features/player/types/player.types';
+import type { PlayerTrack, PlaySingleTrackOptions } from '../features/player/types/player.types';
 
 const getPageTitle = (pathname: string) => {
   const [section, boardType, action] =
@@ -71,7 +71,10 @@ export interface PlayerOutletContext {
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
   onPauseSoundCloud: () => void;
-  onPlaySingleTrack: (track: PlayerTrack, onFailure?: () => void) => void;
+  onPlaySingleTrack: (
+    track: PlayerTrack,
+    options?: PlaySingleTrackOptions
+  ) => void;
 
   playlistStatus: ReturnType<typeof useSoundCloudWidget>['playlistStatus'];
   widgetError: string | null;

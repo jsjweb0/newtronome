@@ -4,7 +4,7 @@ import type {
   SoundCloudWidgetInstance,
 } from '../types/soundcloud-widget.types';
 import { mapSoundCloudWidgetTrack } from '../utils/mapSoundCloudWidgetTrack';
-import type { PlayerTrack } from '../types/player.types';
+import type { PlayerTrack, PlaySingleTrackOptions } from '../types/player.types';
 import { isNonNegativeFiniteNumber } from '../../../utils/numberValidation';
 import { useSoundCloudControls } from './useSoundCloudControls';
 
@@ -506,12 +506,19 @@ export function useSoundCloudWidget(playlistUrl: string) {
   }, [iframeElement, clearLoadTimer, clearPlaybackTimer, failLoad, setCurrentTime, setCurrentTrack, setDuration, setPlaying, setPlaylist, startLoadTimer]);
 
   const playSingleTrack = useCallback(
-    (track: PlayerTrack, onFailure?: () => void) => {
+    (
+      track: PlayerTrack,
+      options: PlaySingleTrackOptions = {}
+    ) => {
       const widget = widgetRef.current;
       const permalinkUrl = track.permalinkUrl;
 
+      if (track.playbackStatus === 'blocked') {
+        return;
+      }
+
       if (!widget || !permalinkUrl) {
-        onFailure?.();
+        options.onFailure?.();
         return;
       }
 
@@ -531,7 +538,12 @@ export function useSoundCloudWidget(playlistUrl: string) {
         isSourceSwitchingRef.current = true;
 
         const transitionId = ++transitionIdRef.current;
-        bookmarkRequestRef.current = { id: transitionId, reported: false, onFailure };
+
+        bookmarkRequestRef.current = {
+          id: transitionId,
+          reported: false,
+          onFailure: options.onFailure,
+        };
 
         setWidgetError(null);
         startLoadTimer(transitionId);
@@ -543,18 +555,55 @@ export function useSoundCloudWidget(playlistUrl: string) {
         setDuration(track.durationMs / 1000);
 
         widget.load(permalinkUrl, {
-          auto_play: true,
+          // 상태를 확인하기 전에는 재생하지 않음
+          auto_play: false,
+
           callback: () => {
             if (widgetRef.current !== widget || transitionIdRef.current !== transitionId) return;
 
-            clearLoadTimer();
-            clearPlaybackTimer();
-            isSourceSwitchingRef.current = false;
-            retryLoadRef.current = null;
+            widget.getCurrentSound((sound) => {
+              if (
+                widgetRef.current !== widget ||
+                transitionIdRef.current !== transitionId
+              ) {
+                return;
+              }
 
-            setPlaylistStatus(usePlayerStore.getState().tracks.length === 0 ? 'empty' : 'ready');
+              const resolvedTrack = mapSoundCloudWidgetTrack(sound);
 
-            runPendingSelection();
+              if (!resolvedTrack || String(resolvedTrack.id) !== String(track.id)) {
+                failLoad(transitionId);
+                return;
+              }
+
+              clearLoadTimer();
+              clearPlaybackTimer();
+              isSourceSwitchingRef.current = false;
+              retryLoadRef.current = null;
+
+              setCurrentTrack(resolvedTrack);
+              setCurrentTime(0);
+              setDuration(resolvedTrack.durationMs / 1000);
+
+              setPlaylistStatus(usePlayerStore.getState().tracks.length === 0 ? 'empty' : 'ready');
+
+              // 최신 상태를 북마크 페이지에 전달
+              options.onResolved?.(resolvedTrack);
+
+              if (resolvedTrack.playbackStatus === 'blocked') {
+                if (bookmarkRequestRef.current?.id === transitionId) {
+                  bookmarkRequestRef.current.reported = true;
+                }
+
+                widget.pause();
+                setPlaying(false);
+                runPendingSelection();
+                return;
+              }
+
+              widget.play();
+              runPendingSelection();
+            });
           },
         });
       };
@@ -564,13 +613,14 @@ export function useSoundCloudWidget(playlistUrl: string) {
     [
       clearLoadTimer,
       clearPlaybackTimer,
-      startLoadTimer,
+      failLoad,
       runPendingSelection,
       setCurrentTime,
       setCurrentTrack,
       setDuration,
       setPlaybackMode,
       setPlaying,
+      startLoadTimer,
     ]
   );
 
