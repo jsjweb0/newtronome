@@ -311,7 +311,9 @@ service cloud.firestore {
           'durationMs',
           'genre',
           'tags',
-          'savedAt'
+          'savedAt',
+          'playbackStatus',
+          'playbackStatusCheckedAt'
         ])
         && (
           request.resource.data.id is int
@@ -334,7 +336,22 @@ service cloud.firestore {
         && request.resource.data.durationMs >= 0
         && request.resource.data.genre is string
         && request.resource.data.tags is list
-        && request.resource.data.savedAt is timestamp;
+        && request.resource.data.savedAt is timestamp
+        && (
+          request.resource.data.keys().hasAny(['playbackStatus'])
+          == request.resource.data.keys().hasAny(['playbackStatusCheckedAt'])
+        )
+        && (
+          !request.resource.data.keys().hasAny(['playbackStatus'])
+          || (
+            request.resource.data.playbackStatus in [
+              'allowed',
+              'preview',
+              'blocked'
+            ]
+            && request.resource.data.playbackStatusCheckedAt is timestamp
+          )
+        );
     }
 
     function hasOnlyAllowedPostFields() {

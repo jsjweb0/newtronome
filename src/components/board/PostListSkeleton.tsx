@@ -1,43 +1,35 @@
-import { Search } from "lucide-react";
-
 interface PostListSkeletonProps {
     rows?: number;
+    showToolbar?: boolean;
 }
 
 export default function PostListSkeleton({
     rows = 10,
+    showToolbar = true,
 }: PostListSkeletonProps) {
     return (
-        <div className="animate-pulse">
-            <div className="w-full max-w-xl m-auto mt-4 md:mt-8 mb-5 text-center">
-                <div className="flex flex-row items-center gap-2 relative">
-                    <div className="relative w-full">
-                        <span className="flex items-center absolute inset-y-0 start-0 z-20 ps-3.5">
-                            <Search className="shrink-0 size-4 text-gray-300 dark:text-white/30" />
-                        </span>
-                        <div className="py-3 ps-10 pe-30 w-full h-10 bg-gray-200 rounded-lg dark:bg-neutral-700" />
-                    </div>
-                    <div className="flex items-center w-26 h-10 bg-gray-200 rounded-lg dark:bg-neutral-700"></div>
-                </div>
-            </div>
-            <div className="flex justify-between items-center">
-                <div className="w-12 h-6 bg-gray-200 rounded-full dark:bg-neutral-700"></div>
-                <div className="flex justify-center items-center gap-2">
-                    <div className="flex items-center w-26 h-12 bg-gray-200 rounded-lg dark:bg-neutral-700"></div>
-                </div>
-            </div>
-            <div className="mt-8 animate-pulse">
-                <div className="divide-y divide-gray-200 border border-gray-200 rounded-md overflow-hidden text-gray-500 text-xs md:text-base text-left md:text-center dark:border-neutral-700 dark:text-neutral-400">
-                    {Array.from({ length: rows }).map((_, i) => (
-                        <div key={i} className="grid grid-cols-1 md:grid-cols-13 gap-2 px-4 py-6 items-center">
-                            <div className="h-4 w-4 md:m-auto bg-gray-300 rounded dark:bg-neutral-700" />
-                            <div className="md:col-span-7 h-4 bg-gray-300 rounded dark:bg-neutral-700"></div>
-                            <div className="md:col-span-2 h-4 w-16 md:m-auto bg-gray-300 rounded dark:bg-neutral-700" />
-                            <div className="h-4 w-4 md:m-auto bg-gray-300 rounded dark:bg-neutral-700" />
-                            <div className="md:col-span-2 h-4 w-20 md:m-auto bg-gray-300 rounded dark:bg-neutral-700" />
-                        </div>
+        <div className="animate-pulse flex flex-col gap-4 md:gap-5" aria-hidden="true">
+            {showToolbar && <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex gap-1.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="h-9.5 w-14 rounded-full bg-field" />
                     ))}
                 </div>
+                <div className="flex gap-2 max-md:w-full">
+                    <div className="h-11 w-56 max-md:flex-1 rounded-xl bg-field" />
+                    <div className="h-11 w-22 rounded-xl bg-field" />
+                </div>
+            </div>}
+            <div className="border-t border-textThr">
+                {Array.from({ length: rows }).map((_, i) => (
+                    <div key={i} className="grid grid-cols-1 md:grid-cols-[64px_minmax(0,1fr)_150px_96px_64px] items-center gap-x-4 gap-y-2 px-1.5 md:px-4 py-4 md:min-h-15 border-b border-line">
+                        <div className="max-md:hidden h-3.5 w-6 mx-auto rounded bg-field" />
+                        <div className="h-4 w-3/4 rounded bg-field" />
+                        <div className="max-md:hidden h-3.5 w-20 rounded bg-field" />
+                        <div className="max-md:hidden h-3.5 w-18 mx-auto rounded bg-field" />
+                        <div className="max-md:hidden h-3.5 w-6 ml-auto rounded bg-field" />
+                    </div>
+                ))}
             </div>
         </div>
     );

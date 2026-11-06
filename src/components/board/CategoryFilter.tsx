@@ -1,5 +1,4 @@
-import { Fragment } from 'react';
-import { BaseButton } from '../ui/BaseButton';
+import clsx from 'clsx';
 import {
   FREE_BOARD_CATEGORIES,
   type FreeBoardCategoryValue,
@@ -12,42 +11,39 @@ type CategoryFilterProps = {
   onCategoryChange: (category: CategoryFilterValue) => void;
 };
 
+const options: { value: CategoryFilterValue; label: string }[] = [
+  { value: '', label: '전체' },
+  ...FREE_BOARD_CATEGORIES,
+];
+
 export default function CategoryFilter({
   selectedCategory,
   onCategoryChange
 }: CategoryFilterProps) {
   return (
     <div
-      className="peer category-filter flex flex-wrap items-center justify-center md:gap-2 gap-0.5 mt-6"
+      className="flex gap-1.5 max-md:w-full max-md:overflow-x-auto max-md:[scrollbar-width:none] md:flex-wrap"
       role="group"
       aria-label="카테고리 필터"
     >
-      <BaseButton
-        type="button"
-        variant={selectedCategory === '' ? 'link' : 'ghost'}
-        aria-pressed={selectedCategory === ''}
-        onClick={() => onCategoryChange('')}
-        className="px-3! py-2! text-sm! max-md:text-xs!"
-      >
-        전체
-      </BaseButton>
-
-      {FREE_BOARD_CATEGORIES.map((category) => {
+      {options.map((category) => {
         const isSelected = selectedCategory === category.value;
 
         return (
-          <Fragment key={category.value}>
-            <span className="text-textThr" aria-hidden="true">|</span>
-            <BaseButton
-              type="button"
-              variant={isSelected ? 'link' : 'ghost'}
-              aria-pressed={isSelected}
-              onClick={() => onCategoryChange(category.value)}
-              className="px-3! py-2! text-sm! max-md:text-xs!"
-            >
-              {category.label}
-            </BaseButton>
-          </Fragment>
+          <button
+            key={category.value || 'all'}
+            type="button"
+            aria-pressed={isSelected}
+            onClick={() => onCategoryChange(category.value)}
+            className={clsx(
+              'shrink-0 min-h-11 md:min-h-9.5 px-3.5 rounded-full border text-[13px] font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+              isSelected
+                ? 'border-primary bg-primary text-onPrimary'
+                : 'border-textThr text-textSub hover:text-textBase hover:bg-field'
+            )}
+          >
+            {category.label}
+          </button>
         );
       })}
     </div>

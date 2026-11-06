@@ -2,17 +2,18 @@ import { useCallback, type RefObject } from 'react';
 import { usePlayerStore } from '../stores/usePlayerStore';
 import type { SoundCloudWidgetInstance } from '../types/soundcloud-widget.types';
 import { isNonNegativeFiniteNumber } from '../../../utils/numberValidation';
+import type { PlayerTrack } from '../types/player.types';
 
 interface UseSoundCloudControlsParams {
-    widgetRef: RefObject<
-        SoundCloudWidgetInstance | null
-    >;
-    trackRequestIdRef: RefObject<number>;
+    widgetRef: RefObject<SoundCloudWidgetInstance | null>;
+    selectTrack: (index: number) => void;
+    pendingTrackIdRef: RefObject<PlayerTrack['id'] | null>;
 }
 
 export function useSoundCloudControls({
     widgetRef,
-    trackRequestIdRef,
+    selectTrack,
+    pendingTrackIdRef,
 }: UseSoundCloudControlsParams) {
     const isMuted = usePlayerStore(
         (state) => state.isMuted
@@ -45,35 +46,9 @@ export function useSoundCloudControls({
         setCurrentTime(seconds);
     }, [setCurrentTime, widgetRef]);
 
-    const previousTrack = useCallback(() => {
-        trackRequestIdRef.current += 1;
-        widgetRef.current?.prev();
-    }, [trackRequestIdRef, widgetRef]);
-
-    const nextTrack = useCallback(() => {
-        trackRequestIdRef.current += 1;
-        widgetRef.current?.next();
-    }, [trackRequestIdRef, widgetRef]);
-
     const rewindToStart = useCallback(() => {
         widgetRef.current?.seekTo(0);
     }, [widgetRef]);
-
-    const playRandomTrack = useCallback(() => {
-        const widget = widgetRef.current;
-        if (!widget) return;
-
-        widget.getSounds((sounds) => {
-            if (!Array.isArray(sounds) || sounds.length === 0) {
-                return;
-            }
-
-            const randomIndex = Math.floor(Math.random() * sounds.length);
-
-            trackRequestIdRef.current += 1;
-            widget.skip(randomIndex);
-        });
-    }, [trackRequestIdRef, widgetRef]);
 
     const toggleMute = useCallback(() => {
         const widget = widgetRef.current;
@@ -84,6 +59,48 @@ export function useSoundCloudControls({
         widget.setVolume(nextMuted ? 0 : 100);
         setMuted(nextMuted);
     }, [isMuted, setMuted, widgetRef]);
+
+    const moveTrack = useCallback((direction: 'previous' | 'next' | 'random') => {
+        const widget = widgetRef.current;
+        const { tracks, currentTrack, playbackMode } = usePlayerStore.getState();
+
+        if (!widget || playbackMode !== 'playlist') return;
+
+        const navigationTrackId = pendingTrackIdRef.current ?? currentTrack?.id;
+        const currentIndex = tracks.findIndex(
+            (track) => navigationTrackId != null && String(track.id) === String(navigationTrackId)
+        );
+
+        const candidates: number[] = [];
+
+        tracks.forEach((track, index) => {
+            if (track.playbackStatus === 'blocked' || index === currentIndex) return;
+
+            if (direction === 'previous' && index >= currentIndex) return;
+            if (direction === 'next' && index <= currentIndex) return;
+
+            candidates.push(index);
+        });
+
+        if (candidates.length === 0) {
+            widget.pause();
+            return;
+        }
+
+        let position = 0;
+
+        if (direction === 'previous') {
+            position = candidates.length - 1;
+        } else if (direction === 'random') {
+            position = Math.floor(Math.random() * candidates.length);
+        }
+
+        selectTrack(candidates[position]);
+    }, [selectTrack, widgetRef, pendingTrackIdRef]);
+
+    const previousTrack = useCallback(() => moveTrack('previous'), [moveTrack]);
+    const nextTrack = useCallback(() => moveTrack('next'), [moveTrack]);
+    const playRandomTrack = useCallback(() => moveTrack('random'), [moveTrack]);
 
     return {
         play,

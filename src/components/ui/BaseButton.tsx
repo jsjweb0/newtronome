@@ -23,19 +23,19 @@ type BaseButtonProps = ButtonProps | LinkButtonProps;
 
 export function BaseButton(props: BaseButtonProps) {
     const baseStyle =
-        "group shrink-0 px-4 py-3 inline-flex items-center justify-center gap-x-2 font-medium border rounded-lg shadow-2xs align-middle text-xs md:text-base transition-all focus:z-10 disabled:opacity-50 disabled:pointer-events-none";
+        "group shrink-0 min-h-11 px-5 inline-flex items-center justify-center gap-x-2 rounded-full border text-sm font-bold align-middle transition-colors focus:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:pointer-events-none";
 
     const variantStyle: Record<ButtonVariant, string> = {
         primary:
-            "border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700",
+            "border-transparent bg-primary text-onPrimary hover:brightness-105 focus-visible:brightness-105",
         outline:
-            "border-gray-200 text-gray-500 hover:border-blue-600 hover:text-blue-600 focus:border-blue-600 focus:text-blue-600 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-blue-500 dark:hover:border-blue-600 dark:focus:text-blue-500 dark:focus:border-blue-600 ",
+            "border-textThr text-textBase hover:bg-field focus-visible:bg-field",
         ghost:
-            "border-transparent text-gray-800 hover:bg-gray-100 focus:bg-gray-100 dark:text-white dark:hover:bg-white/10 dark:focus:bg-white/10 ",
+            "border-transparent text-textBase hover:bg-field focus-visible:bg-field",
         cancel:
-            "border-gray-200 text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 hover:bg-gray-50 focus:bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:hover:text-neutral-100 dark:hover:bg-neutral-700 dark:focus:bg-neutral-700 ",
+            "border-textThr bg-transparent text-textBase hover:bg-field focus-visible:bg-field",
         link:
-            "border-transparent text-blue-600 hover:text-blue-800 focus:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400 dark:focus:text-blue-400 ",
+            "border-transparent text-primary hover:underline focus-visible:underline",
     };
 
     const variant = props.variant ?? "primary";

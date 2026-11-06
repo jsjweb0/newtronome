@@ -14,7 +14,7 @@ import PlayerBarSkeleton from '../components/layout/PlayerBarSkeleton';
 import LoadingLogo from '../components/ui/LoadingLogo';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle';
-import type { PlayerTrack } from '../features/player/types/player.types';
+import type { PlayerTrack, PlaySingleTrackOptions } from '../features/player/types/player.types';
 import { PLAYLISTS } from '../features/playlists/data/playlists';
 
 const getPageTitle = (pathname: string) => {
@@ -46,7 +46,6 @@ const getPageTitle = (pathname: string) => {
   return matchedRoute?.title ?? '페이지를 찾을 수 없음';
 };
 
-
 export interface PlayerOutletContext {
   isSidebarCollapsed: boolean;
 
@@ -54,7 +53,10 @@ export interface PlayerOutletContext {
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
   onPauseSoundCloud: () => void;
-  onPlaySingleTrack: (track: PlayerTrack) => void;
+  onPlaySingleTrack: (
+    track: PlayerTrack,
+    options?: PlaySingleTrackOptions
+  ) => void;
 
   playlistStatus: ReturnType<typeof useSoundCloudWidget>['playlistStatus'];
   widgetError: string | null;
@@ -176,7 +178,7 @@ export default function MainLayout() {
           tabIndex={-1}
           inert={isMobilePanelOpen}
           className={clsx(
-            'transition-all duration-300',
+            'py-4 lg:py-10 transition-all duration-300',
             isPanelCollapsed ? 'xl:max-w-[calc(100%-300px-0.75rem)]' : 'xl:max-w-full'
           )}
         >
@@ -207,7 +209,7 @@ export default function MainLayout() {
       <footer
         inert={isMobilePanelOpen}
         className={clsx(
-          'z-100 xl:z-50 fixed left-3 bottom-3 w-full max-w-[calc(100%-1.5rem)] xl:h-29 bg-background/90 backdrop-blur-xs rounded-2xl transition-all',
+          'z-50 fixed left-3 bottom-3 w-full max-w-[calc(100%-1.5rem)] xl:h-29 bg-background/90 backdrop-blur-xs rounded-2xl transition-all',
           'border border-textThr dark:border-none',
           isSidebarCollapsed
             ? 'lg:left-25 lg:max-w-[calc(100%-7rem)]'
