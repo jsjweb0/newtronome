@@ -135,7 +135,7 @@ export default function PostForm({
     : `${boardMeta.label}에 새 글을 남겨요`;
 
   return (
-    <section aria-labelledby="post-form-title" className="w-full max-w-225 mx-auto flex flex-col gap-3.5 md:gap-4.5 px-1 md:px-7 pb-6">
+    <section aria-labelledby="post-form-title" className="w-full flex flex-col gap-3.5 md:gap-4.5 px-1 md:px-7 pb-6">
       <Link
         to={`/board/${boardType}`}
         className="self-start inline-flex items-center gap-1 min-h-11 pr-2 text-sm text-textSub hover:text-textBase"
