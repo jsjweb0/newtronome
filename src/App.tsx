@@ -20,9 +20,6 @@ const LikedTracksPage = lazy(
 const ITunesSearchPage = lazy(
   () => import('./features/itunes/pages/ITunesSearchPage')
 );
-const PlaylistListPage = lazy(
-  () => import('./features/playlists/pages/PlaylistListPage')
-);
 
 function App() {
   return (
@@ -38,7 +35,6 @@ function App() {
           <Route path={ROUTES.likes.path} element={<LikedTracksPage />} />
           <Route path={ROUTES.search.path} element={<ITunesSearchPage />} />
           <Route path={ROUTES.mypage.path} element={<MyActivity />} />
-          <Route path={ROUTES.playlists.path} element={<PlaylistListPage />} />
 
           {/* 게시판 */}
           <Route path={ROUTES.boardList.path} element={<DynamicBoard />} />

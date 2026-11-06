@@ -27,7 +27,6 @@ export const ROUTES = {
   account: { path: '/account', title: '내 계정' },
   likes: { path: '/likes', title: '좋아요' },
   search: { path: '/search', title: '음악 검색' },
-  playlists: { path: '/playlists', title: '플레이리스트' },
   mypage: { path: '/mypage', title: '내 활동' },
   boardEdit: { path: '/board/:boardType/edit/:id', title: '게시글 수정' },
   boardWrite: { path: '/board/:boardType/write', title: '글쓰기' },
