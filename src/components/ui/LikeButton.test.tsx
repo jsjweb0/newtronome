@@ -200,15 +200,18 @@ describe('댓글 좋아요와 Query 캐시 동기화', () => {
 });
 
 describe('LikeButton request state', () => {
-  it('exposes the server-confirmed like state with aria-pressed', () => {
-    const button = renderLikeButton();
+  it.each(['heart', 'thumb'] as const)(
+    'exposes the server-confirmed like state with aria-pressed (%s)',
+    (type) => {
+      const button = renderLikeButton({ type });
 
-    publishLikeSnapshot([], 0);
-    expect(button.getAttribute('aria-pressed')).toBe('false');
+      publishLikeSnapshot([], 0);
+      expect(button.getAttribute('aria-pressed')).toBe('false');
 
-    publishLikeSnapshot(['user-1'], 1);
-    expect(button.getAttribute('aria-pressed')).toBe('true');
-  });
+      publishLikeSnapshot(['user-1'], 1);
+      expect(button.getAttribute('aria-pressed')).toBe('true');
+    },
+  );
 
   it('does not write before the first subscription response', () => {
     const button = renderLikeButton();

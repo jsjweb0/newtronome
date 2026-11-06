@@ -217,7 +217,7 @@ export default function LikeButton({
                 : '좋아요'
             }
             aria-describedby={ariaDescribedBy}
-            aria-pressed={!liked}
+            aria-pressed={liked}
             className={clsx(
               'group flex items-center justify-center min-h-9 min-w-9 rounded-full text-[13px] hover:bg-field hover:text-textBase focus-visible:outline-2 focus-visible:outline-primary',
               liked ? 'text-primary font-bold' : 'text-textSub'
