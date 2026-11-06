@@ -5,7 +5,10 @@ import {
   useState,
   type FormEvent,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import clsx from 'clsx';
+import { ChevronLeft, CircleAlert, Megaphone, PencilLine } from 'lucide-react';
+import Avatar from '../ui/Avatar';
 import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
 import { useAuth } from '../../contexts/AuthContext';
@@ -54,9 +57,6 @@ export default function PostForm({
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
   const initializedPostRef = useRef<string | null>(null);
-
-  const today = new Date();
-  const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
@@ -126,98 +126,139 @@ export default function PostForm({
     }
   };
 
-  const baseClasses =
-    'mt-3 py-2.5 sm:py-3 px-4 block w-full border border-gray-200 rounded-lg text-xs md:text-base focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600';
+  const boardMeta = boardType === 'notice'
+    ? { title: 'Notice', label: '공지사항' }
+    : { title: 'Free Board', label: '자유게시판' };
+  const heading = mode === 'edit' ? '글 수정' : '글쓰기';
+  const description = mode === 'edit'
+    ? `${boardMeta.label}에 올린 글을 고쳐요`
+    : `${boardMeta.label}에 새 글을 남겨요`;
 
   return (
-    <div className="max-w-[85rem] mx-auto mb-8 px-4">
-      <form onSubmit={handleSubmit}>
-        <h2 className="mb-4 md:mb-8 text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
-          {mode === 'edit' ? '글 수정' : '글쓰기'}
-        </h2>
+    <section aria-labelledby="post-form-title" className="w-full max-w-225 mx-auto flex flex-col gap-3.5 md:gap-4.5 px-1 md:px-7 pb-6">
+      <Link
+        to={`/board/${boardType}`}
+        className="self-start inline-flex items-center gap-1 min-h-11 pr-2 text-sm text-textSub hover:text-textBase"
+      >
+        <ChevronLeft aria-hidden="true" className="size-4.5" />
+        {boardMeta.title}
+      </Link>
+      <div className="flex items-center gap-3">
+        <PencilLine aria-hidden="true" className="shrink-0 size-6.5 text-primary" />
+        <div>
+          <h1 id="post-form-title" className="text-[28px] leading-tight font-extrabold tracking-tight text-textBase">
+            {heading}
+          </h1>
+          <p className="mt-0.5 text-[13px] text-textSub">{description}</p>
+        </div>
+      </div>
 
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="flex flex-col gap-5 md:gap-6 px-4 py-5 md:px-8 md:py-7 rounded-2xl border border-line bg-surface"
+      >
         <AuthAccess allow={['admin']}>
-          <div className="mb-3">
-            <label
-              htmlFor="isNotice"
-              className="flex items-center p-3 w-full text-xs md:text-base border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400"
-            >
-              <input
-                type="checkbox"
-                id="isNotice"
-                className="shrink-0 mt-0.5 border-gray-200 rounded-sm text-blue-600 focus:ring-blue-500 checked:border-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                checked={isNotice}
-                onChange={(e) => setNotice(e.target.checked)}
-              />
-              <span className="text-gray-600 ms-3 dark:text-neutral-400">공지글</span>
-            </label>
-          </div>
+          <label
+            htmlFor="isNotice"
+            className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border border-textThr bg-field cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-primary"
+          >
+            <span className="flex items-center gap-2.5">
+              <Megaphone aria-hidden="true" className="shrink-0 size-5 text-primary" />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-bold text-textBase">공지글로 등록</span>
+                <span className="text-xs text-textSub">관리자에게만 보이는 옵션 · 목록 맨 위에 고정돼요</span>
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              id="isNotice"
+              className="peer sr-only"
+              checked={isNotice}
+              onChange={(e) => setNotice(e.target.checked)}
+            />
+            <span
+              aria-hidden="true"
+              className="relative shrink-0 w-11.5 h-6.5 rounded-full bg-textThr transition-colors peer-checked:bg-primary after:absolute after:top-0.75 after:left-0.75 after:size-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5"
+            />
+          </label>
         </AuthAccess>
 
-        <FormInput
-          type="text"
-          name="date"
-          className="mb-3 text-xs md:text-base"
-          value={formattedDate}
-          readOnly
-          title="작성일"
-        />
-
         {boardType === 'free' && (
-          <>
-            <select
-              id="category"
-              value={selectedCategory}
-              onChange={(event) => {
-                setSelectedCategory(event.target.value);
-                setError((prev) => ({ ...prev, category: '' }));
-              }}
-              className={`${baseClasses} pe-9`}
-              title="카테고리"
-              aria-invalid={Boolean(errors.category)}
+          <div className="flex flex-col gap-2.5">
+            <span id="category-label" className="text-sm font-bold text-textBase">
+              카테고리 <span aria-hidden="true" className="text-primary">*</span>
+            </span>
+            <div
+              role="radiogroup"
+              aria-labelledby="category-label"
               aria-describedby={errors.category ? 'category-error' : undefined}
+              aria-invalid={Boolean(errors.category)}
+              className="flex flex-wrap gap-2"
             >
-              <option value="">카테고리를 선택하세요</option>
+              {FREE_BOARD_CATEGORIES.map((category) => {
+                const isChecked = selectedCategory === category.value;
 
-              {FREE_BOARD_CATEGORIES.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
-                </option>
-              ))}
-            </select>
+                return (
+                  <button
+                    key={category.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isChecked}
+                    onClick={() => {
+                      setSelectedCategory(category.value);
+                      setError((prev) => ({ ...prev, category: '' }));
+                    }}
+                    className={clsx(
+                      'min-h-11 px-4.5 rounded-full border text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                      isChecked
+                        ? 'border-primary bg-primary text-onPrimary'
+                        : 'border-textThr text-textSub hover:bg-field hover:text-textBase'
+                    )}
+                  >
+                    {category.label}
+                  </button>
+                );
+              })}
+            </div>
 
             {errors.category && (
-              <p
-                id="category-error"
-                className="my-2 text-xs text-red-600 md:text-sm"
-              >
+              <p id="category-error" className="flex items-center gap-1 text-xs text-danger">
+                <CircleAlert aria-hidden="true" className="size-3.5" />
                 {errors.category}
               </p>
             )}
-          </>
+          </div>
         )}
 
-        <FormInput
-          type="text"
-          name="writer"
-          className="mt-3"
-          onChange={(e) => setWriter(e.target.value)}
-          value={writer}
-          title="작성자"
-          placeholder="작성자를 입력해주세요"
-          readOnly
-        />
+        <div className="flex flex-col gap-2.5">
+          <span className="text-sm font-bold text-textBase">작성자</span>
+          <div className="flex items-center gap-2.5 min-h-12 px-3.5 rounded-xl border border-textThr bg-field">
+            <Avatar
+              name={writer || '?'}
+              photoURL={mode === 'edit' ? initialData?.photoURL : user?.photoURL}
+              className="size-7 text-xs"
+            />
+            <span className="min-w-0 truncate text-[15px] text-textBase">{writer}</span>
+            {mode === 'create' && (
+              <span className="ml-auto max-md:hidden text-xs text-textSub">로그인한 계정으로 등록돼요</span>
+            )}
+          </div>
+        </div>
 
         <FormInput
           type="text"
           name="postTitle"
-          className="mt-3"
+          id="post-title-input"
+          label="제목"
+          required
+          className="text-base"
           value={inputTitle}
           onChange={(e) => {
             setInputTitle(e.target.value);
             setError((prev) => ({ ...prev, title: '' }));
           }}
-          title="제목"
           placeholder="제목을 입력해주세요"
           error={errors.title}
           ref={titleRef}
@@ -225,9 +266,10 @@ export default function PostForm({
 
         <FormTextarea
           name="content"
+          id="post-content-input"
+          label="내용"
+          required
           placeholder="내용을 입력해주세요."
-          className="mt-3"
-          title="내용"
           value={inputContent}
           onChange={(e) => {
             setInputContent(e.target.value);
@@ -237,15 +279,15 @@ export default function PostForm({
           ref={contentRef}
         />
 
-        <div className="flex justify-center items-center mt-5">
-          <BaseButton type="button" className="mr-2" variant="cancel" onClick={() => navigate(-1)}>
+        <div className="flex max-md:flex-col-reverse justify-center gap-2.5 pt-1">
+          <BaseButton type="button" variant="cancel" className="min-h-12 px-6 text-[15px]" onClick={() => navigate(-1)}>
             취소
           </BaseButton>
-          <BaseButton type="submit" disabled={isSubmitting}>
+          <BaseButton type="submit" className="min-h-12 px-7 text-[15px]" disabled={isSubmitting}>
             {isSubmitting ? '처리 중...' : mode === 'edit' ? '수정' : '등록'}
           </BaseButton>
         </div>
       </form>
-    </div>
+    </section>
   );
 }

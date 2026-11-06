@@ -256,13 +256,13 @@ describe('Board list conditions across routes', () => {
     const content = screen.getByPlaceholderText<HTMLTextAreaElement>('내용을 입력해주세요.');
     fireEvent.change(title, { target: { value: '수정한 제목' } });
     fireEvent.change(content, { target: { value: '수정한 본문' } });
-    fireEvent.change(screen.getByTitle('카테고리'), { target: { value: 'chat' } });
+    fireEvent.click(screen.getByRole('radio', { name: '수다' }));
     fireEvent.click(screen.getByRole('button', { name: '수정' }));
     await waitFor(() => expect(screen.getByRole<HTMLButtonElement>('button', { name: '수정' }).disabled).toBe(false));
     expect(updatePost).toHaveBeenCalledTimes(1);
     expect(title.value).toBe('수정한 제목');
     expect(content.value).toBe('수정한 본문');
-    expect(screen.getByTitle<HTMLSelectElement>('카테고리').value).toBe('chat');
+    expect(screen.getByRole('radio', { name: '수다' }).getAttribute('aria-checked')).toBe('true');
     expectConditions(currentUrl(), '/board/free/edit/post-11');
   });
 
@@ -281,7 +281,7 @@ describe('Board list conditions across routes', () => {
       expect(
         screen.getByPlaceholderText<HTMLTextAreaElement>('내용을 입력해주세요.').value
       ).toBe('본문 11');
-      expect(screen.getByTitle<HTMLSelectElement>('카테고리').value).toBe('question');
+      expect(screen.getByRole('radio', { name: '질문' }).getAttribute('aria-checked')).toBe('true');
     });
     expectConditions(currentUrl(), '/board/free/edit/post-11', expected);
     fireEvent.click(screen.getByRole('button', { name: '수정' }));

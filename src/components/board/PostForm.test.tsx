@@ -30,7 +30,7 @@ describe('PostForm submission state', () => {
       </MemoryRouter>
     );
 
-    fireEvent.change(screen.getByTitle('카테고리'), { target: { value: 'chat' } });
+    fireEvent.click(screen.getByRole('radio', { name: '수다' }));
     fireEvent.change(screen.getByPlaceholderText('제목을 입력해주세요'), {
       target: { value: '제목' },
     });
