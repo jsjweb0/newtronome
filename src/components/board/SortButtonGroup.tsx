@@ -1,28 +1,22 @@
-import { BaseButton } from "../ui/BaseButton";
 import { ArrowUpDown } from "lucide-react";
 
 type SortButtonGroupProps = {
-    posts?: readonly unknown[];
     dateSort: boolean;
     setDateSort: (nextSort: boolean) => void;
 };
 
 export default function SortButtonGroup({
-    posts,
     dateSort,
     setDateSort
 }: SortButtonGroupProps) {
-    const postCount = posts?.length ?? 0;
-
     return (
-        <div className="flex justify-between items-center">
-            <p className="text-xs md:text-base">Total <b className="inline-flex items-center py-0.5 px-1.5 rounded-full text-xs font-medium bg-red-500 text-white">{postCount}</b></p>
-            <div className="flex justify-center items-center gap-2">
-                <BaseButton variant="cancel" onClick={() => setDateSort(!dateSort)}>
-                    <ArrowUpDown className="shrink-0 size-4 text-gray-600 dark:text-white/60" />
-                    {dateSort ? "오래된 순" : "최신 순"}
-                </BaseButton>
-            </div>
-        </div>
+        <button
+            type="button"
+            onClick={() => setDateSort(!dateSort)}
+            className="shrink-0 inline-flex items-center gap-1.5 min-h-11 px-3.5 rounded-xl bg-field text-sm font-bold whitespace-nowrap text-textBase hover:bg-textThr focus-visible:outline-2 focus-visible:outline-primary"
+        >
+            <ArrowUpDown aria-hidden="true" className="shrink-0 size-4 text-textSub" />
+            {dateSort ? "오래된 순" : "최신 순"}
+        </button>
     )
 }

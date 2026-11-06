@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom';
 import { AuthAccess } from '../auth/AuthAccess';
 import { useToast } from '../../contexts/ToastContext';
-import { BaseButton } from '../ui/BaseButton';
+import clsx from 'clsx';
+import { MessageSquare, Pin } from 'lucide-react';
 import { formatDate } from '../../utils/format';
 import { useNotifications } from '../../contexts/NotificationContext';
 import type { CommunityBoardType, Post } from '../../features/board/types/post';
-import { FREE_BOARD_CATEGORY_LABELS } from '../../constants/freeBoardCategories';
+import {
+  FREE_BOARD_CATEGORY_LABELS,
+  getFreeBoardCategoryBadgeClass,
+} from '../../constants/freeBoardCategories';
 import { createBoardListSearch } from '../../features/board/utils/boardListSearch';
 import { useCommentCountQuery } from '../../features/board/hooks/useCommentCountQuery';
 
@@ -42,13 +46,6 @@ function PostItem({
   const commentCountQuery = useCommentCountQuery(boardType, post.id);
   const commentCount = commentCountQuery.data;
 
-  const categoryColorMap: Record<string, string> = {
-    chat: 'text-blue-500 font-normal',
-    quote: 'text-orange-400 font-normal',
-    recommendation: 'text-gray-400 font-normal',
-    question: 'text-pink-300 font-normal',
-  };
-
   const categoryLabel = post.category
     ? FREE_BOARD_CATEGORY_LABELS[post.category] ?? post.category
     : null;
@@ -69,7 +66,7 @@ function PostItem({
 
     return text.split(regex).map((part, index) =>
       part.toLowerCase() === keyword.toLowerCase() ? (
-        <mark key={index}>{part}</mark>
+        <mark key={index} className="rounded-sm bg-primary/25 text-inherit">{part}</mark>
       ) : (
         <span key={index}>{part}</span>
       )
@@ -106,78 +103,93 @@ function PostItem({
     }
   };
 
+  const viewCount = Number.isFinite(post.viewCount) ? post.viewCount : 0;
+  const postDate = formatDate(post.date);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-13 gap-1 md:gap-2 px-4 py-3 text-xs md:text-base sm:items-center hover:bg-gray-50 dark:hover:bg-neutral-800 dark:border-neutral-700">
-      <div>
+    <div
+      role="row"
+      className={clsx(
+        'grid grid-cols-1 md:grid-cols-[64px_minmax(0,1fr)_150px_96px_64px] items-center gap-x-4 px-1.5 py-3 md:px-4 md:py-0 md:min-h-15 border-b border-line hover:bg-field/60',
+        post.isNotice && 'bg-primary/5'
+      )}
+    >
+      <span role="cell" className="max-md:hidden flex justify-center font-inter text-[13px] text-textSub tabular-nums">
         {post.isNotice ? (
-          <span className="shrink-0 inline-block px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded-full">
-            📌 공지
+          <span className="inline-flex items-center gap-0.5 px-2 py-0.75 rounded-full bg-primary/12 text-primary font-sans text-[11px] font-bold">
+            <Pin aria-hidden="true" className="size-3" />
+            공지
           </span>
         ) : (
-          <span>
-            {/^[1-9]\d*$/.test(post.id) ? post.id : '번호없음'}
-          </span>
+          /^[1-9]\d*$/.test(post.id) ? post.id : '번호없음'
         )}
-      </div>
-      <div className="flex items-start md:items-center flex-col md:flex-row gap-2 md:col-span-7 text-left">
-        <Link
-          to={`/board/${boardType}/${post.id}${boardSearch}`}
-          className="overflow-hidden inline-flex items-center max-w-full py-2 font-medium text-gray-900 dark:text-white"
-        >
-          {post.category && categoryLabel && (
-            <span
-              className={`shrink-0 inline-block ${categoryColorMap[post.category] || 'text-gray-500'
-                } mr-2`}
-            >
-              [{categoryLabel}]
+      </span>
+      <span role="cell" className="min-w-0 flex flex-col gap-1">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+          <Link
+            to={`/board/${boardType}/${post.id}${boardSearch}`}
+            className="flex flex-1 items-center gap-2 min-w-0 min-h-7 text-textBase hover:text-primary focus-visible:outline-2 focus-visible:outline-primary rounded"
+          >
+            {post.isNotice && (
+              <span className="md:hidden shrink-0 px-2 py-0.5 rounded-md bg-primary/12 text-primary text-[11px] font-bold">공지</span>
+            )}
+            {post.category && categoryLabel && (
+              <span data-title-part className={clsx('shrink-0 px-2 py-0.5 rounded-md text-[11px] font-bold', getFreeBoardCategoryBadgeClass(post.category))}>
+                {categoryLabel}
+              </span>
+            )}
+
+            <span data-title-part className={clsx('min-w-0 truncate text-[15px]', post.isNotice ? 'font-bold' : 'font-medium')}>
+              {highlightText(post.title, searchKeyword)}
             </span>
-          )}
 
-          <span className="inline-block truncate">{highlightText(post.title, searchKeyword)}</span>
+            {commentCount !== undefined && commentCount > 0 && (
+              <span className="shrink-0 inline-flex items-center gap-0.75 text-xs font-bold text-primary">
+                <MessageSquare aria-hidden="true" className="size-3.5" />
+                <span className="sr-only">댓글</span>
+                {commentCount}
+                <span className="sr-only">개</span>
+              </span>
+            )}
 
-          {commentCount !== undefined && commentCount > 0 && (
-            <i className="shrink-0 inline-block not-italic text-xs text-gray-500 px-2">
-              {commentCount}
-            </i>
-          )}
-
-          {commentCount === undefined && (
-            <span className="shrink-0 px-2 text-xs text-textSub">
-              <i aria-hidden="true">—</i>
-              <i className="sr-only">
-                {commentCountQuery.isError
-                  ? '댓글 수를 불러오지 못했습니다.'
-                  : '댓글 수를 불러오는 중입니다.'}
-              </i>
+            {commentCount === undefined && (
+              <span className="shrink-0 text-xs text-textSub">
+                <i aria-hidden="true" className="not-italic">—</i>
+                <i className="sr-only">
+                  {commentCountQuery.isError
+                    ? '댓글 수를 불러오지 못했습니다.'
+                    : '댓글 수를 불러오는 중입니다.'}
+                </i>
+              </span>
+            )}
+          </Link>
+          <AuthAccess allow={['admin']}>
+            <span className="shrink-0 flex items-center">
+              <Link
+                to={`/board/${boardType}/edit/${post.id}${boardSearch}`}
+                className="inline-flex items-center min-h-9 px-2.5 rounded-lg text-[13px] text-textSub hover:bg-field hover:text-textBase"
+              >
+                수정
+              </Link>
+              <button
+                type="button"
+                className="inline-flex items-center min-h-9 px-2.5 rounded-lg text-[13px] text-danger hover:bg-field"
+                onClick={() => {
+                  deletePosts(post.id);
+                }}
+              >
+                삭제
+              </button>
             </span>
-          )}
-
-        </Link>
-        <AuthAccess allow={['admin']}>
-          <div className="shrink-0 flex justify-start md:justify-center items-center gap-1">
-            <BaseButton
-              as="link"
-              to={`/board/${boardType}/edit/${post.id}${boardSearch}`}
-              className="px-3! py-2! md:text-sm"
-              variant="cancel"
-            >
-              수정
-            </BaseButton>
-            <BaseButton
-              variant="cancel"
-              className="px-3! py-2! md:text-sm"
-              onClick={() => {
-                deletePosts(post.id);
-              }}
-            >
-              삭제
-            </BaseButton>
-          </div>
-        </AuthAccess>
-      </div>
-      <div className="md:col-span-2">{displayAuthor}</div>
-      <div className="max-md:hidden">{Number.isFinite(post.viewCount) ? post.viewCount : 0}</div>
-      <div className="md:col-span-2">{formatDate(post.date)}</div>
+          </AuthAccess>
+        </span>
+        <span className="md:hidden text-xs text-textSub">
+          {displayAuthor} · {postDate} · 조회 {viewCount}
+        </span>
+      </span>
+      <span role="cell" className="max-md:hidden min-w-0 truncate text-[13px] text-textSub">{displayAuthor}</span>
+      <span role="cell" className="max-md:hidden text-center text-[13px] text-textSub tabular-nums">{postDate}</span>
+      <span role="cell" className="max-md:hidden text-right text-[13px] text-textSub tabular-nums">{viewCount}</span>
     </div>
   );
 }

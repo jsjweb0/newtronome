@@ -1,5 +1,6 @@
 import { useSearchParams, useParams } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Activity, Disc3 } from 'lucide-react';
 import {
   isCommunityBoardType,
   type CommunityBoardType,
@@ -135,15 +136,13 @@ function BoardContent({
 
   if (isPending) {
     return (
-      <div className="max-w-340 mx-auto px-4">
-        <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
-          {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
-        </h2>
+      <section aria-labelledby="board-title" className={sectionClasses}>
+        <BoardHeader boardType={boardType} />
         <div role="status">
           <span className="sr-only">게시글을 불러오는 중입니다.</span>
           <PostListSkeleton />
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -166,69 +165,113 @@ function BoardContent({
   }
 
   return (
-    <div className="max-w-340 mx-auto px-4 py-4 lg:py-10">
-      <h2 className="text-lg md:text-2xl text-center font-bold text-gray-800 dark:text-white">
-        {boardType === 'notice' ? '공지사항' : boardType === 'free' ? '자유게시판' : '게시판'}
-      </h2>
+    <section aria-labelledby="board-title" className={sectionClasses}>
+      <BoardHeader boardType={boardType} totalCount={posts.length}>
+        <WriteButton boardType={boardType} />
+      </BoardHeader>
 
       {queryError}
 
       {isFetching && !isError && (
-        <p role="status" className="text-center text-sm">
+        <p role="status" className="-mt-2 text-sm text-textSub">
           최신 목록을 확인하고 있습니다.
         </p>
       )}
 
-      {boardType === 'free' && (
-        <CategoryFilter
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {boardType === 'free' && (
+          <CategoryFilter
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryChange}
+          />
+        )}
+
+        <div className="flex items-center gap-2 max-md:w-full md:ml-auto">
+          <SearchBar
+            className="max-md:flex-1"
+            searchKeyword={draftKeyword}
+            setSearchKeyword={setDraftKeyword}
+            onSearch={handleSearch}
+          />
+
+          <SortButtonGroup
+            dateSort={dateSort}
+            setDateSort={handleSortChange}
+          />
+        </div>
+      </div>
+
+      <div>
+        <PostList
+          posts={posts}
+          filteredPosts={currentItems}
+          currentPage={currentPage}
+          searchKeyword={searchKeyword}
+          boardType={boardType}
           selectedCategory={selectedCategory}
-          onCategoryChange={handleCategoryChange}
+          dateSort={dateSort}
+          deletePost={deletePost}
         />
-      )}
-
-      <SearchBar
-        searchKeyword={draftKeyword}
-        setSearchKeyword={setDraftKeyword}
-        onSearch={handleSearch}
-      />
-
-      <SortButtonGroup
-        posts={posts}
-        dateSort={dateSort}
-        setDateSort={handleSortChange}
-      />
-      <PostList
-        posts={posts}
-        filteredPosts={currentItems}
-        currentPage={currentPage}
-        searchKeyword={searchKeyword}
-        boardType={boardType}
-        selectedCategory={selectedCategory}
-        dateSort={dateSort}
-        deletePost={deletePost}
-      />
-      {totalItems === 0 && (
-        <p
-          role="status"
-          className="py-10 text-center text-sm text-gray-500 dark:text-neutral-400"
-        >
-          {posts.length === 0
-            ? '아직 등록된 게시글이 없습니다.'
-            : searchKeyword
-              ? '검색 결과가 없습니다. 다른 검색어로 검색해 보세요.'
-              : selectedCategory
-                ? '이 카테고리에 등록된 게시글이 없습니다.'
-                : '표시할 게시글이 없습니다.'}
-        </p>
-      )}
-
-      <WriteButton boardType={boardType} />
+        {totalItems === 0 && (
+          <p
+            role="status"
+            className="py-12 text-center text-sm text-textSub"
+          >
+            {posts.length === 0
+              ? '아직 등록된 게시글이 없습니다.'
+              : searchKeyword
+                ? '검색 결과가 없습니다. 다른 검색어로 검색해 보세요.'
+                : selectedCategory
+                  ? '이 카테고리에 등록된 게시글이 없습니다.'
+                  : '표시할 게시글이 없습니다.'}
+          </p>
+        )}
+      </div>
 
       <Pagination
         currentPage={currentPage}
         setCurrentPage={handlePageChange}
         totalPages={totalPages}
       />
-    </div>
+    </section>
   )
+}
+
+const sectionClasses =
+  'flex flex-col gap-4 md:gap-5 px-1 md:px-7 pb-6';
+
+const BOARD_META: Record<CommunityBoardType, { title: string; label: string }> = {
+  free: { title: 'Free Board', label: '자유게시판' },
+  notice: { title: 'Notice', label: '공지사항' },
+};
+
+function BoardHeader({
+  boardType,
+  totalCount,
+  children,
+}: {
+  boardType: CommunityBoardType;
+  totalCount?: number;
+  children?: ReactNode;
+}) {
+  const { title, label } = BOARD_META[boardType];
+  const Icon = boardType === 'notice' ? Disc3 : Activity;
+
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <Icon aria-hidden="true" className="shrink-0 size-6.5 text-primary" />
+        <div>
+          <h1 id="board-title" className="text-[28px] leading-tight font-extrabold tracking-tight text-textBase">
+            {title}
+          </h1>
+          <p className="mt-0.5 text-[13px] text-textSub">
+            {label}
+            {totalCount !== undefined && ` · 총 ${totalCount}개`}
+          </p>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
 }
