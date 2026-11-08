@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CommunityBoardType, Post, } from "../types/post";
 import { deletePostFromFirestore } from "../services/postsService";
 import { postQueryKeys } from '../queries/postQueryKeys';
+import { commentQueryKeys } from "../queries/commentQueryKeys";
 
 export function useDeletePost(
     boardType: CommunityBoardType,
@@ -23,6 +24,9 @@ export function useDeletePost(
                 }),
                 queryClient.invalidateQueries({
                     queryKey: postQueryKeys.mineRoot(),
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: commentQueryKeys.mineRoot(),
                 }),
             ]);
         },
