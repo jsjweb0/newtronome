@@ -194,7 +194,7 @@ export default function PlaylistPanel({
                     }}
                   />
                   {isNowPlaying && (
-                    <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 text-[11px] font-bold text-accent">
+                    <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/72 text-[11px] font-bold text-accent">
                       <AudioEqualizerIcon isPlaying={true} aria-hidden="true" className="size-3" />
                       재생 중
                     </span>
@@ -267,7 +267,7 @@ export default function PlaylistPanel({
                         <ExternalLink
                           href={`https://soundcloud.com/search?q=${encodeURIComponent(tag)}`}
                           label={`SoundCloud에서 ${tag} 태그 검색`}
-                          className="inline-flex items-center min-h-7 px-2.5 text-xs rounded-full bg-textThr text-textSub hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="inline-flex items-center min-h-7 px-2.5 text-xs rounded-full bg-line text-textSub hover:text-primary hover:bg-primary/10 transition-colors"
                         >
                           # {tag}
                         </ExternalLink>

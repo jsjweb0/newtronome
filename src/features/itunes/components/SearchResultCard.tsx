@@ -40,7 +40,7 @@ export default function SearchResultCard({
         />
 
         {isPlayingPreview && (
-          <span className="absolute top-2.5 left-2.5 z-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-bold text-primary">
+          <span className="absolute top-2.5 left-2.5 z-1 rounded-full bg-black/72 px-2.5 py-1 text-[11px] font-bold text-primary">
             30초 미리듣기 중
           </span>
         )}
