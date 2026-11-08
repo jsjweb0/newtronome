@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import PlaylistCard from './PlaylistCard';
@@ -11,10 +11,10 @@ const playlist: Playlist = {
   coverUrl: 'https://i1.sndcdn.com/artworks-example-t500x500.jpg',
 };
 
-const renderCard = (props: Partial<Parameters<typeof PlaylistCard>[0]> = {}) =>
+const renderCard = (card: Playlist = playlist) =>
   render(
     <MemoryRouter>
-      <PlaylistCard playlist={playlist} {...props} />
+      <PlaylistCard playlist={card} />
     </MemoryRouter>
   );
 
@@ -23,33 +23,29 @@ afterEach(() => {
 });
 
 describe('PlaylistCard', () => {
-  it('links to the home playlist detail with a readable name', () => {
+  it('makes the whole card one link to the playlist detail', () => {
     renderCard();
 
-    const link = screen.getByRole('link', {
-      name: '2024 입하 디스코 플레이리스트, NEWTRONOME',
-    });
-
-    expect(link.getAttribute('href')).toBe('/?playlist=2024-spring');
-    expect(link.getAttribute('aria-current')).toBeNull();
-    expect(screen.queryByText('재생 중')).toBeNull();
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute('aria-label')).toBe('2024 입하 디스코 플레이리스트, NEWTRONOME');
+    expect(links[0].getAttribute('href')).toBe('/playlists/2024-spring');
+    expect(links[0].className).toContain('focus-visible:outline-primary');
   });
 
-  it('shows track count, duration and the playing badge for the current playlist', () => {
-    renderCard({ isCurrent: true, isPlaying: true, trackCount: 12, durationLabel: '44분' });
+  it('swaps in the fallback image when the cover fails to load', () => {
+    const { container } = renderCard();
+    const image = container.querySelector('img');
 
-    const link = screen.getByRole('link', {
-      name: '2024 입하 디스코 플레이리스트, NEWTRONOME, 12곡, 44분, 재생 중',
-    });
+    expect(image?.getAttribute('src')).toBe(playlist.coverUrl);
 
-    expect(link.getAttribute('aria-current')).toBe('true');
-    expect(screen.getByText('재생 중')).toBeTruthy();
-    expect(screen.getByText('12곡 · 44분')).toBeTruthy();
-    expect(screen.getByText('2024 입하 디스코').className).toContain('text-primary');
+    fireEvent.error(image!);
+
+    expect(image?.getAttribute('src')).toContain('no-image');
   });
 
-  it('falls back to a theme background when there is no cover', () => {
-    const { container } = renderCard({ playlist: { ...playlist, coverUrl: null } });
+  it('shows the title on a theme background when there is no cover', () => {
+    const { container } = renderCard({ ...playlist, coverUrl: null });
 
     expect(container.querySelector('img')).toBeNull();
     expect(screen.getAllByText('2024 입하 디스코')).toHaveLength(2);

@@ -1,18 +1,25 @@
-import { useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { usePlayerStore } from '../../player/stores/usePlayerStore';
-import type { PlayerOutletContext } from '../../../layouts/MainLayout';
-import { formatDurationMinutes } from '../../../utils/format';
+import { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import PlaylistCard from '../components/PlaylistCard';
 import { PLAYLISTS } from '../data/playlists';
 
+// 탐색 페이지라서 재생 상태(Zustand 재생 목록 · 위젯)는 읽지도 바꾸지도 않음
 export default function PlaylistsPage() {
-  const { currentPlaylistId, playlistStatus } = useOutletContext<PlayerOutletContext>();
-  const [filter, setFilter] = useState('');
+  // 필터를 주소(?q=)에 두어 상세에서 뒤로 가기로 돌아와도 유지
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = searchParams.get('q') ?? '';
 
-  const tracks = usePlayerStore((state) => state.tracks);
-  const isPlaying = usePlayerStore((state) => state.isPlaying);
-  const playbackMode = usePlayerStore((state) => state.playbackMode);
+  const handleFilterChange = (value: string) => {
+    setSearchParams(
+      (params) => {
+        const next = new URLSearchParams(params);
+        if (value) next.set('q', value);
+        else next.delete('q');
+        return next;
+      },
+      { replace: true }
+    );
+  };
 
   const keyword = filter.trim().toLowerCase();
   const filteredPlaylists = useMemo(
@@ -22,13 +29,6 @@ export default function PlaylistsPage() {
       ),
     [keyword]
   );
-
-  // 곡 수 · 재생시간은 지금 불러온 플레이리스트만 알 수 있음
-  const hasCurrentTracks = playlistStatus === 'ready' && tracks.length > 0;
-  const currentDurationLabel = useMemo(() => {
-    const totalMs = tracks.reduce((total, track) => total + track.durationMs, 0);
-    return formatDurationMinutes(Math.floor(totalMs / 1000 / 60));
-  }, [tracks]);
 
   const countLabel = keyword
     ? `${filteredPlaylists.length} / ${PLAYLISTS.length}개`
@@ -60,7 +60,7 @@ export default function PlaylistsPage() {
         <input
           type="search"
           value={filter}
-          onChange={(event) => setFilter(event.target.value)}
+          onChange={(event) => handleFilterChange(event.target.value)}
           aria-label="플레이리스트 검색"
           placeholder="Filter"
           autoComplete="off"
@@ -76,21 +76,11 @@ export default function PlaylistsPage() {
           aria-label="플레이리스트 목록"
           className="grid grid-cols-2 gap-x-3.5 gap-y-7 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-x-5 md:gap-y-8"
         >
-          {filteredPlaylists.map((playlist) => {
-            const isCurrent = playlist.id === currentPlaylistId;
-
-            return (
-              <li key={playlist.id} className="min-w-0">
-                <PlaylistCard
-                  playlist={playlist}
-                  isCurrent={isCurrent}
-                  isPlaying={isCurrent && isPlaying && playbackMode === 'playlist'}
-                  trackCount={isCurrent && hasCurrentTracks ? tracks.length : undefined}
-                  durationLabel={isCurrent && hasCurrentTracks ? currentDurationLabel : undefined}
-                />
-              </li>
-            );
-          })}
+          {filteredPlaylists.map((playlist) => (
+            <li key={playlist.id} className="min-w-0">
+              <PlaylistCard playlist={playlist} />
+            </li>
+          ))}
         </ul>
       ) : (
         <p className="py-10 text-center text-sm text-textSub">

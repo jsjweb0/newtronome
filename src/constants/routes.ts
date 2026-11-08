@@ -20,6 +20,9 @@ export const getBoardTitle = (boardType?: string) => {
 
 export const createBoardPath = (boardType: BoardType) => `/board/${boardType}`;
 
+export const createPlaylistPath = (playlistId: string) =>
+  `/playlists/${encodeURIComponent(playlistId)}`;
+
 export const ROUTES = {
   home: { path: '/', title: '홈' },
   login: { path: '/login', title: '로그인' },

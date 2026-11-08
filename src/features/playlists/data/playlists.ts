@@ -106,6 +106,3 @@ export const PLAYLISTS: ReadonlyArray<Playlist> = [
 
 export const findPlaylistById = (id: string | null | undefined) =>
     id ? PLAYLISTS.find((playlist) => playlist.id === id) ?? null : null;
-
-export const createPlaylistHomePath = (id: string) =>
-    `/?playlist=${encodeURIComponent(id)}`;

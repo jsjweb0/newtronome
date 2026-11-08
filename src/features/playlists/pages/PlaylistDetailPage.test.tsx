@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import PlaylistDetailPage from './PlaylistDetailPage';
@@ -33,6 +33,15 @@ describe('PlaylistDetailPage', () => {
     expect(soundCloudLink.getAttribute('target')).toBe('_blank');
 
     expect(screen.getByRole('link', { name: '목록으로' }).getAttribute('href')).toBe('/playlists');
+  });
+
+  it('falls back to the default image when the cover fails to load', () => {
+    const { container } = renderAt('/playlists/2024-spring');
+    const image = container.querySelector('img')!;
+
+    fireEvent.error(image);
+
+    expect(image.getAttribute('src')).toContain('no-image');
   });
 
   it('shows the title on a theme background when there is no cover', () => {
