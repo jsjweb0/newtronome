@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Heart } from 'lucide-react';
 import clsx from 'clsx';
 import type { PlayerTrack } from '../../player/types/player.types';
@@ -7,6 +8,8 @@ export type TrackBookmarkButtonProps = {
   track: PlayerTrack;
   className?: string;
   iconClassName?: string;
+  /** 아이콘 옆에 보이는 글자 (예: Likes). 접근성 이름은 aria-label이 그대로 담당 */
+  children?: ReactNode;
   'aria-describedby'?: string;
 };
 
@@ -14,6 +17,7 @@ export default function TrackBookmarkButton({
   track,
   className,
   iconClassName,
+  children,
   'aria-describedby': ariaDescribedBy,
 }: TrackBookmarkButtonProps) {
   const {
@@ -66,6 +70,7 @@ export default function TrackBookmarkButton({
           iconClassName
         )}
       />
+      {children && <span aria-hidden="true">{children}</span>}
     </button>
   );
 }
