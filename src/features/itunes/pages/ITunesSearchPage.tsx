@@ -1,42 +1,17 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ITunesTrack } from "../types/itunes.types";
-import type { PlayerTrack } from '../../player/types/player.types';
 import { useITunesSearch } from "../hooks/useITunesSearch";
-import { Music, Search as SearchIcon, CircleX, ChevronRight, Plus as PlusIcon } from "lucide-react";
+import { Music, Search as SearchIcon, X as XIcon, Plus as PlusIcon } from "lucide-react";
 import clsx from "clsx";
 import { AudioEqualizerIcon } from '../../../components/icons';
 import TrackItemSkeleton from "../../../components/track/TrackItemSkeleton";
-import appleMusicBadge from '../../../assets/brands/apple-music-listen-badge-2x.png';
-import Tooltip from "../../../components/ui/Tooltip";
-import TrackItem from "../../../components/track/TrackItem";
 import { useOutletContext } from "react-router-dom";
 import type { PlayerOutletContext } from "../../../layouts/MainLayout";
 import { usePlayerStore } from "../../player/stores/usePlayerStore";
 import ArtistTracksPanel from "../components/ArtistTracksPanel";
 import SearchSuggestions from "../components/SearchSuggestions";
+import SearchResultCard from "../components/SearchResultCard";
 import { useToast } from "../../../contexts/ToastContext";
-
-const getLargeArtworkUrl = (artworkUrl: string) => {
-  return artworkUrl.replace(
-    '100x100bb',
-    '600x600bb'
-  );
-};
-
-const mapITunesTrackToPlayerTrack = (
-  track: ITunesTrack
-): PlayerTrack => ({
-  id: track.trackId,
-  title: track.trackName,
-  artist: track.artistName,
-  artworkUrl: track.artworkUrl100
-    ? getLargeArtworkUrl(track.artworkUrl100)
-    : null,
-  permalinkUrl: track.trackViewUrl ?? null,
-  durationMs: track.trackTimeMillis ?? 0,
-  genre: '',
-  tags: [],
-});
 
 const RECENT_SEARCHES_KEY = 'recentSearches';
 const MAX_RECENT_SEARCHES = 5;
@@ -49,7 +24,7 @@ interface SelectedArtist {
 }
 
 export default function ITunesSearchPage() {
-  const { onPauseSoundCloud, isSidebarCollapsed } = useOutletContext<PlayerOutletContext>();
+  const { onPauseSoundCloud } = useOutletContext<PlayerOutletContext>();
 
   const { showToast } = useToast();
 
@@ -68,6 +43,8 @@ export default function ITunesSearchPage() {
   const hasMoreTracks = visibleCount < tracks.length;
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const [playingPreviewTrackId, setPlayingPreviewTrackId] = useState<number | null>(null);
 
@@ -133,6 +110,10 @@ export default function ITunesSearchPage() {
     );
   };
 
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+  };
+
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -181,6 +162,9 @@ export default function ITunesSearchPage() {
 
     stopPreview();
     setIsArtistPanelOpen(false);
+    // 검색하면 모바일 검색어 패널을 닫고 키보드도 내린다
+    searchInputRef.current?.blur();
+    setIsSearchFocused(false);
     setVisibleCount(INITIAL_VISIBLE_COUNT);
 
     if (trimmedKeyword === searchKeyword) {
@@ -322,63 +306,80 @@ export default function ITunesSearchPage() {
     stopPreview();
   }, [isSoundCloudPlaying, stopPreview]);
 
+  const isMobilePanelOpen = !hasSearched || isSearchFocused;
+
   return (
-    <div className="relative mx-auto w-full px-2 lg:px-4 pb-6 lg:pb-10">
-      <form onSubmit={handleSearch}>
-        <div className="flex relative">
-          <label htmlFor="music-search" className="inline-flex justify-center items-center absolute top-0 left-3.5 h-full">
+    <div className="relative mx-auto w-full px-1 lg:px-4 pt-2 pb-6 lg:pb-10">
+      <form role="search" onSubmit={handleSearch}>
+        <div
+          className={clsx(
+            'flex items-center gap-2.5 min-h-14.5 pr-1.5 pl-4 rounded-[18px] bg-field',
+            'border border-textThr dark:border-line focus-within:border-primary transition-colors'
+          )}
+        >
+          <label htmlFor="music-search" className="flex shrink-0 text-textSub">
             <span className="sr-only">검색어</span>
-            <Music aria-hidden="true" className="size-4 md:size-6 text-textSub" />
+            <Music aria-hidden="true" className="size-5" />
           </label>
 
           <input
+            ref={searchInputRef}
             id="music-search"
             type="search"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             autoComplete="off"
             placeholder="Search songs or artists"
-            className="music-search-input w-full py-3 md:py-4 pl-10 md:pl-14 pr-18 bg-background rounded-xl md:rounded-2xl text-textBase text-sm md:text-base border border-textThr dark:border-none focus:ring-primary"
+            aria-controls="search-suggestions"
+            aria-expanded={isMobilePanelOpen}
+            className="music-search-input min-w-0 flex-1 min-h-11 border-0 bg-transparent px-0 text-textBase text-base placeholder:text-textSub/70 outline-none focus:ring-0"
           />
           {keyword && (
             <button
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setKeyword('')}
-              className="inline-flex items-center absolute right-10 md:right-11 h-full px-2 md:px-4 text-textSub"
+              className="flex size-10 shrink-0 items-center justify-center rounded-full text-textSub hover:bg-textThr/60 hover:text-textBase"
               aria-label="검색어 지우기"
             >
-              <CircleX aria-hidden="true" className="size-4 md:size-5" />
+              <XIcon aria-hidden="true" className="size-4.5" />
             </button>
           )}
 
           <button type="submit"
             disabled={isLoading}
             aria-label={isLoading ? '검색 중...' : '검색'}
-            className="inline-flex justify-center items-center absolute right-1 h-full px-3 md:px-4 rounded-full bg-none"
+            className={clsx(
+              'flex size-11 shrink-0 items-center justify-center rounded-xl text-textBase hover:bg-textThr/60',
+              'lg:rounded-[10px] lg:bg-primary lg:text-onPrimary lg:hover:bg-primary/85',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60'
+            )}
           >
-            <SearchIcon aria-hidden="true" className="size-4 md:size-6" />
+            <SearchIcon aria-hidden="true" className="size-5" />
           </button>
         </div>
       </form>
 
       {/* 검색어 목록 */}
       <SearchSuggestions
+        id="search-suggestions"
         recentSearches={recentSearches}
         recommendedArtists={recommendedArtists}
+        isMobilePanelOpen={isMobilePanelOpen}
         onSelect={handleRecentSearch}
         onRemoveRecent={removeRecentSearch}
+        onClearRecent={clearRecentSearches}
       />
       {/* //검색어 목록 */}
 
-      <section className="mt-6" aria-labelledby="search-results-title">
+      <section className="mt-6 lg:mt-8" aria-labelledby="search-results-title">
         {!hasSearched && (
-          <div className="flex flex-col items-center justify-center mb-5">
-            <span className="mb-4">
-              <AudioEqualizerIcon isPlaying={true} className="size-8 text-primary" />
-            </span>
-            <p className="text-center text-primary text-sm md:text-base">
-              어떤 곡을 찾고 계신가요? <br className="inline md:hidden" />
+          <div className="flex flex-col items-center gap-2.5 px-4 pt-7 pb-10 text-center">
+            <AudioEqualizerIcon isPlaying={true} size={56} aria-hidden="true" className="text-primary" />
+            <p className="mt-1.5 text-base font-bold text-textBase">어떤 곡을 찾고 계신가요?</p>
+            <p className="text-[13px] leading-normal text-textSub">
               검색어를 입력하고 Enter를 눌러보세요.
             </p>
           </div>
@@ -386,13 +387,13 @@ export default function ITunesSearchPage() {
 
         {isLoading && (
           <>
-            <div className="flex gap-x-4 items-center mb-5">
-              <h2 className="text-xl flex items-center gap-x-2">
-                <SearchIcon aria-hidden="true" />
+            <div className="flex gap-x-3 items-center mb-5">
+              <h2 className="text-lg md:text-[22px] font-bold flex items-center gap-x-2">
+                <SearchIcon aria-hidden="true" className="size-5" />
                 <span>검색 중</span>
               </h2>
               <div
-                className="animate-spin inline-block size-6 border-3 border-current border-t-transparent text-primary rounded-full"
+                className="animate-spin inline-block size-5 border-3 border-current border-t-transparent text-primary rounded-full"
                 role="status"
                 aria-label="loading"
               >
@@ -400,8 +401,8 @@ export default function ITunesSearchPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-x-4 gap-y-8 lg:gap-y-14 mt-6">
-              {Array.from({ length: 12 }).map((_, i) => (
+            <div className={resultGridClassName}>
+              {Array.from({ length: 10 }).map((_, i) => (
                 <TrackItemSkeleton key={i} />
               ))}
             </div>
@@ -409,79 +410,42 @@ export default function ITunesSearchPage() {
         )}
 
         {!isLoading && errorMessage && (
-          <p role="alert" className="text-center">{errorMessage}</p>
+          <p role="alert" className="py-10 text-center text-textSub">{errorMessage}</p>
         )}
 
         {!isLoading &&
           !errorMessage &&
           hasSearched &&
           tracks.length === 0 && (
-            <p className="text-center">검색 결과가 없어요.</p>
+            <p className="py-10 text-center text-textSub">검색 결과가 없어요.</p>
           )}
 
         {!isLoading && !errorMessage && tracks.length > 0 && (
           <>
-            <div className="flex gap-x-4 items-center mb-8">
-              <h2 id="search-results-title" className="text-base md:text-xl flex items-center gap-x-2 text-textSub">
-                <SearchIcon aria-hidden="true" />
-                <span>
-                  검색 결과 “<strong className="font-inter font-black text-textBase">{searchKeyword}</strong>”
-                </span>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 mb-5.5">
+              <SearchIcon aria-hidden="true" className="size-5 text-textBase" />
+              <h2 id="search-results-title" className="text-lg md:text-[22px] font-bold text-textBase">
+                검색 결과 <span className="text-primary">“{searchKeyword}”</span>
               </h2>
+              <span className="text-[13px] text-textSub">{tracks.length}곡 · 30초 미리듣기</span>
             </div>
-            <ul className="grid grid-cols-3 md:grid-cols-5 gap-x-4 gap-y-8 lg:gap-y-14 mt-6">
-              {visibleTracks.map((track, index) => {
-                const displayTrack = mapITunesTrackToPlayerTrack(track);
-                const isPlayingPreview =
-                  playingPreviewTrackId === track.trackId;
-
-                return (
-                  <li key={track.trackId} className="text-center">
-                    <TrackItem
-                      idx={index}
-                      track={displayTrack}
-                      interactive={Boolean(track.previewUrl)}
-                      isPlayingPreview={isPlayingPreview}
-                      onTrackClick={() => handlePreview(track)}
-                      ariaLabel={
-                        isPlayingPreview
-                          ? `${track.trackName} 미리듣기 정지`
-                          : `${track.trackName} 30초 미리듣기`
-                      }
-                      footerActions={
-                        <div className="flex flex-col items-center gap-2">
-                          {track.trackViewUrl ? (
-                            <Tooltip content="Apple Music에서 원곡 보기" position="bottom" className="max-xl:hidden">
-                              <a
-                                href={track.trackViewUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label="Apple Music에서 원곡 보기"
-                                className="inline-flex max-w-24"
-                              >
-                                <img src={appleMusicBadge} alt="Listen on Apple Music" />
-                              </a>
-                            </Tooltip>
-                          ) : null}
-                          <button type="button"
-                            onClick={() => {
-                              setSelectedArtist({
-                                id: track.artistId,
-                                name: track.artistName,
-                              });
-                              setIsArtistPanelOpen(true);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-textSub hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
-                          >
-                            다른 곡 보기
-                            <ChevronRight aria-hidden="true" className="size-3.5" />
-                          </button>
-                        </div>
-                      }
-                    />
-                  </li>
-                );
-              })}
+            <ul className={resultGridClassName}>
+              {visibleTracks.map((track) => (
+                <li key={track.trackId} className="min-w-0">
+                  <SearchResultCard
+                    track={track}
+                    isPlayingPreview={playingPreviewTrackId === track.trackId}
+                    onPreview={handlePreview}
+                    onOpenArtist={(selectedTrack) => {
+                      setSelectedArtist({
+                        id: selectedTrack.artistId,
+                        name: selectedTrack.artistName,
+                      });
+                      setIsArtistPanelOpen(true);
+                    }}
+                  />
+                </li>
+              ))}
             </ul>
             {hasMoreTracks && (
               <div className="flex justify-center mt-10">
@@ -496,12 +460,13 @@ export default function ITunesSearchPage() {
                     );
                   }}
                   className={clsx(
-                    'inline-flex gap-1.5 items-center py-3 px-8 bg-background rounded-xl md:rounded-2xl',
-                    'text-textBase text-sm border border-textThr dark:border-none focus:ring-primary',
-                    'hover:text-primary transition-all'
+                    'inline-flex gap-1.5 items-center min-h-11 px-8 bg-field rounded-xl',
+                    'text-textBase text-sm border border-textThr dark:border-line',
+                    'hover:text-primary hover:border-primary transition-colors',
+                    'focus-visible:outline-2 focus-visible:outline-primary'
                   )}
                 >
-                  20개 더 보기 <PlusIcon aria-hidden="true" className="size-3" />
+                  20개 더 보기 <PlusIcon aria-hidden="true" className="size-3.5" />
                 </button>
               </div>
             )}
@@ -512,7 +477,6 @@ export default function ITunesSearchPage() {
         <ArtistTracksPanel
           artist={selectedArtist}
           isOpen={isArtistPanelOpen}
-          isSidebarCollapsed={isSidebarCollapsed}
           playingTrackId={playingPreviewTrackId}
           onClose={() => {
             stopPreview();
@@ -532,3 +496,8 @@ export default function ITunesSearchPage() {
     </div>
   );
 }
+
+const resultGridClassName = clsx(
+  'grid grid-cols-2 gap-x-3 gap-y-5.5',
+  'md:grid-cols-[repeat(auto-fill,minmax(176px,1fr))] md:gap-x-5 md:gap-y-7'
+);
