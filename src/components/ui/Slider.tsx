@@ -165,7 +165,7 @@ export default function ImageSlider({
       </div>
 
       {caption && (
-        <div className="mt-9 lg:mt-[110px] text-center">
+        <div className="mt-7.5 lg:mt-[54px] text-center">
           <p className="font-bold text-base lg:text-[17px] truncate">{caption.title}</p>
           {caption.subtitle && (
             <p className="mt-0.5 text-[13px] text-textSub truncate">{caption.subtitle}</p>
@@ -174,7 +174,7 @@ export default function ImageSlider({
       )}
 
       {hasMultipleImages && (
-        <div className="flex items-center justify-center gap-x-3.5 mt-3">
+        <div className="flex items-center justify-center gap-x-3.5 mt-5">
           <button
             type="button"
             onClick={handleAutoplayToggle}
