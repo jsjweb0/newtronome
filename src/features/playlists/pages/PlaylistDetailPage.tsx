@@ -1,18 +1,26 @@
-import { Link, useParams } from 'react-router-dom';
-import { ChevronLeft, ExternalLink as ExternalLinkIcon, ListMusic } from 'lucide-react';
+import { Link, useOutletContext, useParams } from 'react-router-dom';
+import { ChevronLeft, ListMusic } from 'lucide-react';
 import { ROUTES } from '../../../constants/routes';
-import ExternalLink from '../../../components/ui/ExternalLink';
-import PlaylistCoverArt from '../components/PlaylistCoverArt';
+import RetryErrorState from '../../../components/ui/RetryErrorState';
+import HomePageSkeleton from '../../../pages/HomePageSkeleton';
+import type { PlayerOutletContext } from '../../../layouts/MainLayout';
+import { selectCurrentTrack, usePlayerStore } from '../../player/stores/usePlayerStore';
+import type { PlayerTrack } from '../../player/types/player.types';
+import PlaylistHero from '../components/PlaylistHero';
+import PlaylistTrackList from '../components/PlaylistTrackList';
 import { findPlaylistById } from '../data/playlists';
+import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 
 const focusRingClass =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
+
+const WIDGET_PRELOAD_HEIGHT = 3000;
 
 function BackToListLink() {
   return (
     <Link
       to={ROUTES.playlists.path}
-      className={`inline-flex items-center gap-1 min-h-11 -ml-1.5 pr-3 pl-1 rounded-full text-sm text-textSub hover:text-primary transition-colors ${focusRingClass}`}
+      className={`inline-flex items-center gap-0.5 min-h-11 pr-3 pl-1.5 rounded-full text-sm text-textSub hover:text-primary transition-colors ${focusRingClass}`}
     >
       <ChevronLeft aria-hidden="true" className="size-5" />
       목록으로
@@ -24,6 +32,16 @@ export default function PlaylistDetailPage() {
   const { playlistId } = useParams<{ playlistId: string }>();
   // URL id로 카탈로그를 바로 조회해서 새로고침 · 직접 접근에도 같은 화면을 보여 줌
   const playlist = findPlaylistById(playlistId);
+
+  const { onPlaySingleTrack, onToggleTrack } = useOutletContext<PlayerOutletContext>();
+  // 재생 목록(tracks)은 쓰지 않고, 지금 한 곡 재생 중인 곡만 표시에 사용
+  const playbackMode = usePlayerStore((state) => state.playbackMode);
+  const currentTrack = usePlayerStore(selectCurrentTrack);
+  const isPlaying = usePlayerStore((state) => state.isPlaying);
+
+  const { iframeRef, frameKey, widgetUrl, status, tracks, retry } = usePlaylistTracks(
+    playlist?.soundCloudUrl ?? null
+  );
 
   if (!playlist) {
     return (
@@ -45,45 +63,84 @@ export default function PlaylistDetailPage() {
     );
   }
 
-  return (
-    <section
-      aria-labelledby="playlist-detail-title"
-      className="mx-auto w-full px-1 md:px-7 pb-6 lg:pb-10"
-    >
-      <BackToListLink />
+  // 재생 플레이리스트를 바꾸지 않도록 한 곡 재생(좋아요 페이지와 같은 방식)으로 들음
+  const handleTrackClick = (track: PlayerTrack) => {
+    if (track.playbackStatus === 'blocked') return;
 
-      <div className="flex max-md:flex-col md:items-end gap-6 md:gap-10 mt-4 md:mt-6">
-        <div className="relative shrink-0 w-full max-w-[320px] md:w-60 lg:w-72 aspect-square overflow-hidden rounded-xl bg-textThr shadow-[0_10px_24px_rgba(0,0,0,0.25)] dark:shadow-[0_10px_24px_rgba(0,0,0,0.45)]">
-          <PlaylistCoverArt
-            playlist={playlist}
-            loading="eager"
-            titleClassName="text-2xl md:text-3xl"
+    const isCurrentSingleTrack =
+      playbackMode === 'single' && String(currentTrack?.id) === String(track.id);
+
+    if (isCurrentSingleTrack) {
+      onToggleTrack();
+      return;
+    }
+
+    onPlaySingleTrack(track);
+  };
+
+  let content;
+
+  if (status === 'loading') {
+    content = <HomePageSkeleton />;
+  } else if (status === 'error') {
+    content = (
+      <RetryErrorState
+        message="플레이리스트 곡 목록을 불러오지 못했습니다."
+        onRetry={retry}
+      />
+    );
+  } else {
+    content = (
+      <>
+        <PlaylistHero
+          title={playlist.title}
+          titleAs="h1"
+          tracks={tracks}
+          soundCloudUrl={playlist.soundCloudUrl}
+          fallbackArtwork={playlist.coverUrl}
+        />
+        {status === 'empty' ? (
+          <p className="px-3 py-14 text-textSub text-sm">플레이리스트가 비어 있어요</p>
+        ) : (
+          <PlaylistTrackList
+            tracks={tracks}
+            currentTrack={playbackMode === 'single' ? currentTrack : null}
+            isPlaying={isPlaying}
+            onTrackClick={handleTrackClick}
+            headingAs="h2"
+          />
+        )}
+      </>
+    );
+  }
+
+  return (
+    <div className="md:px-3">
+      <div className="relative z-1 lg:-mt-6 mb-2 lg:mb-4">
+        <BackToListLink />
+      </div>
+
+      {content}
+
+      {/* 곡 목록만 읽어 오는 숨김 위젯 (재생용 위젯과 별개) */}
+      {widgetUrl && (
+        <div
+          aria-hidden="true"
+          className="absolute -left-2500 top-0 w-75 h-750 overflow-hidden opacity-0 pointer-events-none"
+        >
+          <iframe
+            key={frameKey}
+            ref={iframeRef}
+            title={`${playlist.title} 곡 목록 불러오기`}
+            tabIndex={-1}
+            src={widgetUrl}
+            width="100%"
+            height={WIDGET_PRELOAD_HEIGHT}
+            allow="encrypted-media"
+            className="block w-full"
           />
         </div>
-
-        <div className="flex min-w-0 flex-col items-start gap-y-4">
-          <span className="inline-block px-2.5 py-1 rounded-full bg-primary text-onPrimary font-inter text-[11px] font-extrabold tracking-[0.1em]">
-            PLAYLIST
-          </span>
-          <h1
-            id="playlist-detail-title"
-            className="text-[32px] md:text-[44px] leading-tight font-extrabold tracking-tight text-textBase break-keep"
-          >
-            {playlist.title}
-          </h1>
-          <p className="font-inter text-xs font-black italic tracking-[0.02em] text-textSub">
-            NEWTRONOME
-          </p>
-          <ExternalLink
-            href={playlist.soundCloudUrl}
-            label={`${playlist.title} SoundCloud에서 열기`}
-            className={`inline-flex items-center gap-2 min-h-11 px-5 rounded-xl bg-field border border-textThr dark:border-line text-sm font-bold text-textBase hover:border-primary hover:text-primary transition-colors ${focusRingClass}`}
-          >
-            SoundCloud에서 열기
-            <ExternalLinkIcon aria-hidden="true" className="size-4" />
-          </ExternalLink>
-        </div>
-      </div>
-    </section>
+      )}
+    </div>
   );
 }

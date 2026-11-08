@@ -1,58 +1,111 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PlaylistDetailPage from './PlaylistDetailPage';
+import { usePlayerStore } from '../../player/stores/usePlayerStore';
+import type { PlayerTrack } from '../../player/types/player.types';
+import { createOutletContext, fakeSound, installFakeSoundCloud } from '../test-utils';
 
-function renderAt(pathname: string) {
-  return render(
+vi.mock('../../../components/ui/Slider', () => ({
+  default: ({ images }: { images: string[] }) => <div data-testid="slider">{images.length}</div>,
+}));
+
+vi.mock('../../../components/track/TrackItemActions', () => ({ default: () => null }));
+const playlistTrack: PlayerTrack = {
+  id: 99,
+  title: 'Main Playlist Song',
+  artist: 'Someone',
+  artworkUrl: null,
+  permalinkUrl: null,
+  durationMs: 1000,
+  genre: '',
+  tags: [],
+};
+
+function renderAt(pathname: string, context = createOutletContext()) {
+  const view = render(
     <MemoryRouter initialEntries={[pathname]}>
       <Routes>
-        <Route path="/playlists/:playlistId" element={<PlaylistDetailPage />} />
+        <Route element={<Outlet context={context} />}>
+          <Route path="/playlists/:playlistId" element={<PlaylistDetailPage />} />
+        </Route>
       </Routes>
     </MemoryRouter>
   );
+
+  return { ...view, context };
 }
 
-afterEach(() => {
-  cleanup();
-});
-
 describe('PlaylistDetailPage', () => {
-  it('looks up the playlist from the URL id on direct access', () => {
-    const { container } = renderAt('/playlists/2024-spring');
-
-    expect(screen.getByRole('heading', { level: 1, name: '2024 입하 디스코' })).toBeTruthy();
-    expect(container.querySelector('img')?.getAttribute('src')).toBe(
-      'https://i1.sndcdn.com/artworks-LPqUcC3PkfKV6wbb-MLAeyg-t500x500.jpg'
-    );
-
-    const soundCloudLink = screen.getByRole('link', {
-      name: '2024 입하 디스코 SoundCloud에서 열기 (새 창)',
+  beforeEach(() => {
+    usePlayerStore.setState({
+      tracks: [playlistTrack],
+      currentTrack: playlistTrack,
+      playbackMode: 'playlist',
+      isPlaying: true,
+      currentTime: 10,
+      duration: 100,
     });
-    expect(soundCloudLink.getAttribute('href')).toBe('https://soundcloud.com/ssu-1/sets/2024-spring');
-    expect(soundCloudLink.getAttribute('target')).toBe('_blank');
-
-    expect(screen.getByRole('link', { name: '목록으로' }).getAttribute('href')).toBe('/playlists');
   });
 
-  it('falls back to the default image when the cover fails to load', () => {
+  afterEach(() => {
+    cleanup();
+    delete window.SC;
+  });
+
+  it('looks up the playlist by URL id and shows its info and track list', async () => {
+    installFakeSoundCloud([
+      fakeSound(1, 'First Song', 'https://i1.sndcdn.com/artworks-a-large.jpg'),
+      fakeSound(2, 'Second Song'),
+    ]);
     const { container } = renderAt('/playlists/2024-spring');
-    const image = container.querySelector('img')!;
 
-    fireEvent.error(image);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '2024 입하 디스코' })
+    ).toBeTruthy();
+    expect(screen.getByText('2 Tracks')).toBeTruthy();
+    expect(screen.getByText('6분')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'Track List' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /First Song/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Second Song/ })).toBeTruthy();
 
-    expect(image.getAttribute('src')).toContain('no-image');
+    expect(
+      screen.getByRole('link', { name: 'SoundCloud에서 플레이리스트 열기 (새 창)' }).getAttribute('href')
+    ).toBe('https://soundcloud.com/ssu-1/sets/2024-spring');
+    expect(screen.getByRole('link', { name: '목록으로' }).getAttribute('href')).toBe('/playlists');
+
+    const frame = container.querySelector('iframe');
+    expect(decodeURIComponent(frame?.getAttribute('src') ?? '')).toContain(
+      'url=https://soundcloud.com/ssu-1/sets/2024-spring'
+    );
   });
 
-  it('shows the title on a theme background when there is no cover', () => {
-    const { container } = renderAt('/playlists/autumn-disco');
+  it('plays a clicked track on its own without replacing the current playlist', async () => {
+    installFakeSoundCloud([fakeSound(1, 'First Song')]);
+    const { context } = renderAt('/playlists/2024-spring');
 
-    expect(container.querySelector('img')).toBeNull();
-    expect(screen.getAllByText('Autumn Disco')).toHaveLength(2);
+    fireEvent.click(await screen.findByRole('button', { name: /First Song/ }));
+
+    expect(context.onPlaySingleTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, title: 'First Song' })
+    );
+    expect(context.onSelectTrack).not.toHaveBeenCalled();
+
+    const state = usePlayerStore.getState();
+    expect(state.tracks).toEqual([playlistTrack]);
+    expect(state.currentTime).toBe(10);
+  });
+
+  it('shows a retry state when the tracks cannot be loaded', async () => {
+    installFakeSoundCloud('error');
+    renderAt('/playlists/2024-spring');
+
+    expect(await screen.findByText('플레이리스트 곡 목록을 불러오지 못했습니다.')).toBeTruthy();
   });
 
   it('shows a not-found message with a link back to the list for an unknown id', () => {
-    renderAt('/playlists/does-not-exist');
+    installFakeSoundCloud([]);
+    const { container } = renderAt('/playlists/does-not-exist');
 
     expect(
       screen.getByRole('heading', { level: 1, name: '플레이리스트를 찾을 수 없습니다' })
@@ -60,6 +113,6 @@ describe('PlaylistDetailPage', () => {
     expect(
       screen.getByRole('link', { name: '플레이리스트 목록 보기' }).getAttribute('href')
     ).toBe('/playlists');
-    expect(screen.queryByRole('link', { name: /SoundCloud/ })).toBeNull();
+    expect(container.querySelector('iframe')).toBeNull();
   });
 });

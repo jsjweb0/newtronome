@@ -1,11 +1,15 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { MemoryRouter, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PlaylistsPage from './PlaylistsPage';
 import PlaylistDetailPage from './PlaylistDetailPage';
 import { PLAYLISTS } from '../data/playlists';
 import { usePlayerStore } from '../../player/stores/usePlayerStore';
 import type { PlayerTrack } from '../../player/types/player.types';
+import { createOutletContext, fakeSound, installFakeSoundCloud } from '../test-utils';
+
+vi.mock('../../../components/ui/Slider', () => ({ default: () => <div /> }));
+vi.mock('../../../components/track/TrackItemActions', () => ({ default: () => null }));
 
 const playingTrack: PlayerTrack = {
   id: 1,
@@ -37,8 +41,10 @@ function renderRoutes(initialEntry = '/playlists') {
     <MemoryRouter initialEntries={[initialEntry]}>
       <BackButton />
       <Routes>
-        <Route path="/playlists" element={<PlaylistsPage />} />
-        <Route path="/playlists/:playlistId" element={<PlaylistDetailPage />} />
+        <Route element={<Outlet context={createOutletContext()} />}>
+          <Route path="/playlists" element={<PlaylistsPage />} />
+          <Route path="/playlists/:playlistId" element={<PlaylistDetailPage />} />
+        </Route>
       </Routes>
     </MemoryRouter>
   );
@@ -48,6 +54,7 @@ const getList = () => screen.getByRole('list', { name: '플레이리스트 목�
 
 describe('PlaylistsPage', () => {
   beforeEach(() => {
+    installFakeSoundCloud([fakeSound(1, 'Song')]);
     usePlayerStore.setState({
       tracks: [playingTrack],
       currentTrack: playingTrack,
@@ -60,6 +67,7 @@ describe('PlaylistsPage', () => {
 
   afterEach(() => {
     cleanup();
+    delete window.SC;
   });
 
   it('renders every catalog playlist as a link to its detail page', () => {
@@ -75,7 +83,7 @@ describe('PlaylistsPage', () => {
     });
   });
 
-  it('filters by title and keeps the filter after coming back from the detail', () => {
+  it('filters by title and keeps the filter after coming back from the detail', async () => {
     renderRoutes();
 
     fireEvent.change(screen.getByRole('searchbox', { name: '플레이리스트 검색' }), {
@@ -87,7 +95,7 @@ describe('PlaylistsPage', () => {
     expect(screen.getByText(`1 / ${PLAYLISTS.length}개`)).toBeTruthy();
 
     fireEvent.click(links[0]);
-    expect(screen.getByRole('heading', { level: 1, name: 'Autumn Disco' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Autumn Disco' })).toBeTruthy();
     expect(screen.getByTestId('location').textContent).toBe('/playlists/autumn-disco');
 
     fireEvent.click(screen.getByRole('button', { name: '브라우저 뒤로' }));
