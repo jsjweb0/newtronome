@@ -309,7 +309,18 @@ export default function ITunesSearchPage() {
   const isMobilePanelOpen = !hasSearched || isSearchFocused;
 
   return (
-    <div className="relative mx-auto w-full px-1 lg:px-4 pt-2 pb-6 lg:pb-10">
+    <div className="relative mx-auto w-full px-1 md:px-7 pb-6 lg:pb-10">
+      {/* 게시판(Notice · Free Board)과 같은 페이지 제목 */}
+      <div className="flex items-center gap-3 mb-4 md:mb-5">
+        <SearchIcon aria-hidden="true" className="shrink-0 size-6.5 text-primary" />
+        <div>
+          <h1 className="text-[28px] leading-tight font-extrabold tracking-tight text-textBase">
+            Search
+          </h1>
+          <p className="mt-0.5 text-[13px] text-textSub">음악 검색 · 30초 미리듣기</p>
+        </div>
+      </div>
+
       <form role="search" onSubmit={handleSearch}>
         <div
           className={clsx(
