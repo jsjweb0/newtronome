@@ -105,18 +105,24 @@ export default function HomePage() {
         aria-label="플레이리스트 정보"
         className="relative isolate flex max-lg:flex-col items-center gap-10 lg:gap-12 px-5 pt-12 pb-14 lg:px-11 lg:pt-[94px] lg:pb-12"
       >
-        {/* 배경: 지금 보이는 슬라이드 커버를 크게 흐려서 깔고, 가장자리는 서서히 사라지게 (박스 경계 없이 페이지로 이어짐) */}
+        {/* 배경: 지금 보이는 슬라이드 커버를 크게 흐려서 깔고, 가장자리는 서서히 사라지게 (박스 경계 없이 페이지로 이어짐)
+            - 마스크는 바깥 래퍼, 블러는 안쪽 이미지에 따로 줘야 블러 번짐이 박스 모서리에서 직선으로 잘리지 않음
+            - 마스크가 래퍼 가장자리보다 안쪽에서 완전히 투명해지도록 설정 (아래쪽은 Track List 전에 사라짐) */}
         {heroArtwork && (
-          <img
-            key={heroArtwork}
-            src={heroArtwork}
-            alt=""
+          <div
             aria-hidden="true"
-            className="-z-10 absolute inset-0 w-full h-full object-cover blur-3xl opacity-50 animate-fade-in [mask-image:radial-gradient(ellipse_80%_65%_at_45%_35%,black_30%,transparent_100%)]"
-          />
+            className="pointer-events-none -z-10 absolute -inset-x-10 -top-16 bottom-0 [mask-image:radial-gradient(ellipse_70%_65%_at_50%_45%,black_25%,transparent_70%)]"
+          >
+            <img
+              key={heroArtwork}
+              src={heroArtwork}
+              alt=""
+              className="size-full object-cover scale-110 blur-[90px] opacity-60 animate-fade-in"
+            />
+          </div>
         )}
 
-        <div className="shrink-0 w-full max-w-[620px] lg:w-[54%]">
+        <div className="shrink-0 w-full max-w-[620px] lg:w-[56%]">
           <ImageSlider
             images={slides.map((slide) => slide.src)}
             captions={slides}

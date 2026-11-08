@@ -241,11 +241,11 @@
     margin-bottom: -24px;
   }
   .nt-coverflow .nt-coverflow-slide {
-    width: 52%;
+    width: 45%;
     transition-property: transform, opacity;
   }
   .nt-coverflow .nt-coverflow-slide:not(.swiper-slide-active) {
-    opacity: 0.55;
+    opacity: 0.5;
   }
   /* 바로 옆 카드만 보이고, 그 너머 카드는 숨김 */
   .nt-coverflow .nt-coverflow-slide:not(.swiper-slide-active):not(.swiper-slide-prev):not(.swiper-slide-next) {

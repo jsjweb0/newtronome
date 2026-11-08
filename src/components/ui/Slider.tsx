@@ -99,11 +99,11 @@ export default function ImageSlider({
           speed={500}
           keyboard={{ enabled: true, onlyInViewport: true }}
           coverflowEffect={{
-            rotate: 28,
-            // 양옆 카드를 작게 + 가운데 쪽으로 당겨서 컨테이너 밖으로 잘리지 않게
-            stretch: '55%',
-            depth: 180,
-            scale: 0.78,
+            rotate: 24,
+            // 시안처럼 양옆 카드를 작게(55%) 해서 가운데 카드 옆에 살짝 띄워 배치 (겹치지 않게)
+            stretch: '16%',
+            depth: 0,
+            scale: 0.55,
             modifier: 1,
             slideShadows: false,
           }}
