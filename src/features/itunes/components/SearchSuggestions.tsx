@@ -131,7 +131,7 @@ export default function SearchSuggestions({
                       'lg:min-h-11 lg:gap-1.5 lg:pr-4 lg:pl-3.5 lg:text-[13px]'
                     )}
                   >
-                    <Music2 aria-hidden="true" className="size-4.5 lg:size-4 shrink-0 text-primary" />
+                    <Music2 aria-hidden="true" className="size-4.5 lg:size-4 shrink-0 text-primary lg:text-textSub lg:group-hover:text-primary" />
                     <span className="min-w-0 flex-1 truncate">{artist}</span>
                     <ChevronRight aria-hidden="true" className="size-4.5 shrink-0 text-textSub group-hover:text-primary lg:hidden" />
                   </button>
