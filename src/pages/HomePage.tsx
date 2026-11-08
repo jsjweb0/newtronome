@@ -14,12 +14,7 @@ import type { PlayerOutletContext } from '../layouts/MainLayout';
 import type { PlayerTrack } from '../features/player/types/player.types';
 import RetryErrorState from '../components/ui/RetryErrorState';
 import ExternalLink from '../components/ui/ExternalLink';
-
-const formatDuration = (min: number) => {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
-};
+import { formatDurationMinutes } from '../utils/format';
 
 type ViewMode = 'grid' | 'list';
 
@@ -144,7 +139,7 @@ export default function HomePage() {
             </span>
             <span className="flex items-center gap-1.5">
               <Clock aria-hidden="true" className="size-4" />
-              {formatDuration(totalDurationMinutes)}
+              {formatDurationMinutes(totalDurationMinutes)}
             </span>
           </div>
           {playlistUrl && (

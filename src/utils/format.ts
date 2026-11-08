@@ -48,6 +48,18 @@ export function formatCount(num: number): string {
   return String(num);
 }
 
+/**
+ * 분 단위 길이를 "N시간 M분" / "M분"으로 변환합니다.
+ * @param {number} minutes - 분 단위 길이
+ * @returns {string} 예: 75 → "1시간 15분", 40 → "40분"
+ */
+export function formatDurationMinutes(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+
+  return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
+}
+
 export function formatDate(timestamp: DateValue, withTime = false): string {
   if (timestamp === null || timestamp === undefined || timestamp === '') return '';
 

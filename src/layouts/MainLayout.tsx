@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { getBoardTitle, ROUTES } from '../constants/routes';
 import PageErrorBoundary from '../components/ui/PageErrorBoundary';
 import { useSoundCloudWidget } from '../features/player/hooks/useSoundCloudWidget';
@@ -15,7 +15,7 @@ import LoadingLogo from '../components/ui/LoadingLogo';
 import clsx from 'clsx';
 import DarkModeToggle from '../components/DarkModeToggle';
 import type { PlayerTrack, PlaySingleTrackOptions } from '../features/player/types/player.types';
-import { PLAYLISTS } from '../features/playlists/data/playlists';
+import { findPlaylistById, PLAYLISTS } from '../features/playlists/data/playlists';
 
 const getPageTitle = (pathname: string) => {
   const [section, boardType, action] =
@@ -50,6 +50,8 @@ export interface PlayerOutletContext {
   isSidebarCollapsed: boolean;
 
   playlistUrl: string;
+  /** 지금 홈(플레이리스트 상세)에 불러와 있는 플레이리스트 id */
+  currentPlaylistId: string;
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
   onPauseSoundCloud: () => void;
@@ -70,10 +72,33 @@ export default function MainLayout() {
     document.title = `${getPageTitle(location.pathname)} | NEWTRONOME`;
   }, [location.pathname]);
 
-  const [selectedPlaylist] = useState(() => {
+  // `/?playlist=<id>`로 들어오면 그 플레이리스트를, 아니면 무작위로 하나를 불러옴
+  const [searchParams] = useSearchParams();
+  const requestedPlaylist = findPlaylistById(searchParams.get('playlist'));
+  const [selectedPlaylist, setSelectedPlaylist] = useState(() => {
+    if (requestedPlaylist) return requestedPlaylist;
+
     const randomIndex = Math.floor(Math.random() * PLAYLISTS.length);
     return PLAYLISTS[randomIndex];
   });
+
+  // 다른 플레이리스트를 고르면 렌더 중에 바로 바꿔서 이전 목록이 잠깐 보이지 않게 함
+  if (requestedPlaylist && requestedPlaylist.id !== selectedPlaylist.id) {
+    setSelectedPlaylist(requestedPlaylist);
+  }
+
+  // 플레이리스트가 바뀌면 이전 곡 상태를 비우고 새 목록 기준으로 다시 시작
+  const loadedPlaylistIdRef = useRef(selectedPlaylist.id);
+  useEffect(() => {
+    if (loadedPlaylistIdRef.current === selectedPlaylist.id) return;
+
+    loadedPlaylistIdRef.current = selectedPlaylist.id;
+
+    const { setPlaybackMode, setPlaylist, setPlaying } = usePlayerStore.getState();
+    setPlaying(false);
+    setPlaybackMode('playlist');
+    setPlaylist([]);
+  }, [selectedPlaylist.id]);
   const soundCloudWidget = useSoundCloudWidget(selectedPlaylist.soundCloudUrl);
 
   const tracks = usePlayerStore((state) => state.tracks);
@@ -116,6 +141,7 @@ export default function MainLayout() {
     isSidebarCollapsed,
 
     playlistUrl: selectedPlaylist.soundCloudUrl,
+    currentPlaylistId: selectedPlaylist.id,
     onSelectTrack: soundCloudWidget.selectTrack,
     onToggleTrack: soundCloudWidget.toggle,
     onPauseSoundCloud: soundCloudWidget.pause,

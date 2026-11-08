@@ -16,6 +16,7 @@ function renderHomePage(status: PlaylistStatus) {
   const context = {
     isSidebarCollapsed: false,
     playlistUrl: 'https://soundcloud.com/example/sets/playlist',
+    currentPlaylistId: 'playlist',
     onSelectTrack: vi.fn(),
     onToggleTrack: vi.fn(),
     onPauseSoundCloud: vi.fn(),

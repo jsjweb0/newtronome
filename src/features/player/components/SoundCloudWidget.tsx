@@ -36,7 +36,9 @@ export default function SoundCloudWidget({
         </p>
       )}
 
+      {/* 플레이리스트가 바뀌면 iframe을 새로 만들어 위젯 이벤트를 새로 연결 */}
       <iframe
+        key={widgetUrl}
         ref={iframeRef}
         title="SoundCloud 플레이리스트"
         tabIndex={-1}

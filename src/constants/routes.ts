@@ -25,6 +25,7 @@ export const ROUTES = {
   login: { path: '/login', title: '로그인' },
   signup: { path: '/signup', title: '회원가입' },
   account: { path: '/account', title: '내 계정' },
+  playlists: { path: '/playlists', title: '플레이리스트' },
   likes: { path: '/likes', title: '좋아요' },
   search: { path: '/search', title: '음악 검색' },
   mypage: { path: '/mypage', title: '내 활동' },

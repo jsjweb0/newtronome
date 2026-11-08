@@ -1,10 +1,15 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Link, MemoryRouter, Route, Routes, useOutletContext } from 'react-router-dom';
+import type { PlayerOutletContext } from './MainLayout';
 import MainLayout from './MainLayout';
 
+const { useSoundCloudWidgetMock } = vi.hoisted(() => ({
+  useSoundCloudWidgetMock: vi.fn(),
+}));
+
 vi.mock('../features/player/hooks/useSoundCloudWidget', () => ({
-  useSoundCloudWidget: () => ({
+  useSoundCloudWidget: (playlistUrl: string) => (useSoundCloudWidgetMock(playlistUrl), {
     selectTrack: vi.fn(),
     toggle: vi.fn(),
     pause: vi.fn(),
@@ -15,6 +20,17 @@ vi.mock('../features/player/hooks/useSoundCloudWidget', () => ({
     isReady: true,
   }),
 }));
+
+function CurrentPlaylist() {
+  const { currentPlaylistId } = useOutletContext<PlayerOutletContext>();
+
+  return (
+    <>
+      <p>현재: {currentPlaylistId}</p>
+      <Link to="/?playlist=autumn-disco">가을 디스코로</Link>
+    </>
+  );
+}
 
 vi.mock('../components/layout/Sidebar', () => ({
   default: () => <nav id="navbar" aria-label="주요 메뉴" />,
@@ -87,7 +103,32 @@ describe('MainLayout', () => {
     expect(openButton.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('loads the playlist chosen with the playlist query and switches on link', () => {
+    render(
+      <MemoryRouter initialEntries={['/?playlist=2024-spring']}>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<CurrentPlaylist />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('현재: 2024-spring')).toBeTruthy();
+    expect(useSoundCloudWidgetMock).toHaveBeenLastCalledWith(
+      'https://soundcloud.com/ssu-1/sets/2024-spring'
+    );
+
+    fireEvent.click(screen.getByRole('link', { name: '가을 디스코로' }));
+
+    expect(screen.getByText('현재: autumn-disco')).toBeTruthy();
+    expect(useSoundCloudWidgetMock).toHaveBeenLastCalledWith(
+      'https://soundcloud.com/ssu-1/sets/autumn-disco'
+    );
+  });
+
   it.each([
+    ['/playlists', '플레이리스트 | NEWTRONOME'],
     ['/search', '음악 검색 | NEWTRONOME'],
     ['/board/free', '자유게시판 | NEWTRONOME'],
     ['/board/notice/write', '공지사항 글쓰기 | NEWTRONOME'],
