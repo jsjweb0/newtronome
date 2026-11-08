@@ -1,4 +1,11 @@
-export const PLAYLISTS = [
+export interface Playlist {
+    id: string;
+    soundCloudUrl: string;
+    title: string;
+    coverUrl: string | null;
+}
+
+export const PLAYLISTS: ReadonlyArray<Playlist> = [
     {
         id: '2025-summer',
         soundCloudUrl: 'https://soundcloud.com/ssu-1/sets/2025-summer',
@@ -51,7 +58,7 @@ export const PLAYLISTS = [
         id: '2017-spring',
         soundCloudUrl: 'https://soundcloud.com/ssu-1/sets/2017-spring',
         title: '2017 입하 디스코',
-        ccoverUrl: null,
+        coverUrl: null,
     },
     {
         id: '2017spring',
@@ -96,3 +103,9 @@ export const PLAYLISTS = [
         coverUrl: null,
     },
 ];
+
+export const findPlaylistById = (id: string | null | undefined) =>
+    id ? PLAYLISTS.find((playlist) => playlist.id === id) ?? null : null;
+
+export const createPlaylistHomePath = (id: string) =>
+    `/?playlist=${encodeURIComponent(id)}`;
