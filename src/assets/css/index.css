@@ -135,8 +135,8 @@
   .music-search-input:-webkit-autofill:active {
     -webkit-text-fill-color: var(--color-textBase);
     caret-color: var(--color-textBase);
-    box-shadow: 0 0 0 1000px var(--color-background) inset;
-    -webkit-box-shadow: 0 0 0 1000px var(--color-background) inset;
+    box-shadow: 0 0 0 1000px var(--color-field) inset;
+    -webkit-box-shadow: 0 0 0 1000px var(--color-field) inset;
   }
 
   .logo-fill {

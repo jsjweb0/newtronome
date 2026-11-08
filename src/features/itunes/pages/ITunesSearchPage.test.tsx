@@ -1,7 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
 import { getArtistTracks } from '../services/getArtistTracks';
 import ITunesSearchPage from './ITunesSearchPage';
 import { searchITunesTracks } from '../services/searchITunesTracks';
@@ -19,18 +18,6 @@ vi.mock('react-router-dom', () => ({
 }));
 vi.mock('../services/searchITunesTracks', () => ({ searchITunesTracks: vi.fn() }));
 vi.mock('../services/getArtistTracks', () => ({ getArtistTracks: vi.fn() }));
-vi.mock('../../../components/track/TrackItem', () => ({
-  default: ({ onTrackClick, ariaLabel, track, footerActions }: {
-    onTrackClick: () => void;
-    ariaLabel: string;
-    track: { title: string };
-    footerActions?: ReactNode;
-  }) => <><button type="button" aria-label={ariaLabel} onClick={onTrackClick}>{track.title}</button>{footerActions}</>,
-}));
-vi.mock('../../../components/ui/Tooltip', () => ({
-  default: ({ children }: { children: React.ReactNode }) => children,
-}));
-
 const tracks: ITunesTrack[] = [
   { artistId: 100, trackId: 1, trackName: '첫 곡', artistName: '가수', previewUrl: 'https://example.com/first.m4a' },
   { artistId: 100, trackId: 2, trackName: '둘째 곡', artistName: '가수', previewUrl: 'https://example.com/second.m4a' },
@@ -101,14 +88,14 @@ describe('artist panel cache', () => {
     await showSearchResults();
     expect(getArtistTracks).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getAllByRole('button', { name: '다른 곡 보기' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /다른 곡 보기$/ })[0]);
     expect(await screen.findByRole('button', { name: '아티스트 추가 곡 미리듣기 재생' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '아티스트 곡 패널 닫기' }));
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: '가수의 최신곡' })).toBeNull();
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: '다른 곡 보기' })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: /다른 곡 보기$/ })[1]);
     expect(await screen.findByRole('button', { name: '아티스트 추가 곡 미리듣기 재생' })).toBeTruthy();
     expect(getArtistTracks).toHaveBeenCalledTimes(1);
 
@@ -126,7 +113,7 @@ describe('artist panel cache', () => {
       expect(screen.queryByRole('dialog', { name: '가수의 최신곡' })).toBeNull();
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: '다른 곡 보기' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /다른 곡 보기$/ })[0]);
     expect(await screen.findByRole('button', { name: '아티스트 추가 곡 미리듣기 재생' })).toBeTruthy();
     expect(getArtistTracks).toHaveBeenCalledTimes(1);
   });
@@ -140,7 +127,7 @@ describe('artist panel states and playback', () => {
 
   async function openPanel() {
     await showSearchResults();
-    fireEvent.click(screen.getAllByRole('button', { name: '다른 곡 보기' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /다른 곡 보기$/ })[0]);
     return within(await screen.findByRole('dialog', { name: '가수의 최신곡' }));
   }
 
@@ -213,7 +200,7 @@ describe('artist panel states and playback', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: '가수의 최신곡' })).toBeNull();
     });
-    fireEvent.click(screen.getAllByRole('button', { name: '다른 곡 보기' })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: /다른 곡 보기$/ })[1]);
     await waitFor(() => expect(signalA?.aborted).toBe(true));
     const panel = within(await screen.findByRole('dialog', { name: '다른 가수의 최신곡' }));
     expect(await panel.findByRole('button', { name: 'B의 곡 미리듣기 재생' })).toBeTruthy();
@@ -397,5 +384,19 @@ describe('iTunes preview failure feedback', () => {
     });
 
     expect(mocks.showToast).not.toHaveBeenCalled();
+  });
+});
+
+describe('recent searches', () => {
+  it('saves a search and clears every recent search with 전체 삭제', async () => {
+    await showSearchResults();
+
+    expect(screen.getByRole('button', { name: 'test 다시 검색' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: '전체 삭제' }));
+
+    expect(screen.queryByRole('button', { name: 'test 다시 검색' })).toBeNull();
+    expect(screen.getByText('최근 검색어가 없어요')).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem('recentSearches') ?? 'null')).toEqual([]);
   });
 });

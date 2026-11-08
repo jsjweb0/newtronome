@@ -120,13 +120,14 @@ export default function TrackItem({
                     }}
                 />
                 {!isList && playbackBadge && (
-                    <span className="absolute top-2 left-2 z-1 flex rounded-full bg-black/70">
+                    <span className="absolute top-2 left-2 z-1 flex rounded-full bg-black/72">
                         {playbackBadge}
                     </span>
                 )}
                 {(interactive && !isBlocked) && (
                     <i className={clsx(
-                        "hidden items-center justify-center absolute inset-0 bg-white/30 ",
+                        "hidden items-center justify-center absolute inset-0",
+                        viewModeClass(viewMode, "bg-black/40", "bg-black/55"),
                         "opacity-0 transition-all duration-300",
                         "group-hover:flex group-[.isPlaying]:flex group-[.isPaused]:flex",
                         "group-hover:opacity-100 group-[.isPlaying]:opacity-100 group-[.isPaused]:opacity-100",

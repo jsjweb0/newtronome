@@ -1,92 +1,146 @@
 import clsx from "clsx";
 import { Music2, Clock3, ChevronRight, X as XIcon } from "lucide-react";
 
-
 interface SearchSuggestionsProps {
+  id?: string;
   recentSearches: string[];
   recommendedArtists: string[];
+  /** 모바일에서 카드 패널을 보여줄지. 데스크톱(lg 이상)은 항상 칩으로 보인다 */
+  isMobilePanelOpen: boolean;
   onSelect: (searchTerm: string) => void;
   onRemoveRecent: (searchTerm: string) => void;
+  onClearRecent: () => void;
 }
 
+/**
+ * 최근 · 추천 검색어.
+ * 모바일은 검색창 아래 카드 하나에 목록으로, 데스크톱은 한 줄씩 칩으로 보여준다.
+ */
 export default function SearchSuggestions({
+  id,
   recentSearches,
   recommendedArtists,
+  isMobilePanelOpen,
   onSelect,
-  onRemoveRecent
+  onRemoveRecent,
+  onClearRecent,
 }: SearchSuggestionsProps) {
+  const hasRecent = recentSearches.length > 0;
+  const hasRecommended = recommendedArtists.length > 0;
+
   return (
     <div
+      id={id}
+      // 패널 안을 눌러도 검색창 포커스가 빠지지 않게 해 모바일 패널이 닫히지 않게 한다
+      onMouseDown={(event) => event.preventDefault()}
       className={clsx(
-        'flex lg:flex-wrap flex-col lg:flex-row gap-4 lg:mt-5 rounded-xl',
-        'max-lg:mt-1 max-lg:p-4 max-lg:bg-background max-lg:shadow-md'
+        'flex flex-col',
+        'max-lg:mt-2.5 max-lg:rounded-[18px] max-lg:border max-lg:border-line max-lg:bg-background max-lg:px-2 max-lg:pt-4.5 max-lg:pb-2.5',
+        'lg:mt-5 lg:gap-3',
+        !isMobilePanelOpen && 'max-lg:hidden'
       )}
     >
       {/* 최근 검색어 */}
-      {recentSearches.length > 0 && (
-        <div className="flex flex-col lg:flex-row gap-2 items-start lg:items-center max-lg:pb-3 max-lg:border-b max-lg:border-b-textThr">
-          <p className="text-sm text-textSub">최근 검색어</p>
-          <ul className="flex flex-wrap gap-2 max-lg:w-full max-lg:flex-col">
+      <section
+        aria-labelledby="recent-searches-title"
+        className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:gap-2"
+      >
+        <div className="flex items-center justify-between max-lg:pr-2.5 max-lg:pb-1.5 max-lg:pl-3">
+          <h2
+            id="recent-searches-title"
+            className="text-sm lg:min-w-18 lg:text-[13px] font-bold text-textSub"
+          >
+            최근 검색어
+          </h2>
+          {hasRecent && (
+            <button
+              type="button"
+              onClick={onClearRecent}
+              className="min-h-11 px-1.5 text-xs text-textSub hover:text-textBase lg:hidden"
+            >
+              전체 삭제
+            </button>
+          )}
+        </div>
+
+        {hasRecent ? (
+          <ul className="flex flex-col lg:flex-row lg:flex-wrap lg:gap-2">
             {recentSearches.map((searchTerm) => (
               <li
                 key={searchTerm}
-                className="flex items-center gap-x-px lg:bg-textThr rounded-full hover:bg-primary/10"
+                className={clsx(
+                  'flex items-center rounded-xl hover:bg-textThr/60',
+                  'lg:h-11 lg:rounded-full lg:bg-field lg:hover:bg-primary/10'
+                )}
               >
                 <button
                   type="button"
                   onClick={() => onSelect(searchTerm)}
+                  aria-label={`${searchTerm} 다시 검색`}
                   className={clsx(
-                    'group inline-flex items-center gap-x-1 lg:px-2 py-1.5',
-                    'text-xs lg:text-sm hover:text-primary',
-                    'max-lg:grow max-lg:pl-1'
+                    'group flex min-w-0 flex-1 items-center gap-3 min-h-12 pr-1 pl-3 text-left text-[15px] text-textBase',
+                    'lg:min-h-11 lg:gap-1.5 lg:pl-3.5 lg:text-[13px] hover:text-primary'
                   )}
                 >
-                  <Clock3 aria-hidden="true" className="size-4 text-textSub group-hover:text-primary" />
-                  {searchTerm}
+                  <Clock3 aria-hidden="true" className="size-4.5 lg:size-4 shrink-0 text-textSub group-hover:text-primary" />
+                  <span className="truncate">{searchTerm}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onRemoveRecent(searchTerm)}
-                  onMouseDown={(e) => e.preventDefault()}
-                  className="group shrink-0 inline-flex px-2 py-1 max-lg:py-px hover:text-primary"
                   aria-label={`${searchTerm} 최근 검색어 삭제`}
+                  className="group flex size-11 shrink-0 items-center justify-center rounded-full text-textSub hover:text-primary lg:mr-0.5"
                 >
-                  <XIcon aria-hidden="true" className="size-4 text-textSub group-hover:text-primary" />
+                  <XIcon aria-hidden="true" className="size-4.5 lg:size-4" />
                 </button>
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        ) : (
+          <p className="px-3 pt-2.5 pb-3 text-[13px] text-textSub lg:p-0">
+            최근 검색어가 없어요
+          </p>
+        )}
+      </section>
 
       {/* 추천 검색어 */}
-      <div className={clsx('flex flex-col lg:flex-row gap-2 items-start lg:items-center')}>
-        <p className="text-sm text-textSub">추천 검색어</p>
-        {recommendedArtists.length > 0 && (
-          <ul className="flex flex-wrap gap-2 max-lg:w-full max-lg:flex-col">
-            {recommendedArtists.map((artist) => (
-              <li
-                key={artist}
-                className="inline-flex items-center gap-x-2 lg:bg-textThr rounded-full text-textBase hover:bg-primary/10"
-              >
-                <button
-                  type="button"
-                  onClick={() => onSelect(artist)}
-                  className={clsx(
-                    'group inline-flex items-center gap-x-1 relative lg:pl-3 lg:pr-4 py-1.5 text-xs lg:text-sm hover:text-primary',
-                    'max-lg:w-full max-lg:pl-1'
-                  )}
+      {hasRecommended && (
+        <>
+          <div aria-hidden="true" className="mx-3 mt-2.5 mb-3.5 h-px bg-textThr lg:hidden" />
+          <section
+            aria-labelledby="recommended-searches-title"
+            className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:gap-2"
+          >
+            <h2
+              id="recommended-searches-title"
+              className="px-3 pb-1.5 text-sm lg:min-w-18 lg:p-0 lg:text-[13px] font-bold text-textSub"
+            >
+              추천 검색어
+            </h2>
+            <ul className="flex flex-col lg:flex-row lg:flex-wrap lg:gap-2">
+              {recommendedArtists.map((artist) => (
+                <li
+                  key={artist}
+                  className="rounded-xl hover:bg-textThr/60 lg:rounded-full lg:bg-field lg:hover:bg-primary/10"
                 >
-                  <Music2 aria-hidden="true" className="size-3 text-textSub group-hover:text-primary" />
-                  {artist}
-                  <ChevronRight aria-hidden="true" className="block lg:hidden size-3 absolute top-1/2 right-1.5 -translate-y-1/2 text-textSub group-hover:text-primary" />
-                </button>
-              </li>
-
-            ))}
-          </ul>
-        )}
-      </div>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(artist)}
+                    className={clsx(
+                      'group flex w-full items-center gap-3 min-h-12 pr-3.5 pl-3 text-left text-[15px] text-textBase hover:text-primary',
+                      'lg:min-h-11 lg:gap-1.5 lg:pr-4 lg:pl-3.5 lg:text-[13px]'
+                    )}
+                  >
+                    <Music2 aria-hidden="true" className="size-4.5 lg:size-4 shrink-0 text-primary lg:text-textSub lg:group-hover:text-primary" />
+                    <span className="min-w-0 flex-1 truncate">{artist}</span>
+                    <ChevronRight aria-hidden="true" className="size-4.5 shrink-0 text-textSub group-hover:text-primary lg:hidden" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      )}
     </div>
-  )
+  );
 }
