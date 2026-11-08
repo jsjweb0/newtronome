@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { subscribeToSavedTrack, subscribeToSavedTracks } from './savedTracks';
+import { saveTrack, subscribeToSavedTrack, subscribeToSavedTracks } from './savedTracks';
 
 type Snapshot = { exists: () => boolean } | {
   docs: { id: string; data: () => unknown }[];
@@ -7,6 +7,7 @@ type Snapshot = { exists: () => boolean } | {
 
 const firestore = vi.hoisted(() => ({
   doc: vi.fn(),
+  setDoc: vi.fn(),
   onSnapshot: vi.fn<(
     ref: unknown,
     onSuccess: (snapshot: Snapshot) => void,
@@ -18,7 +19,7 @@ vi.mock('../../../firebase', () => ({ db: 'test-db' }));
 vi.mock('firebase/firestore', () => ({
   ...firestore,
   collection: vi.fn(), deleteDoc: vi.fn(), orderBy: vi.fn(), query: vi.fn(),
-  serverTimestamp: vi.fn(), setDoc: vi.fn(), Timestamp: class {},
+  serverTimestamp: vi.fn(), Timestamp: class {},
 }));
 
 beforeEach(() => vi.resetAllMocks());
@@ -92,4 +93,34 @@ describe('subscribeToSavedTracks data validation', () => {
     expect(onSuccess).not.toHaveBeenCalled();
     expect(track.id).toBe(documentId === 'A' ? 'B' : 123);
   });
+});
+
+it('saves bookmark metadata without persisting a playback result', async () => {
+  const track = {
+    id: 1, title: 'Track', artist: 'Artist', artworkUrl: null,
+    permalinkUrl: null, durationMs: 1000, genre: '', tags: [],
+    playbackStatus: 'blocked' as const,
+  };
+  await saveTrack('user-1', track);
+  const data = firestore.setDoc.mock.calls[0][1];
+  expect(data.title).toBe('Track');
+  expect(data).not.toHaveProperty('playbackStatus');
+  expect(data).not.toHaveProperty('playbackStatusCheckedAt');
+});
+
+it('discards legacy playback fields when reading bookmarks', () => {
+  const track = {
+    id: 123, title: 'Track', artist: 'Artist', artworkUrl: null,
+    permalinkUrl: null, durationMs: 1000, genre: '', tags: [], savedAt: null,
+    playbackStatus: 'blocked', playbackStatusCheckedAt: 'legacy value',
+  };
+  const onSuccess = vi.fn();
+  const onError = vi.fn();
+  subscribeToSavedTracks('user-1', onSuccess, onError);
+  firestore.onSnapshot.mock.calls[0][1]({ docs: [{ id: '123', data: () => track }] });
+  expect(onError).not.toHaveBeenCalled();
+  const result = onSuccess.mock.calls[0][0][0];
+  expect(result.title).toBe('Track');
+  expect(result).not.toHaveProperty('playbackStatus');
+  expect(result).not.toHaveProperty('playbackStatusCheckedAt');
 });

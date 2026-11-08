@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
 import type { ReactNode } from 'react';
@@ -8,7 +8,6 @@ import { useToast } from '../../../contexts/ToastContext';
 import {
   removeSavedTrack,
   subscribeToSavedTracks,
-  updateSavedTrackPlaybackStatus,
 } from '../services/savedTracks';
 import type { SavedTrack } from '../types/saved-track.types';
 import { selectCurrentTrack, usePlayerStore } from '../../player/stores/usePlayerStore';
@@ -16,7 +15,6 @@ import type { PlayerOutletContext } from '../../../layouts/MainLayout';
 import type { PlaybackStatus, PlayerTrack } from '../../player/types/player.types';
 import RetryErrorState from '../../../components/ui/RetryErrorState';
 import { SoundCloudTrackLink, trackActionButtonClass } from '../../../components/track/TrackItemActions';
-import { getCachedPlaybackStatus } from '../../player/utils/getCachedPlaybackStatus';
 
 export default function LikedTracksPage() {
   const { user, loading: isAuthLoading } = useAuth();
@@ -27,12 +25,9 @@ export default function LikedTracksPage() {
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
 
-  const playlistTracks = usePlayerStore((state) => state.tracks);
-
   const [resolvedStatuses, setResolvedStatuses] = useState<
     Record<string, PlaybackStatus>
   >({});
-  const persistedPlaylistStatusesRef = useRef(new Set<string>());
 
   const [tracks, setTracks] = useState<SavedTrack[]>([]);
   const [loadedUserUid, setLoadedUserUid] = useState<string | null>(null);
@@ -70,41 +65,6 @@ export default function LikedTracksPage() {
     );
   }, [isAuthLoading, user?.uid, retryCount]);
 
-  const playlistStatusById = useMemo(() => {
-    const statusMap = new Map<string, PlaybackStatus>();
-
-    for (const track of playlistTracks) {
-      if (track.playbackStatus) {
-        statusMap.set(String(track.id), track.playbackStatus);
-      }
-    }
-
-    return statusMap;
-  }, [playlistTracks]);
-
-  useEffect(() => {
-    if (!user?.uid) return;
-
-    for (const track of tracks) {
-      const trackId = String(track.id);
-      const status = playlistStatusById.get(trackId);
-
-      if (!status || status === 'unknown') continue;
-      if (getCachedPlaybackStatus(track) === status) continue;
-
-      const persistenceKey = `${user.uid}:${trackId}:${status}`;
-
-      if (persistedPlaylistStatusesRef.current.has(persistenceKey)) continue;
-
-      persistedPlaylistStatusesRef.current.add(persistenceKey);
-      void updateSavedTrackPlaybackStatus(user.uid, track.id, status).catch(
-        () => {
-          persistedPlaylistStatusesRef.current.delete(persistenceKey);
-        }
-      );
-    }
-  }, [playlistStatusById, tracks, user?.uid]);
-
   const displayedTracks = useMemo(
     () =>
       tracks.map((track) => {
@@ -113,12 +73,10 @@ export default function LikedTracksPage() {
         return {
           ...track,
           playbackStatus:
-            resolvedStatuses[trackId] ??
-            playlistStatusById.get(trackId) ??
-            getCachedPlaybackStatus(track),
+            resolvedStatuses[trackId] ?? 'unknown',
         };
       }),
-    [playlistStatusById, resolvedStatuses, tracks]
+    [resolvedStatuses, tracks]
   );
 
   const handleTrackClick = (track: PlayerTrack) => {
@@ -144,22 +102,6 @@ export default function LikedTracksPage() {
           ...current,
           [String(resolvedTrack.id)]: status,
         }));
-
-        if (
-          user?.uid &&
-          status !== 'unknown'
-        ) {
-          void updateSavedTrackPlaybackStatus(
-            user.uid,
-            resolvedTrack.id,
-            status
-          ).catch(() => {
-            showToast({
-              message: '곡 상태를 저장하지 못했습니다.',
-              type: 'error',
-            });
-          });
-        }
 
         if (status === 'blocked') {
           showToast({
