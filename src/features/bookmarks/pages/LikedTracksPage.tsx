@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import TrackItem from '../../../components/track/TrackItem';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -227,30 +228,20 @@ export default function LikedTracksPage() {
       </header>
 
       {!user ? (
-        <div className="rounded-xl border border-textThr px-4 py-16 text-center">
-          <Heart
-            aria-hidden="true"
-            className="mx-auto mb-3 size-8 text-textSub"
-          />
-
-          <p className="font-medium text-textBase">
-            자, 이제 좋아하는 음악을 모아볼 시간.
-          </p>
-
-          <p className="mt-1 text-sm text-textSub">
-            로그인하고 마음에 드는 트랙을 저장하세요. 듣고 싶은 순간, 바로 다시 만날 수 있으니까요.
-          </p>
-
+        <LikesEmptyState
+          title="자, 이제 좋아하는 음악을 모아볼 시간."
+          description="로그인하고 마음에 드는 트랙을 저장하세요. 듣고 싶은 순간, 바로 다시 만날 수 있으니까요."
+        >
           <Link
             to="/login"
-            className="mt-5 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-medium text-white dark:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="mt-4 inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-7 text-[15px] font-extrabold text-onPrimary hover:bg-primary/85 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             로그인하고 시작하기
           </Link>
-        </div>
+        </LikesEmptyState>
       ) : isLoading || loadedUserUid !== user.uid ? (
         <div
-          className="rounded-xl border border-textThr px-4 py-16 text-center text-sm text-textSub"
+          className="px-6 py-16 text-center text-[13px] text-textSub"
           role="status"
         >
           저장한 트랙을 불러오고 있습니다.
@@ -264,13 +255,10 @@ export default function LikedTracksPage() {
           }}
         />
       ) : displayedTracks.length === 0 ? (
-        <div className="rounded-xl border border-textThr px-4 py-16 text-center">
-          <Heart aria-hidden="true" className="mx-auto mb-3 size-8 text-textSub" />
-          <p className="font-medium text-textBase">좋아하는 음악을 위한 자리.</p>
-          <p className="mt-1 text-sm text-textSub">
-            마음에 드는 트랙을 발견했다면, 북마크하고 이곳에서 다시 만나보세요.
-          </p>
-        </div>
+        <LikesEmptyState
+          title="좋아하는 음악을 위한 자리."
+          description="마음에 드는 트랙을 발견했다면, 북마크하고 이곳에서 다시 만나보세요."
+        />
       ) : (
         <>
           <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-x-3 md:gap-x-5 gap-y-6 md:gap-y-7">
@@ -318,5 +306,30 @@ export default function LikedTracksPage() {
         </>
       )}
     </section>
+  );
+}
+
+/** 알림 · 검색 빈 화면과 같은 형태의 안내 (로그인 전, 저장한 곡 없음) */
+function LikesEmptyState({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2.5 px-6 pt-14 pb-15 text-center">
+      <span
+        aria-hidden="true"
+        className="mb-1 flex size-15 items-center justify-center rounded-full bg-line text-textSub"
+      >
+        <Heart className="size-6.5" />
+      </span>
+      <p className="text-[15px] font-bold text-textBase">{title}</p>
+      <p className="max-w-sm text-[13px] leading-normal text-textSub break-keep">{description}</p>
+      {children}
+    </div>
   );
 }
