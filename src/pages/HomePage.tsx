@@ -4,7 +4,7 @@ import ImageSlider from '../components/ui/Slider';
 import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore';
 import { toHighResArtwork } from '../utils/image';
 import { GridIcon } from '../components/icons';
-import { CircleX, Clock, List, ListMusic, Play } from 'lucide-react';
+import { CircleX, Clock, List, ListMusic } from 'lucide-react';
 import TrackItem from '../components/track/TrackItem';
 import TrackItemActions from '../components/track/TrackItemActions';
 import HomePageSkeleton from './HomePageSkeleton';
@@ -103,7 +103,7 @@ export default function HomePage() {
     <div className="md:px-3">
       <section
         aria-label="플레이리스트 정보"
-        className="relative isolate flex max-lg:flex-col items-center gap-10 lg:gap-12 px-5 pt-12 pb-14 lg:px-11 lg:pt-[94px] lg:pb-12"
+        className="relative isolate flex max-lg:flex-col items-center gap-7 lg:gap-12 px-5 py-6 lg:px-11 lg:-mt-10 lg:pt-[50px] lg:pb-10"
       >
         {/* 배경: 지금 보이는 슬라이드 커버를 크게 흐려서 깔고, 가장자리는 서서히 사라지게 (박스 경계 없이 페이지로 이어짐)
             - 마스크는 바깥 래퍼, 블러는 안쪽 이미지에 따로 줘야 블러 번짐이 박스 모서리에서 직선으로 잘리지 않음
@@ -130,14 +130,14 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="grow min-w-0 max-lg:w-full">
+        <div className="grow flex flex-col items-start gap-y-5 min-w-0 max-lg:w-full">
           <span className="inline-block px-2.5 py-1 rounded-full bg-primary text-black font-inter text-[11px] font-extrabold tracking-[0.1em]">
             PLAYLIST
           </span>
-          <h2 className="mt-4 font-black font-inter text-[44px] lg:text-[68px] leading-[0.95] tracking-[-0.03em]">
+          <h2 className="font-black font-inter text-[44px] lg:text-[68px] leading-[0.95] tracking-[-0.03em]">
             Now Playlist
           </h2>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-4 text-[13px] text-textSub">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-textSub">
             <span className="flex items-center gap-1.5">
               <ListMusic aria-hidden="true" className="size-4" />
               {tracks.length} Tracks
@@ -148,7 +148,7 @@ export default function HomePage() {
             </span>
           </div>
           {playlistUrl && (
-            <p className="flex items-center gap-1.5 mt-3 text-[11px] md:text-sm text-textSub">
+            <p className="flex items-center gap-1.5 text-[11px] md:text-sm text-textSub">
               Music provided by{' '}
               <ExternalLink
                 href={playlistUrl}
@@ -169,20 +169,10 @@ export default function HomePage() {
               </ExternalLink>
             </p>
           )}
-          <div className="flex flex-wrap items-center gap-2.5 mt-6">
-            <button
-              type="button"
-              onClick={() => onSelectTrack?.(0)}
-              className="inline-flex items-center gap-2 h-13 px-6.5 rounded-full bg-primary text-black text-[15px] font-bold hover:brightness-110 transition"
-            >
-              <Play aria-hidden="true" className="size-5 fill-current" />
-              전체 재생
-            </button>
-          </div>
         </div>
       </section>
 
-      <div className="z-1 relative mt-1 md:mt-8">
+      <div className="z-1 relative mt-1 md:mt-9">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5 md:mb-8">
           {/* 제목 + 곡 수 */}
           <div className="flex items-center gap-x-2.5">
