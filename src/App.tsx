@@ -20,6 +20,9 @@ const LikedTracksPage = lazy(
 const PlaylistsPage = lazy(
   () => import('./features/playlists/pages/PlaylistsPage')
 );
+const PlaylistDetailPage = lazy(
+  () => import('./features/playlists/pages/PlaylistDetailPage')
+);
 const ITunesSearchPage = lazy(
   () => import('./features/itunes/pages/ITunesSearchPage')
 );
@@ -36,6 +39,7 @@ function App() {
           <Route path={ROUTES.signup.path} element={<SignupPage />} />
           <Route path={ROUTES.account.path} element={<AccountProfile />} />
           <Route path={ROUTES.playlists.path} element={<PlaylistsPage />} />
+          <Route path={ROUTES.playlistDetail.path} element={<PlaylistDetailPage />} />
           <Route path={ROUTES.likes.path} element={<LikedTracksPage />} />
           <Route path={ROUTES.search.path} element={<ITunesSearchPage />} />
           <Route path={ROUTES.mypage.path} element={<MyActivity />} />

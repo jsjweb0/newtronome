@@ -21,6 +21,18 @@ const getPageTitle = (pathname: string) => {
   const [section, boardType, action] =
     pathname.split('/').filter(Boolean);
 
+  if (section === 'playlists' && boardType) {
+    // 두 번째 경로 조각이 플레이리스트 id
+    let playlistId = boardType;
+    try {
+      playlistId = decodeURIComponent(boardType);
+    } catch {
+      // 잘못된 % 인코딩은 그대로 조회해서 '찾을 수 없음'으로 처리
+    }
+
+    return findPlaylistById(playlistId)?.title ?? '플레이리스트를 찾을 수 없음';
+  }
+
   if (section === 'board') {
     const boardTitle = getBoardTitle(boardType);
 

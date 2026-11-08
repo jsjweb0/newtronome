@@ -129,6 +129,9 @@ describe('MainLayout', () => {
 
   it.each([
     ['/playlists', '플레이리스트 | NEWTRONOME'],
+    ['/playlists/2024-spring', '2024 입하 디스코 | NEWTRONOME'],
+    ['/playlists/unknown', '플레이리스트를 찾을 수 없음 | NEWTRONOME'],
+    ['/playlists/%E0%A4%A', '플레이리스트를 찾을 수 없음 | NEWTRONOME'],
     ['/search', '음악 검색 | NEWTRONOME'],
     ['/board/free', '자유게시판 | NEWTRONOME'],
     ['/board/notice/write', '공지사항 글쓰기 | NEWTRONOME'],

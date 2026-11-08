@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { AudioEqualizerIcon } from '../../../components/icons';
-import noImage from '../../../assets/no-image.png';
+import PlaylistCoverArt from './PlaylistCoverArt';
 import { createPlaylistHomePath, type Playlist } from '../data/playlists';
 
 interface PlaylistCardProps {
@@ -57,30 +57,7 @@ export default function PlaylistCard({
             'transition-shadow duration-300 group-hover:shadow-[0_14px_30px_rgba(0,0,0,0.4)]'
           )}
         >
-          {playlist.coverUrl ? (
-            <img
-              src={playlist.coverUrl}
-              alt=""
-              loading="lazy"
-              className="absolute inset-0 block size-full object-cover transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110"
-              onError={(event) => {
-                event.currentTarget.src = noImage;
-                event.currentTarget.onerror = null;
-              }}
-            />
-          ) : (
-            <span
-              className={clsx(
-                'absolute inset-0 block transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110',
-                'bg-[radial-gradient(circle_at_30%_25%,var(--color-primary)_0,transparent_55%)] opacity-35'
-              )}
-            />
-          )}
-          {!playlist.coverUrl && (
-            <span className="absolute inset-x-3.5 bottom-3 font-inter text-lg md:text-xl font-black italic uppercase leading-[1.05] tracking-[-0.02em] text-textBase break-keep line-clamp-2">
-              {playlist.title}
-            </span>
-          )}
+          <PlaylistCoverArt playlist={playlist} zoomOnHover />
           {isPlaying && (
             <span className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-black/72 px-2.5 py-1 text-[11px] font-bold text-primary">
               <AudioEqualizerIcon isPlaying aria-hidden="true" className="size-3" />
