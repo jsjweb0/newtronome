@@ -21,6 +21,8 @@ type TrackItemProps = {
     isPlayingPreview?: boolean;
     interactive?: boolean;
     showDuration?: boolean;
+    /** 카드/행 안에 붙는 버튼 묶음 (좋아요 · SoundCloud 등). 리스트형은 오른쪽 끝, 그리드형은 재생시간 옆 */
+    actions?: ReactNode;
     footerActions?: ReactNode;
     ariaLabel?: string;
 };
@@ -35,9 +37,11 @@ export default function TrackItem({
     isPlayingPreview = false,
     interactive = true,
     showDuration = false,
+    actions,
     footerActions,
     ariaLabel,
 }: TrackItemProps) {
+    const isList = viewMode === "list";
     const isBlocked = track.playbackStatus === 'blocked';
 
     let playbackLabel = '';
@@ -48,8 +52,21 @@ export default function TrackItem({
         playbackLabel = '미리듣기';
     }
 
-    const isThisTrack = currentTrack != null && String(currentTrack.id) === String(track.id);
+    // 재생 상태 배지 (미리듣기 / 재생 불가)
+    const playbackBadge = playbackLabel ? (
+        <i
+            className={clsx(
+                'shrink-0 inline-block rounded-full px-1.5 py-0.5 text-[11px] font-bold not-italic leading-tight whitespace-nowrap',
+                isBlocked
+                    ? 'bg-textThr text-textBase'
+                    : 'border border-primary/50 text-primary',
+            )}
+        >
+            {playbackLabel}
+        </i>
+    ) : null;
 
+    const isThisTrack = currentTrack != null && String(currentTrack.id) === String(track.id);
     const isPlayingTrack = isThisTrack && isPlaying;
     const isPaused = isThisTrack && !isPlaying;
 
@@ -59,35 +76,34 @@ export default function TrackItem({
         isPaused && "isPaused"
     );
 
+    // 재생 버튼이 감싸는 영역: 리스트형은 커버 + 제목, 그리드형은 커버 + 제목 + 아티스트
     const contentClassName = clsx(
         interactive && "group",
-        "w-full",
+        "w-full min-w-0",
         viewModeMultiClass(viewMode, {
-            grid: "flex flex-1 flex-col",
-            list: clsx(
-                "grid grid-cols-[2em_58px_minmax(0,1fr)_3em] max-md:grid-rows-2",
-                "md:grid-cols-[2.5em_80px_2fr_1fr_5em] gap-x-1 md:gap-x-6 items-center py-2 text-left",
-                interactive && "hover:bg-textSub/10"
-            )
+            grid: clsx("flex flex-1 flex-col", actions && "text-left"),
+            list: "col-span-2 grid grid-cols-subgrid items-center text-left",
         }),
-        interactive && statusClass,
+        interactive && statusClass
+    );
+
+    const duration = (
+        <span className={clsx(
+            "block shrink-0 text-textSub text-xs font-inter tabular-nums",
+            isList && "md:text-[13px] text-right",
+            isBlocked && "opacity-50",
+        )}>
+            {formatTime(track.durationMs)}
+        </span>
     );
 
     const trackContent = (
         <>
-            {viewMode === "list" && (
-                <span className={clsx(
-                    'min-w-max block text-textSub text-[11px] lg:text-sm font-inter row-span-2 text-center',
-                    isBlocked && 'opacity-50',
-                )}>
-                    {idx + 1}
-                </span>
-            )}
             <span className={clsx(
-                "overflow-hidden block relative rounded-lg",
+                "overflow-hidden block relative",
                 viewModeMultiClass(viewMode, {
-                    grid: "pt-[100%]",
-                    list: "row-span-2 size-12 md:size-20"
+                    grid: "pt-[100%] rounded-xl",
+                    list: "size-10 md:size-12 rounded-lg"
                 }),
                 isBlocked && 'opacity-50',
             )}>
@@ -103,20 +119,25 @@ export default function TrackItem({
                         event.currentTarget.onerror = null;
                     }}
                 />
+                {!isList && playbackBadge && (
+                    <span className="absolute top-2 left-2 z-1 flex rounded-full bg-black/70">
+                        {playbackBadge}
+                    </span>
+                )}
                 {(interactive && !isBlocked) && (
                     <i className={clsx(
                         "hidden items-center justify-center absolute inset-0 bg-white/30 ",
                         "opacity-0 transition-all duration-300",
                         "group-hover:flex group-[.isPlaying]:flex group-[.isPaused]:flex",
                         "group-hover:opacity-100 group-[.isPlaying]:opacity-100 group-[.isPaused]:opacity-100",
-                        "group-focus-visible:flex group-focus-visible:opacity-100",
+                        "group-focus-visible:flex group-focus-visible:opacity-100"
                     )}
                     >
                         {isPlayingTrack || isPlayingPreview ? (
                             <PauseRound
                                 className={clsx(
                                     "fade-in fill-white transition-all duration-300",
-                                    viewModeClass(viewMode, "size-12 lg:size-18", "size-6 lg:size-8"),
+                                    viewModeClass(viewMode, "size-12 lg:size-18", "size-6"),
                                 )}
                                 aria-hidden="true"
                             />
@@ -124,7 +145,7 @@ export default function TrackItem({
                             <PlayRound
                                 className={clsx(
                                     "fade-in fill-white transition-all duration-300",
-                                    viewModeClass(viewMode, "size-12 lg:size-18", "size-6 lg:size-8"),
+                                    viewModeClass(viewMode, "size-12 lg:size-18", "size-6"),
                                 )}
                                 aria-hidden="true"
                             />
@@ -132,94 +153,86 @@ export default function TrackItem({
                     </i>
                 )}
             </span>
-            <span className={clsx(
-                "block max-lg:text-sm",
-                viewModeMultiClass(viewMode, {
-                    grid: "mt-3",
-                    list: "md:col-start-3 md:row-span-2 text-left truncate"
-                }),
-            )}>
-                {playbackLabel && (
-                    <i
-                        className={clsx(
-                            'mb-1 rounded px-1.5 py-0.5 text-[11px] font-medium not-italic',
-                            isBlocked
-                                ? 'bg-textThr text-textBase'
-                                : 'bg-primary/10 text-primary',
-                            viewModeMultiClass(viewMode, {
-                                grid: "inline-block",
-                                list: "hidden"
-                            }),
-                        )}
-                    >
-                        {playbackLabel}
-                    </i>
-                )}
+            <span className={clsx("block min-w-0", !isList && "mt-2.5", isBlocked && "opacity-50")}>
+                <span className="flex items-center gap-1.5 min-w-0">
+                    <span className={clsx(
+                        "block min-w-0 text-sm md:text-[15px] font-bold",
+                        "group-[.isThisTrack]:text-primary",
+                        (isList || actions) && "truncate"
+                    )}>
+                        {track.title}
+                    </span>
+                    {isList && playbackBadge}
+                </span>
                 <span
                     className={clsx(
-                        'block truncate',
-                        'group-[.isThisTrack]:text-primary',
-                        isBlocked && 'opacity-50',
-                    )}
-                >
-                    {track.title}
+                        "block mt-0.5 text-textSub text-xs md:text-[13px]",
+                        "group-[.isThisTrack]:text-primary",
+                        (isList || actions) && "truncate"
+                    )}>
+                    {track.artist}
                 </span>
             </span>
-            <span
-                className={clsx(
-                    "block text-textSub text-xs lg:text-sm",
-                    "group-[.isThisTrack]:text-primary",
-                    viewModeClass(viewMode, "mt-1", "max-md:col-start-3 max-md:row-start-2 md:row-span-2"),
-                    isBlocked && 'opacity-50',
-                )}>
-                {track.artist}
-            </span>
-            {(viewMode === "list" || showDuration) && (
-                <span className={clsx(
-                    "block text-textSub text-xs lg:text-sm font-inter text-center",
-                    viewModeClass(viewMode, "mt-1", "min-w-max row-span-2"),
-                    isBlocked && 'opacity-50',
-                )}>
-                    {viewMode === 'list' && playbackLabel ? (
-                        <i className={clsx(
-                            'inline-block rounded px-1.5 py-0.5 text-[11px] font-medium not-italic',
-                            isBlocked ? 'bg-textThr text-textBase' : 'bg-primary/10 text-primary',
-                        )}>
-                            {playbackLabel}
-                        </i>
-                    ) : (
-                        formatTime(track.durationMs)
-                    )}
-                </span>
+            {!isList && showDuration && !actions && (
+                <span className="block mt-1">{duration}</span>
             )}
         </>
     );
 
+    const trackButton = interactive ? (
+        <button
+            type="button"
+            onClick={() => {
+                onTrackClick?.(track);
+            }}
+            className={contentClassName}
+            disabled={isBlocked}
+            aria-label={[
+                ariaLabel ??
+                `${track.title} ${isPlayingTrack || isPlayingPreview ? '일시정지' : '재생'}`,
+                playbackLabel,
+            ].filter(Boolean).join(', ')}
+        >
+            {trackContent}
+        </button>
+    ) : (
+        <article className={contentClassName}>
+            {trackContent}
+        </article>
+    );
+
+    if (isList) {
+        return (
+            <div className={clsx(
+                "grid items-center min-h-15 md:min-h-17 px-1 md:px-3 rounded-[10px]",
+                "grid-cols-[20px_40px_minmax(0,1fr)_34px_auto] gap-x-2",
+                "md:grid-cols-[44px_48px_minmax(0,1fr)_72px_auto] md:gap-x-3",
+                interactive && !isBlocked && "hover:bg-textSub/10"
+            )}>
+                <span className={clsx(
+                    "block text-center text-textSub text-xs md:text-sm font-inter tabular-nums",
+                    isBlocked && "opacity-50",
+                )}>
+                    {idx + 1}
+                </span>
+                {trackButton}
+                {duration}
+                <div className="flex items-center justify-end">{actions}</div>
+                {footerActions && (
+                    <div className="col-span-full pb-2">{footerActions}</div>
+                )}
+            </div>
+        );
+    }
+
     return (
-        <div className={viewModeMultiClass(viewMode, {
-            grid: "max-w-60",
-            list: "flex items-center gap-4 max-w-none border-b border-b-textThr/50"
-        })}>
-            {interactive ? (
-                <button
-                    type="button"
-                    onClick={() => {
-                        onTrackClick?.(track);
-                    }}
-                    className={contentClassName}
-                    disabled={isBlocked}
-                    aria-label={[
-                        ariaLabel ??
-                        `${track.title} ${isPlayingTrack || isPlayingPreview ? '일시정지' : '재생'}`,
-                        playbackLabel,
-                    ].filter(Boolean).join(', ')}
-                >
-                    {trackContent}
-                </button>
-            ) : (
-                <article className={contentClassName}>
-                    {trackContent}
-                </article>
+        <div className="max-w-60">
+            {trackButton}
+            {actions && (
+                <div className="flex items-center justify-between gap-x-1 mt-1">
+                    {duration}
+                    <div className="flex items-center">{actions}</div>
+                </div>
             )}
             {footerActions && (
                 <div className="mt-3">

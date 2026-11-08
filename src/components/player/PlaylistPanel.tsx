@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import SoundCloudWidget from '../../features/player/components/SoundCloudWidget';
 import soundCloudFaviconBlack from '../../assets/brands/soundcloud-favicon-black.webp';
 import soundCloudFaviconWhite from '../../assets/brands/soundcloud-favicon-white.webp';
+import ExternalLink from '../ui/ExternalLink';
 import Tooltip from '../ui/Tooltip';
 import type { PlayerTrack } from '../../features/player/types/player.types';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
@@ -194,11 +195,9 @@ export default function PlaylistPanel({
                 <>
                   {playlistTrack.permalinkUrl ? (
                     <Tooltip content="SoundCloud에서 듣기" className="max-xl:hidden">
-                      <a
+                      <ExternalLink
                         href={playlistTrack.permalinkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`${playlistTrack.title} 원곡을 SoundCloud에서 열기 (새 창)`}
+                        label={`${playlistTrack.title} 원곡을 SoundCloud에서 열기`}
                         className="relative inline-flex flex-col hover:text-primary"
                       >
                         <span>
@@ -214,7 +213,7 @@ export default function PlaylistPanel({
                           />
                         </span>
                         <strong className="font-black">{playlistTrack.title}</strong>
-                      </a>
+                      </ExternalLink>
                     </Tooltip>
                   ) : (
                     <strong className="font-black">{playlistTrack.title}</strong>
@@ -251,15 +250,13 @@ export default function PlaylistPanel({
                 <ul className="flex flex-wrap gap-2 mt-3" aria-label="현재 재생곡 태그">
                   {tags.slice(0, 5).map((tag) => (
                     <li key={tag}>
-                      <a
+                      <ExternalLink
                         href={`https://soundcloud.com/search?q=${encodeURIComponent(tag)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        label={`SoundCloud에서 ${tag} 태그 검색`}
                         className="inline-block px-2 py-1 text-xs rounded-full bg-textThr text-textSub hover:text-primary hover:bg-primary/6"
-                        aria-label={`SoundCloud에서 ${tag} 태그 검색 (새 창)`}
                       >
                         # {tag}
-                      </a>
+                      </ExternalLink>
                     </li>
                   ))}
                 </ul>

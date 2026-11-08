@@ -228,3 +228,33 @@
 .multiSounds__sound {
   display: none;
 }
+
+/* 홈 상단 커버 슬라이드 (Swiper coverflow)
+   모바일: 카드 1장이 폭에 꽉 차게 / 데스크톱: 가운데 카드 + 양옆 카드가 잘리지 않게 안쪽으로 당김 */
+.nt-coverflow .nt-coverflow-slide {
+  width: 100%;
+}
+@media (min-width: 1024px) {
+  .nt-coverflow {
+    /* 가운데 카드 그림자가 잘리지 않을 여유 */
+    padding-bottom: 24px;
+    margin-bottom: -24px;
+  }
+  .nt-coverflow .nt-coverflow-slide {
+    width: 45%;
+    transition-property: transform, opacity;
+  }
+  .nt-coverflow .nt-coverflow-slide:not(.swiper-slide-active) {
+    opacity: 0.5;
+  }
+  /* 바로 옆 카드만 보이고, 그 너머 카드는 숨김 */
+  .nt-coverflow .nt-coverflow-slide:not(.swiper-slide-active):not(.swiper-slide-prev):not(.swiper-slide-next) {
+    opacity: 0;
+  }
+  .nt-coverflow .nt-coverflow-slide img {
+    transition: box-shadow 0.45s ease;
+  }
+  .nt-coverflow .swiper-slide-active img {
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  }
+}
