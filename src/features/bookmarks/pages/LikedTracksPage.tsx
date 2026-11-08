@@ -207,16 +207,23 @@ export default function LikedTracksPage() {
     );
   }
 
+  const hasLoadedTracks =
+    Boolean(user) && !isLoading && loadedUserUid === user?.uid && !errorMessage;
+
   return (
-    <section className="mx-auto w-full px-4 py-6 lg:px-8 lg:py-10">
-      <header className="mb-6 pb-4">
-        <div className="flex items-center gap-2">
-          <Heart aria-hidden="true" className="size-6 text-primary" />
-          <h2 className="text-2xl font-bold text-textBase">Likes</h2>
+    <section className="mx-auto w-full px-1 md:px-7 pb-6 lg:pb-10">
+      {/* 게시판 · 검색과 같은 페이지 제목 */}
+      <header className="flex items-center gap-3 mb-4 md:mb-5">
+        <Heart aria-hidden="true" className="shrink-0 size-6.5 text-primary" />
+        <div>
+          <h1 className="text-[28px] leading-tight font-extrabold tracking-tight text-textBase">
+            Likes
+          </h1>
+          <p className="mt-0.5 text-[13px] text-textSub">
+            좋아요한 곡
+            {hasLoadedTracks && ` · 총 ${displayedTracks.length}개`}
+          </p>
         </div>
-        <p className="sr-only">
-          SoundCloud에서 저장한 트랙을 확인하고 관리할 수 있습니다.
-        </p>
       </header>
 
       {!user ? (
@@ -266,7 +273,6 @@ export default function LikedTracksPage() {
         </div>
       ) : (
         <>
-          <p className="mb-3 text-sm text-textSub">저장된 트랙 {displayedTracks.length}개</p>
           <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-x-3 md:gap-x-5 gap-y-6 md:gap-y-7">
             {displayedTracks.map((track, index) => {
               const trackId = String(track.id);
