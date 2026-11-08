@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -18,6 +18,9 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const analytics = getAnalytics(app);
+// Analytics는 지원되는 브라우저에서만 켬 (테스트·SSR·쿠키 차단 환경에서 import만으로 에러가 나지 않게)
+export const analytics: Promise<Analytics | null> = isSupported()
+    .then((supported) => (supported ? getAnalytics(app) : null))
+    .catch(() => null);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
