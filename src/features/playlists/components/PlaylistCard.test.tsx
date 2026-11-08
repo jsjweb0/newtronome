@@ -38,16 +38,20 @@ describe('PlaylistCard', () => {
     const image = container.querySelector('img');
 
     expect(image?.getAttribute('src')).toBe(playlist.coverUrl);
+    expect(container.querySelector('[data-generated-cover]')).toBeNull();
 
     fireEvent.error(image!);
 
     expect(image?.getAttribute('src')).toContain('no-image');
   });
 
-  it('shows the title on a theme background when there is no cover', () => {
+  it('uses the id-based generated cover only when there is no cover', () => {
     const { container } = renderCard({ ...playlist, coverUrl: null });
 
     expect(container.querySelector('img')).toBeNull();
+    const cover = container.querySelector('[data-generated-cover]');
+    expect(cover?.getAttribute('aria-hidden')).toBe('true');
+    expect(cover?.textContent).toContain('NEWTRONOME');
     expect(screen.getAllByText('2024 입하 디스코')).toHaveLength(2);
   });
 });

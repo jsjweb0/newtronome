@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { createPlaylistPath } from '../../../constants/routes';
 import PlaylistCoverArt from './PlaylistCoverArt';
+import { getGeneratedCover } from '../utils/generatedCover';
 import type { Playlist } from '../data/playlists';
 
 interface PlaylistCardProps {
@@ -10,6 +11,8 @@ interface PlaylistCardProps {
 
 /** 카드 전체가 플레이리스트 상세로 이동하는 링크 */
 export default function PlaylistCard({ playlist }: PlaylistCardProps) {
+  const stack = getGeneratedCover(playlist.id).palette;
+
   return (
     <Link
       to={createPlaylistPath(playlist.id)}
@@ -21,8 +24,15 @@ export default function PlaylistCard({ playlist }: PlaylistCardProps) {
     >
       {/* 썸네일 + 뒤로 겹쳐 보이는 카드 두 장 */}
       <span aria-hidden="true" className="relative block aspect-square mt-3">
-        <span className="absolute inset-x-[12%] -top-3 h-10 rounded-[10px] bg-textSub/25" />
-        <span className="absolute inset-x-[6%] -top-1.5 h-10 rounded-xl bg-textSub/45" />
+        {/* 뒷장 c3 .35, 앞장 c2 .6 (실제 커버도 같은 id 색) */}
+        <span
+          className="absolute inset-x-[12%] -top-3 h-10 rounded-[10px] opacity-35"
+          style={{ backgroundColor: stack.c3 }}
+        />
+        <span
+          className="absolute inset-x-[6%] -top-1.5 h-10 rounded-xl opacity-60"
+          style={{ backgroundColor: stack.c2 }}
+        />
         <span
           className={clsx(
             'absolute inset-0 overflow-hidden rounded-xl bg-textThr',
