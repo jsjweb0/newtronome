@@ -165,7 +165,7 @@ Firebase Admin SDK 스크립트([set-admin-claim.mjs](scripts/set-admin-claim.mj
 | ------------------------------------------------ | -------------- | -------------------------------------------------- |
 | [PR Checks](.github/workflows/pr-checks.yml)     | PR             | typecheck, lint, 단위 테스트, build, Firestore 규칙 |
 | [Playwright](.github/workflows/playwright.yml)   | PR, `main` push | Chromium E2E                                       |
-| [Deploy](.github/workflows/deploy.yml)           | `main` push    | Cloudflare Workers 배포                            |
+| Cloudflare Workers Builds                        | `main` push    | Cloudflare Workers 프로덕션 배포                   |
 
 로컬 실행:
 
