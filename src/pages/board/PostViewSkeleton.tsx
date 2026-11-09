@@ -1,27 +1,37 @@
+const bone = 'bg-gray-200 dark:bg-neutral-700';
+
+/** 게시글 상세(PostView)와 같은 배치의 로딩 화면: 목록 링크 · 본문 카드 · 이전/다음 글 */
 export default function PostViewSkeleton() {
     return (
-        <div className="max-w-[85rem] mx-auto px-4 py-10 animate-pulse">
-            <div className="flex flex-row max-md:flex-col items-center justify-between gap-2 px-4 py-5 border-y border-gray-300">
-                <div className="h-6 w-2/3 bg-gray-200 rounded-md dark:bg-neutral-700" />
-                <div className="shrink-0 flex divide-x divide-gray-300 dark:divide-neutral-700">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-6 w-12 mx-2 bg-gray-200 rounded-full dark:bg-neutral-700" />
-                    ))}
+        <div className="w-full flex flex-col gap-4 md:gap-5 px-1 md:px-7 pb-6 animate-pulse" aria-hidden="true">
+            <div className={`w-24 h-5 my-3 rounded ${bone}`} />
+
+            <div className="rounded-2xl border border-line bg-surface px-4 pt-5 pb-4.5 md:px-8 md:pt-7 md:pb-6">
+                <div className="flex flex-col gap-3 pb-4.5 border-b border-textThr/70">
+                    <div className={`w-12 h-5 rounded-md ${bone}`} />
+                    <div className={`w-3/4 h-7 md:h-8 rounded-lg ${bone}`} />
+                    <div className="flex items-center gap-2.5">
+                        <div className={`size-7.5 rounded-full ${bone}`} />
+                        <div className={`w-20 h-3.5 rounded ${bone}`} />
+                        <div className={`w-40 h-3.5 rounded ${bone}`} />
+                    </div>
+                </div>
+                <div className="flex flex-col gap-3 py-6.5 pb-7.5">
+                    <div className={`w-full h-4 rounded ${bone}`} />
+                    <div className={`w-11/12 h-4 rounded ${bone}`} />
+                    <div className={`w-4/5 h-4 rounded ${bone}`} />
+                    <div className={`w-2/3 h-4 rounded ${bone}`} />
+                </div>
+                <div className="flex justify-center gap-2.5 pt-5 border-t border-textThr/70">
+                    <div className={`w-20 h-11 rounded-full ${bone}`} />
+                    <div className={`w-20 h-11 rounded-full ${bone}`} />
                 </div>
             </div>
 
-            <div className="py-5 px-3 md:py-12 md:px-7">
-                <div className="h-80 bg-gray-200 rounded dark:bg-neutral-700" />
-            </div>
-
-            <div className="flex items-center justify-center gap-x-3 mt-8">
-                <div className="h-4 w-8 bg-gray-300 rounded dark:bg-neutral-700" />
-                <div className="h-4 w-8 bg-gray-300 rounded dark:bg-neutral-700" />
-                <div className="h-4 w-8 bg-gray-300 rounded dark:bg-neutral-700" />
-            </div>
-
-            <div className="flex justify-center mt-6 md:mt-14">
-                <div className="h-12 w-26 bg-gray-200 rounded dark:bg-neutral-700" />
+            <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2.5">
+                <div className={`h-15 rounded-xl ${bone}`} />
+                <div className={`max-md:hidden w-20 h-15 rounded-xl ${bone}`} />
+                <div className={`h-15 rounded-xl ${bone}`} />
             </div>
         </div>
     );
