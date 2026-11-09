@@ -148,6 +148,56 @@ describe('useSoundCloudWidget source switching', () => {
     vi.restoreAllMocks();
   });
 
+  it.each(['playlist', 'single'] as const)(
+    '%s 모드에서 일시정지 후 재개해도 같은 곡의 재생 위치를 유지한다',
+    (mode) => {
+      const { widget, events, listeners } = createWidgetMock();
+      const track = mode === 'playlist' ? playlistTracks[0] : bookmarkTrack;
+      vi.mocked(widget.getSounds).mockImplementation(reply => reply(playlistTracks.map(toWidgetSound)));
+      vi.mocked(widget.getCurrentSound).mockImplementation(reply => reply(toWidgetSound(track)));
+      vi.mocked(widget.getDuration).mockImplementation(reply => reply(track.durationMs));
+      const { result } = renderWidgetHook();
+      act(() => listeners.get(events.READY)?.());
+
+      if (mode === 'single') {
+        act(() => result.current.playSingleTrack(track));
+        act(() => vi.mocked(widget.load).mock.calls[0][1]?.callback?.());
+      } else {
+        act(() => result.current.play());
+      }
+      act(() => {
+        listeners.get(events.PLAY)?.();
+        listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 45_000 });
+      });
+      expect(usePlayerStore.getState()).toMatchObject({
+        playbackMode: mode, currentTrack: { id: track.id }, isPlaying: true, currentTime: 45,
+      });
+      const loadCount = vi.mocked(widget.load).mock.calls.length;
+      const playCount = vi.mocked(widget.play).mock.calls.length;
+
+      act(() => result.current.pause());
+      expect(widget.pause).toHaveBeenCalledOnce();
+      act(() => listeners.get(events.PAUSE)?.());
+      expect(usePlayerStore.getState()).toMatchObject({
+        currentTrack: { id: track.id }, isPlaying: false, currentTime: 45,
+        duration: track.durationMs / 1000,
+      });
+
+      act(() => result.current.play());
+      expect(widget.play).toHaveBeenCalledTimes(playCount + 1);
+      act(() => listeners.get(events.PLAY)?.());
+      expect(usePlayerStore.getState()).toMatchObject({
+        playbackMode: mode, currentTrack: { id: track.id }, isPlaying: true,
+        currentTime: 45, duration: track.durationMs / 1000,
+      });
+      act(() => listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 46_000 }));
+      expect(usePlayerStore.getState().currentTime).toBe(46);
+      expect(widget.load).toHaveBeenCalledTimes(loadCount);
+      expect(widget.skip).not.toHaveBeenCalled();
+      expect(widget.seekTo).not.toHaveBeenCalled();
+    }
+  );
+
   it('loads a saved track and changes to single playback mode', () => {
     const { widget } = createWidgetMock();
     const { result } = renderWidgetHook();
@@ -978,6 +1028,52 @@ describe('useSoundCloudWidget source switching', () => {
     expect(widget.load).toHaveBeenCalledTimes(2);
     expect(usePlayerStore.getState().currentTrack).toEqual(bookmarkTrack);
   });
+
+  it.each(['error-first', 'timeout-first'] as const)(
+    '%s: ERROR와 시간 초과는 한 번만 보고하고 재시도 실패는 별도로 보고한다',
+    (order) => {
+      vi.useFakeTimers();
+      const { widget, events, listeners } = createWidgetMock();
+      vi.mocked(widget.getSounds).mockImplementation(reply => reply(playlistTracks.map(toWidgetSound)));
+      const { result } = renderWidgetHook();
+      const onFailure = vi.fn();
+      act(() => listeners.get(events.READY)?.());
+      act(() => result.current.playSingleTrack(bookmarkTrack, { onFailure }));
+
+      if (order === 'error-first') {
+        act(() => vi.advanceTimersByTime(9_999));
+        expect(onFailure).not.toHaveBeenCalled();
+        act(() => listeners.get(events.ERROR)?.());
+        expect(onFailure).toHaveBeenCalledOnce();
+        act(() => vi.advanceTimersByTime(1));
+      } else {
+        act(() => vi.advanceTimersByTime(9_999));
+        expect(onFailure).not.toHaveBeenCalled();
+        act(() => vi.advanceTimersByTime(1));
+        expect(onFailure).toHaveBeenCalledOnce();
+        act(() => listeners.get(events.ERROR)?.());
+      }
+      expect(onFailure).toHaveBeenCalledOnce();
+      expect(widget.pause).toHaveBeenCalledOnce();
+      expect(result.current.playlistStatus).toBe('ready');
+      expect(usePlayerStore.getState()).toMatchObject({ currentTrack: null, isPlaying: false });
+
+      // 같은 콜백을 재사용해도 새 요청의 실패는 다시 보고되어야 한다.
+      act(() => result.current.playSingleTrack(bookmarkTrack, { onFailure }));
+      expect(widget.load).toHaveBeenCalledTimes(2);
+      act(() => vi.advanceTimersByTime(9_999));
+      expect(onFailure).toHaveBeenCalledOnce();
+      act(() => vi.advanceTimersByTime(1));
+      expect(onFailure).toHaveBeenCalledTimes(2);
+      act(() => {
+        listeners.get(events.ERROR)?.();
+        vi.advanceTimersByTime(10_000);
+      });
+      expect(onFailure).toHaveBeenCalledTimes(2);
+      expect(widget.pause).toHaveBeenCalledTimes(2);
+      expect(usePlayerStore.getState()).toMatchObject({ currentTrack: null, isPlaying: false });
+    }
+  );
 
   it('recovers the initial playlist after a bookmark load times out before READY', () => {
     vi.useFakeTimers();
