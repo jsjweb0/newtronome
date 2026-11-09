@@ -55,7 +55,7 @@ export default function PlaylistActions({ playlist, isPlaying, onPlay }: Playlis
         type="button"
         onClick={onPlay}
         className={clsx(
-          'inline-flex items-center gap-2 min-h-13 px-6.5 rounded-full bg-primary text-onPrimary text-[15px] font-bold hover:bg-primary/85 transition-colors',
+          'shrink-0 inline-flex items-center gap-2 min-h-13 px-6.5 rounded-full bg-primary text-onPrimary text-[15px] font-bold whitespace-nowrap hover:bg-primary/85 transition-colors',
           focusRingClass
         )}
       >
@@ -71,7 +71,8 @@ export default function PlaylistActions({ playlist, isPlaying, onPlay }: Playlis
         href={playlist.soundCloudUrl}
         label="SoundCloud에서 듣기"
         className={clsx(
-          'inline-flex items-center gap-2.5 min-h-13 pl-4.5 pr-5.5 rounded-full text-[15px] font-bold',
+          // 좁은 화면에서 글자가 두 줄로 꺾이지 않게: 버튼째 다음 줄로 넘어감
+          'shrink-0 inline-flex items-center gap-2.5 min-h-13 pl-4.5 pr-5.5 rounded-full text-[15px] font-bold whitespace-nowrap',
           outlineClass,
           focusRingClass
         )}
