@@ -12,6 +12,7 @@ import {
   Activity,
   Bell,
   Heart,
+  ListMusic,
   Search as SearchIcon
 } from 'lucide-react';
 import { LogoIcon, LogoMoIcon, Turntable, MusicLibrary } from '../icons';
@@ -51,6 +52,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
 
   const navItems: ReadonlyArray<NavItem> = [
     { label: 'Browse', path: ROUTES.home.path, icon: Music },
+    { label: 'Playlists', path: ROUTES.playlists.path, icon: ListMusic },
     { label: 'Search', path: ROUTES.search.path, icon: SearchIcon },
     { label: 'Likes', path: ROUTES.likes.path, icon: Heart },
     { label: 'Notice', path: createBoardPath('notice'), icon: Bell },

@@ -155,6 +155,43 @@ describe('북마크 재생 상태 규칙', () => {
   });
 });
 
+describe('플레이리스트 저장 규칙', () => {
+  const savedPlaylist = () => ({
+    id: '2024-spring',
+    title: '2024 입하 디스코',
+    soundCloudUrl: 'https://soundcloud.com/ssu-1/sets/2024-spring',
+    savedAt: serverTimestamp(),
+  });
+
+  it('소유자는 플레이리스트를 저장 · 조회 · 삭제할 수 있다', async () => {
+    const userDb = testEnvironment.authenticatedContext('user-1').firestore();
+    const playlistRef = doc(userDb, 'users', 'user-1', 'savedPlaylists', '2024-spring');
+
+    await assertSucceeds(setDoc(playlistRef, savedPlaylist()));
+    await assertSucceeds(getDoc(playlistRef));
+    await assertSucceeds(deleteDoc(playlistRef));
+  });
+
+  it('다른 사용자나 비로그인 사용자는 저장하거나 읽을 수 없다', async () => {
+    const otherDb = testEnvironment.authenticatedContext('user-2').firestore();
+    const guestDb = testEnvironment.unauthenticatedContext().firestore();
+
+    await assertFails(
+      setDoc(doc(otherDb, 'users', 'user-1', 'savedPlaylists', '2024-spring'), savedPlaylist())
+    );
+    await assertFails(getDoc(doc(guestDb, 'users', 'user-1', 'savedPlaylists', '2024-spring')));
+  });
+
+  it('문서 id와 다른 id, 허용하지 않은 필드, 서버 시각이 아닌 savedAt은 막는다', async () => {
+    const userDb = testEnvironment.authenticatedContext('user-1').firestore();
+    const playlistRef = doc(userDb, 'users', 'user-1', 'savedPlaylists', '2024-spring');
+
+    await assertFails(setDoc(playlistRef, { ...savedPlaylist(), id: 'other' }));
+    await assertFails(setDoc(playlistRef, { ...savedPlaylist(), extra: true }));
+    await assertFails(setDoc(playlistRef, { ...savedPlaylist(), savedAt: Timestamp.fromMillis(0) }));
+  });
+});
+
 async function createFreePost(postId = 'post-1') {
   await testEnvironment.withSecurityRulesDisabled(async (context) => {
     await setDoc(

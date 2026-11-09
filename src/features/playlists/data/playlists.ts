@@ -1,4 +1,17 @@
-export const PLAYLISTS = [
+export interface Playlist {
+    id: string;
+    soundCloudUrl: string;
+    title: string;
+    coverUrl: string | null;
+    /**
+     * 플레이리스트를 마지막으로 손본 날짜 (YYYY-MM-DD, 선택).
+     * SoundCloud oEmbed · Widget API는 플레이리스트 수정일을 주지 않아서 직접 적는다.
+     * 없으면 상세 화면의 큐레이션 줄에서 날짜만 숨긴다.
+     */
+    updatedAt?: string;
+}
+
+export const PLAYLISTS: ReadonlyArray<Playlist> = [
     {
         id: '2025-summer',
         soundCloudUrl: 'https://soundcloud.com/ssu-1/sets/2025-summer',
@@ -51,7 +64,7 @@ export const PLAYLISTS = [
         id: '2017-spring',
         soundCloudUrl: 'https://soundcloud.com/ssu-1/sets/2017-spring',
         title: '2017 입하 디스코',
-        ccoverUrl: null,
+        coverUrl: null,
     },
     {
         id: '2017spring',
@@ -96,3 +109,6 @@ export const PLAYLISTS = [
         coverUrl: null,
     },
 ];
+
+export const findPlaylistById = (id: string | null | undefined) =>
+    id ? PLAYLISTS.find((playlist) => playlist.id === id) ?? null : null;

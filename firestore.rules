@@ -354,6 +354,17 @@ service cloud.firestore {
         );
     }
 
+    function isValidSavedPlaylist(playlistId) {
+      let data = request.resource.data;
+
+      return data.keys().hasAll(['id', 'title', 'soundCloudUrl', 'savedAt'])
+        && data.keys().hasOnly(['id', 'title', 'soundCloudUrl', 'savedAt'])
+        && data.id == playlistId
+        && data.title is string
+        && data.soundCloudUrl is string
+        && data.savedAt == request.time;
+    }
+
     function hasOnlyAllowedPostFields() {
       return request.resource.data.keys().hasOnly([
         'title',
@@ -391,6 +402,12 @@ service cloud.firestore {
       match /savedTracks/{trackId} {
         allow read, delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidSavedTrack();
+      }
+
+      match /savedPlaylists/{playlistId} {
+        allow read, delete: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidSavedPlaylist(playlistId);
+        allow update: if false;
       }
     }
 
