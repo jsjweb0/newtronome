@@ -8,7 +8,7 @@ export type TrackBookmarkButtonProps = {
   track: PlayerTrack;
   className?: string;
   iconClassName?: string;
-  /** 아이콘 옆에 보이는 글자 (예: Likes). 접근성 이름은 aria-label이 그대로 담당 */
+  /** 아이콘 옆에 보이는 글자 (예: Likes) */
   children?: ReactNode;
   'aria-describedby'?: string;
 };
@@ -49,7 +49,6 @@ export default function TrackBookmarkButton({
       onClick={error !== null ? retrySubscription : toggleBookmark}
       disabled={isLoading || isSaving || isAddBlocked}
       aria-pressed={error !== null || isLoading ? undefined : isBookmarked}
-      aria-label={buttonLabel}
       title={buttonLabel}
       aria-describedby={ariaDescribedBy}
       className={clsx(
@@ -70,7 +69,8 @@ export default function TrackBookmarkButton({
           iconClassName
         )}
       />
-      {children && <span aria-hidden="true">{children}</span>}
+      {children}
+      <span className="sr-only">{buttonLabel}</span>
     </button>
   );
 }

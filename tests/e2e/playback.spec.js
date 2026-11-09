@@ -33,11 +33,11 @@ test('loading, selection and keyboard pause stay consistent across the UI', asyn
   await expect(page.locator('footer').getByRole('button', { name: '정지', exact: true })).toBeVisible();
   const panelToggle = page.getByRole('button', { name: '플레이리스트 열기', exact: true });
   if (await panelToggle.count()) await panelToggle.click();
-  await expect(page.locator('aside').getByRole('button', { name: 'E2E Second 일시정지' })).toBeVisible();
-  await page.locator('aside').getByRole('button', { name: 'E2E Second 일시정지' }).focus();
+  await expect(page.locator('aside').getByRole('button', { name: 'E2E Second Artist Two 일시정지' })).toBeVisible();
+  await page.locator('aside').getByRole('button', { name: 'E2E Second Artist Two 일시정지' }).focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('footer').getByRole('button', { name: '재생', exact: true })).toBeVisible();
-  await expect(page.locator('aside').getByRole('button', { name: 'E2E Second 재생' })).toBeVisible();
+  await expect(page.locator('aside').getByRole('button', { name: 'E2E Second Artist Two 재생' })).toBeVisible();
   await expectNoLoading(page);
 });
 
@@ -122,8 +122,8 @@ test('late responses from A do not overwrite B after consecutive track selection
     await expect(player.getByRole('slider')).toHaveAttribute('max', '210');
     const panelToggle = page.getByRole('button', { name: '플레이리스트 열기', exact: true });
     if (await panelToggle.count()) await panelToggle.click();
-    await expect(page.locator('aside').getByRole('button', { name: 'E2E Second 일시정지' })).toBeVisible();
-    await expect(page.locator('aside').getByRole('button', { name: 'E2E First 일시정지' })).toHaveCount(0);
+    await expect(page.locator('aside').getByRole('button', { name: 'E2E Second Artist Two 일시정지' })).toBeVisible();
+    await expect(page.locator('aside').getByRole('button', { name: 'E2E First Artist One 일시정지' })).toHaveCount(0);
   } finally {
     // Attach on success too, so the same event sequence is available for every run.
     const history = await page.evaluate(() => window.soundCloudTest.history);

@@ -106,7 +106,7 @@ test('search, sort, pagination, detail and browser back preserve list state', as
     }));
   await page.goto('/board/free');
   await page.getByRole('navigation', { name: '페이지' })
-    .getByRole('button', { name: '2페이지', exact: true }).click();
+    .getByRole('button', { name: '2 페이지', exact: true }).click();
   await expect(page).toHaveURL(/page=2/);
   await expect(page.getByRole('link', { name: /React 글 2/ })).toBeVisible();
   await page.getByRole('link', { name: /React 글 2/ }).click();

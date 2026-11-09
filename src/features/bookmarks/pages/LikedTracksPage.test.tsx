@@ -133,7 +133,7 @@ it('shows a playback error toast when the selected bookmark fails', () => {
   const onPlaySingleTrack = vi.fn();
   renderPage(onPlaySingleTrack);
   act(() => mocks.onSuccess?.([savedTrack]));
-  fireEvent.click(screen.getByRole('button', { name: savedTrack.title + ' 재생' }));
+  fireEvent.click(screen.getByRole('button', { name: `${savedTrack.title} ${savedTrack.artist} 재생` }));
   expect(onPlaySingleTrack).toHaveBeenCalledWith(
     expect.objectContaining({ ...savedTrack, playbackStatus: 'unknown' }),
     expect.objectContaining({
@@ -159,7 +159,7 @@ it('ignores legacy blocked metadata and checks again after reopening Likes', () 
   const onPlaySingleTrack = vi.fn();
   renderPage(onPlaySingleTrack);
   act(() => mocks.onSuccess?.([legacyTrack]));
-  fireEvent.click(screen.getByRole('button', { name: savedTrack.title + ' 재생' }));
+  fireEvent.click(screen.getByRole('button', { name: `${savedTrack.title} ${savedTrack.artist} 재생` }));
   expect(onPlaySingleTrack).toHaveBeenCalledWith(
     expect.objectContaining({ playbackStatus: 'unknown' }), expect.any(Object)
   );
@@ -174,7 +174,7 @@ it('ignores legacy blocked metadata and checks again after reopening Likes', () 
   const replay = vi.fn();
   renderPage(replay);
   act(() => mocks.onSuccess?.([legacyTrack]));
-  fireEvent.click(screen.getByRole('button', { name: savedTrack.title + ' 재생' }));
+  fireEvent.click(screen.getByRole('button', { name: `${savedTrack.title} ${savedTrack.artist} 재생` }));
   expect(replay).toHaveBeenCalledWith(
     expect.objectContaining({ playbackStatus: 'unknown' }), expect.any(Object)
   );
@@ -192,7 +192,7 @@ it('keeps a blocked lookup on the page, disables only that bookmark, and shows o
   renderPage(onPlaySingleTrack);
   act(() => mocks.onSuccess?.([savedTrack, otherTrack]));
   fireEvent.click(
-    screen.getByRole('button', { name: savedTrack.title + ' 재생' })
+    screen.getByRole('button', { name: `${savedTrack.title} ${savedTrack.artist} 재생` })
   );
 
   act(() =>
@@ -205,12 +205,12 @@ it('keeps a blocked lookup on the page, disables only that bookmark, and shows o
   expect(screen.getByText('재생 불가')).toBeTruthy();
   expect(
     (screen.getByRole('button', {
-      name: /회복된 트랙 재생, 재생 불가/,
+      name: /재생 불가 회복된 트랙 아티스트 재생/,
     }) as HTMLButtonElement).disabled
   ).toBe(true);
   expect(
     (screen.getByRole('button', {
-      name: otherTrack.title + ' 재생',
+      name: `${otherTrack.title} ${otherTrack.artist} 재생`,
     }) as HTMLButtonElement).disabled
   ).toBe(false);
   expect(mocks.showToast).toHaveBeenCalledTimes(1);
@@ -225,7 +225,7 @@ it('does not persist or block an unknown lookup result', () => {
   renderPage(onPlaySingleTrack);
   act(() => mocks.onSuccess?.([savedTrack]));
   fireEvent.click(
-    screen.getByRole('button', { name: savedTrack.title + ' 재생' })
+    screen.getByRole('button', { name: `${savedTrack.title} ${savedTrack.artist} 재생` })
   );
 
   act(() =>
@@ -238,7 +238,7 @@ it('does not persist or block an unknown lookup result', () => {
   expect(screen.queryByText('재생 불가')).toBeNull();
   expect(
     (screen.getByRole('button', {
-      name: savedTrack.title + ' 재생',
+      name: `${savedTrack.title} ${savedTrack.artist} 재생`,
     }) as HTMLButtonElement).disabled
   ).toBe(false);
 });
@@ -247,7 +247,7 @@ it('keeps retry available when the lookup fails', () => {
   const onPlaySingleTrack = vi.fn();
   renderPage(onPlaySingleTrack);
   act(() => mocks.onSuccess?.([savedTrack]));
-  const button = screen.getByRole('button', { name: savedTrack.title + ' 재생' });
+  const button = screen.getByRole('button', { name: `${savedTrack.title} ${savedTrack.artist} 재생` });
   fireEvent.click(button);
   act(() => onPlaySingleTrack.mock.calls[0][1].onFailure());
   fireEvent.click(button);

@@ -320,7 +320,6 @@ export default function PlaylistPanel({
                           String(track.id) === String(playlistTrack?.id);
                         const isBlocked = track.playbackStatus === 'blocked';
                         const isPreview = track.playbackStatus === 'preview';
-                        const playbackLabel = isBlocked ? '재생 불가' : isPreview ? '미리듣기' : '';
 
                         return (
                           <li
@@ -344,10 +343,6 @@ export default function PlaylistPanel({
                               }}
                               disabled={isBlocked}
                               aria-current={isActive ? 'true' : undefined}
-                              aria-label={[
-                                `${track.title} ${isActive && isPlaying ? '일시정지' : '재생'}`,
-                                playbackLabel,
-                              ].filter(Boolean).join(', ')}
                               className="grid grid-cols-[18px_40px_minmax(0,1fr)] items-center gap-2.5 min-w-0 min-h-14 pl-2 text-left disabled:cursor-not-allowed"
                             >
                               <span className="flex justify-center font-inter text-[11px] text-textSub tabular-nums">
@@ -388,9 +383,14 @@ export default function PlaylistPanel({
                                     </i>
                                   )}
                                 </span>
+                                {' '}
                                 <span className={clsx('text-[11px] truncate', isActive ? 'text-primary' : 'text-textSub')}>
                                   {track.artist}
                                 </span>
+                              </span>
+                              {' '}
+                              <span className="sr-only">
+                                {isActive && isPlaying ? '일시정지' : '재생'}
                               </span>
                             </button>
                             <span className={clsx('text-[11px] tabular-nums', isActive ? 'text-primary' : 'text-textSub')}>

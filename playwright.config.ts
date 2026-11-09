@@ -29,6 +29,11 @@ export default defineConfig({
       testMatch: 'board-*.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'a11y-chromium',
+      testMatch: 'a11y.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 4183 --strictPort',

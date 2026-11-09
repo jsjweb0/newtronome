@@ -12,7 +12,8 @@
     "test:rules": "XDG_CONFIG_HOME=/tmp/newtronome-firebase-config FIREBASE_CLI_DISABLE_UPDATE_CHECK=true firebase emulators:exec --only firestore --project demo-newtronome \"vitest run --environment node tests/firestore.rules.test.ts\"",
     "preview": "vite preview",
     "frontend:deploy": "npx wrangler deploy",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test --project=a11y-chromium"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",
@@ -32,6 +33,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^9.25.0",
     "@firebase/rules-unit-testing": "^4.0.1",
     "@playwright/test": "^1.64.1",
@@ -42,6 +44,7 @@
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
     "eslint": "^9.25.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "firebase-admin": "^14.4.0",

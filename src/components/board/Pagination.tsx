@@ -57,7 +57,6 @@ export default function Pagination({
                         key={page}
                         type="button"
                         onClick={() => goTo(page)}
-                        aria-label={`${page}페이지`}
                         aria-current={isCurrent ? "page" : undefined}
                         className={clsx(
                             "size-11 md:size-10 rounded-[10px] font-inter text-sm font-bold tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
@@ -66,7 +65,7 @@ export default function Pagination({
                                 : "text-textSub hover:bg-field hover:text-textBase"
                         )}
                     >
-                        {page}
+                        {page}<span className="sr-only"> 페이지</span>
                     </button>
                 )
             })}
