@@ -165,7 +165,7 @@ Firebase Admin SDK 스크립트([set-admin-claim.mjs](scripts/set-admin-claim.mj
 | ------------------------------------------------ | -------------- | -------------------------------------------------- |
 | [PR Checks](.github/workflows/pr-checks.yml)     | PR             | typecheck, lint, 단위 테스트, build, Firestore 규칙 |
 | [Playwright](.github/workflows/playwright.yml)   | PR, `main` push | Chromium E2E                                       |
-| [Deploy](.github/workflows/deploy.yml)           | `main` push    | Cloudflare Workers, GitHub Pages 배포              |
+| [Deploy](.github/workflows/deploy.yml)           | `main` push    | Cloudflare Workers 배포                            |
 
 로컬 실행:
 
@@ -208,7 +208,7 @@ npm run dev
 
 ### 배포
 
-Cloudflare Workers Static Assets로 배포합니다. `main` 브랜치에 push하면 GitHub Actions가 빌드 후 Cloudflare Workers와 GitHub Pages에 자동 배포합니다.
+Cloudflare Workers Static Assets로 배포합니다. `main` 브랜치에 push하면 GitHub Actions가 빌드 후 Cloudflare Workers에 자동 배포합니다.
 
 Cloudflare Workers Builds를 사용할 때는 Node.js 22와 빌드 명령 `npm run build`를 사용합니다. `vite.config.js`의 `maxParallelFileOps: 32`는 빌드 중 동시 파일 작업 수를 제한합니다. Cloudflare에서 패키지 경로를 찾지 못하던 빌드가 이 제한을 적용한 뒤 통과했습니다.
 
