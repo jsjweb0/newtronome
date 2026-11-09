@@ -48,10 +48,10 @@ async function showSearchResults() {
       <ITunesSearchPage />
     </QueryClientProvider>
   );
-  fireEvent.change(screen.getByRole('searchbox', { name: '검색어' }), {
+  fireEvent.change(screen.getByRole('combobox', { name: '검색어' }), {
     target: { value: 'test' },
   });
-  fireEvent.submit(screen.getByRole('searchbox', { name: '검색어' }).closest('form')!);
+  fireEvent.submit(screen.getByRole('combobox', { name: '검색어' }).closest('form')!);
   expect(await screen.findByRole('button', { name: '첫 곡 30초 미리듣기' })).toBeTruthy();
 }
 
@@ -104,10 +104,10 @@ describe('artist panel cache', () => {
       expect(screen.queryByRole('dialog', { name: '가수의 최신곡' })).toBeNull();
     });
 
-    fireEvent.change(screen.getByRole('searchbox', { name: '검색어' }), {
+    fireEvent.change(screen.getByRole('combobox', { name: '검색어' }), {
       target: { value: '새 검색어' },
     });
-    fireEvent.submit(screen.getByRole('searchbox', { name: '검색어' }).closest('form')!);
+    fireEvent.submit(screen.getByRole('combobox', { name: '검색어' }).closest('form')!);
     await screen.findByRole('button', { name: '첫 곡 30초 미리듣기' });
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: '가수의 최신곡' })).toBeNull();
@@ -388,6 +388,24 @@ describe('iTunes preview failure feedback', () => {
 });
 
 describe('recent searches', () => {
+  it('closes mobile suggestions with Escape, keeps input focus, and reopens on input', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ITunesSearchPage />
+      </QueryClientProvider>
+    );
+    const input = screen.getByRole('combobox', { name: '검색어' });
+
+    input.focus();
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(input);
+
+    fireEvent.change(input, { target: { value: 'test' } });
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('saves a search and clears every recent search with 전체 삭제', async () => {
     await showSearchResults();
 

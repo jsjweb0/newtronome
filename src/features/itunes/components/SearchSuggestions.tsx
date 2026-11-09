@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { Music2, Clock3, ChevronRight, X as XIcon } from "lucide-react";
+import type { KeyboardEvent } from 'react';
 
 interface SearchSuggestionsProps {
   id?: string;
@@ -10,6 +11,7 @@ interface SearchSuggestionsProps {
   onSelect: (searchTerm: string) => void;
   onRemoveRecent: (searchTerm: string) => void;
   onClearRecent: () => void;
+  onEscape: () => void;
 }
 
 /**
@@ -24,20 +26,27 @@ export default function SearchSuggestions({
   onSelect,
   onRemoveRecent,
   onClearRecent,
+  onEscape,
 }: SearchSuggestionsProps) {
   const hasRecent = recentSearches.length > 0;
   const hasRecommended = recommendedArtists.length > 0;
+  const handleSuggestionKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onEscape();
+    }
+  };
 
   return (
     <div
       id={id}
-      // 패널 안을 눌러도 검색창 포커스가 빠지지 않게 해 모바일 패널이 닫히지 않게 한다
-      onMouseDown={(event) => event.preventDefault()}
+      role="dialog"
+      aria-label="검색 제안"
       className={clsx(
         'flex flex-col',
         'max-lg:mt-2.5 max-lg:rounded-[18px] max-lg:border max-lg:border-line max-lg:bg-background max-lg:px-2 max-lg:pt-4.5 max-lg:pb-2.5',
         'lg:mt-5 lg:gap-3',
-        !isMobilePanelOpen && 'max-lg:hidden'
+        !isMobilePanelOpen && 'hidden'
       )}
     >
       {/* 최근 검색어 */}
@@ -55,6 +64,8 @@ export default function SearchSuggestions({
           {hasRecent && (
             <button
               type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onKeyDown={handleSuggestionKeyDown}
               onClick={onClearRecent}
               className="min-h-11 px-1.5 text-xs text-textSub hover:text-textBase lg:hidden"
             >
@@ -75,6 +86,8 @@ export default function SearchSuggestions({
               >
                 <button
                   type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onKeyDown={handleSuggestionKeyDown}
                   onClick={() => onSelect(searchTerm)}
                   aria-label={`${searchTerm} 다시 검색`}
                   className={clsx(
@@ -87,6 +100,8 @@ export default function SearchSuggestions({
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onKeyDown={handleSuggestionKeyDown}
                   onClick={() => onRemoveRecent(searchTerm)}
                   aria-label={`${searchTerm} 최근 검색어 삭제`}
                   className="group flex size-11 shrink-0 items-center justify-center rounded-full text-textSub hover:text-primary lg:mr-0.5"
@@ -125,6 +140,8 @@ export default function SearchSuggestions({
                 >
                   <button
                     type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onKeyDown={handleSuggestionKeyDown}
                     onClick={() => onSelect(artist)}
                     className={clsx(
                       'group flex w-full items-center gap-3 min-h-12 pr-3.5 pl-3 text-left text-[15px] text-textBase hover:text-primary',

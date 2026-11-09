@@ -45,6 +45,8 @@ export default function ITunesSearchPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [areSuggestionsDismissed, setAreSuggestionsDismissed] = useState(false);
+  const [isDesktopSearch, setIsDesktopSearch] = useState(false);
 
   const [playingPreviewTrackId, setPlayingPreviewTrackId] = useState<number | null>(null);
 
@@ -56,6 +58,20 @@ export default function ITunesSearchPage() {
 
   const [selectedArtist, setSelectedArtist] = useState<SelectedArtist | null>(null);
   const [isArtistPanelOpen, setIsArtistPanelOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const updateIsDesktopSearch = () => setIsDesktopSearch(mediaQuery.matches);
+
+    updateIsDesktopSearch();
+    mediaQuery.addEventListener('change', updateIsDesktopSearch);
+
+    return () => mediaQuery.removeEventListener('change', updateIsDesktopSearch);
+  }, []);
 
   // 최근 검색어
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
@@ -165,6 +181,7 @@ export default function ITunesSearchPage() {
     // 검색하면 모바일 검색어 패널을 닫고 키보드도 내린다
     searchInputRef.current?.blur();
     setIsSearchFocused(false);
+    setAreSuggestionsDismissed(!isDesktopSearch);
     setVisibleCount(INITIAL_VISIBLE_COUNT);
 
     if (trimmedKeyword === searchKeyword) {
@@ -306,7 +323,14 @@ export default function ITunesSearchPage() {
     stopPreview();
   }, [isSoundCloudPlaying, stopPreview]);
 
-  const isMobilePanelOpen = !hasSearched || isSearchFocused;
+  const areSuggestionsOpen =
+    !areSuggestionsDismissed &&
+    (isDesktopSearch || !hasSearched || isSearchFocused);
+
+  const dismissSuggestions = () => {
+    setAreSuggestionsDismissed(!isDesktopSearch);
+    searchInputRef.current?.focus();
+  };
 
   return (
     <div className="relative mx-auto w-full px-1 md:px-7 pb-6 lg:pb-10">
@@ -338,13 +362,28 @@ export default function ITunesSearchPage() {
             id="music-search"
             type="search"
             value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            onFocus={() => setIsSearchFocused(true)}
+            onChange={(event) => {
+              setKeyword(event.target.value);
+              setAreSuggestionsDismissed(false);
+            }}
+            onFocus={() => {
+              setIsSearchFocused(true);
+              setAreSuggestionsDismissed(false);
+            }}
             onBlur={() => setIsSearchFocused(false)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && areSuggestionsOpen) {
+                event.preventDefault();
+                dismissSuggestions();
+              }
+            }}
             autoComplete="off"
             placeholder="Search songs or artists"
+            role="combobox"
+            aria-autocomplete="none"
+            aria-haspopup="dialog"
             aria-controls="search-suggestions"
-            aria-expanded={isMobilePanelOpen}
+            aria-expanded={areSuggestionsOpen}
             className="music-search-input min-w-0 flex-1 min-h-11 border-0 bg-transparent px-0 text-textBase text-base placeholder:text-textSub/70 outline-none focus:ring-0"
           />
           {keyword && (
@@ -378,10 +417,11 @@ export default function ITunesSearchPage() {
         id="search-suggestions"
         recentSearches={recentSearches}
         recommendedArtists={recommendedArtists}
-        isMobilePanelOpen={isMobilePanelOpen}
+        isMobilePanelOpen={areSuggestionsOpen}
         onSelect={handleRecentSearch}
         onRemoveRecent={removeRecentSearch}
         onClearRecent={clearRecentSearches}
+        onEscape={dismissSuggestions}
       />
       {/* //검색어 목록 */}
 
@@ -498,6 +538,8 @@ export default function ITunesSearchPage() {
         {/* // 다른 곡 보기 */}
 
         {/* audio */}
+        {/* 순수 음악 30초 미리듣기로, 음성 콘텐츠용 자막 트랙을 제공하지 않는다. */}
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <audio
           ref={audioRef}
           onEnded={() => setPlayingPreviewTrackId(null)}

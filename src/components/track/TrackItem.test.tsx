@@ -20,8 +20,8 @@ afterEach(() => {
 
 describe('TrackItem accessibility', () => {
   it.each([
-    { isPlaying: false, accessibleName: 'Test track 재생' },
-    { isPlaying: true, accessibleName: 'Test track 일시정지' },
+    { isPlaying: false, accessibleName: 'Test track Test artist 재생' },
+    { isPlaying: true, accessibleName: 'Test track Test artist 일시정지' },
   ])('exposes the current playback action when isPlaying=$isPlaying', ({
     isPlaying,
     accessibleName,

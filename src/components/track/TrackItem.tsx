@@ -154,6 +154,7 @@ export default function TrackItem({
                     </i>
                 )}
             </span>
+            {' '}
             <span className={clsx("block min-w-0", !isList && "mt-2.5", isBlocked && "opacity-50")}>
                 <span className="flex items-center gap-1.5 min-w-0">
                     <span className={clsx(
@@ -165,6 +166,7 @@ export default function TrackItem({
                     </span>
                     {isList && playbackBadge}
                 </span>
+                {' '}
                 <span
                     className={clsx(
                         "block mt-0.5 text-textSub text-xs md:text-[13px]",
@@ -188,13 +190,12 @@ export default function TrackItem({
             }}
             className={contentClassName}
             disabled={isBlocked}
-            aria-label={[
-                ariaLabel ??
-                `${track.title} ${isPlayingTrack || isPlayingPreview ? '일시정지' : '재생'}`,
-                playbackLabel,
-            ].filter(Boolean).join(', ')}
         >
             {trackContent}
+            {' '}
+            <span className="sr-only">
+                {ariaLabel ?? (isPlayingTrack || isPlayingPreview ? '일시정지' : '재생')}
+            </span>
         </button>
     ) : (
         <article className={contentClassName}>
