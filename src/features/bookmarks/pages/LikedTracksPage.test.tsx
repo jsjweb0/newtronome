@@ -4,9 +4,8 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
 } from '@testing-library/react';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom';
 import LikedTracksPage from './LikedTracksPage';
@@ -17,7 +16,6 @@ const mocks = vi.hoisted(() => ({
   showToast: vi.fn(),
   onSuccess: undefined as ((tracks: SavedTrack[]) => void) | undefined,
   onError: undefined as ((error: Error) => void) | undefined,
-  updateSavedTrackPlaybackStatus: vi.fn(),
 }));
 
 vi.mock('../../../contexts/AuthContext', () => ({
@@ -33,11 +31,7 @@ vi.mock('../services/savedTracks', () => ({
     return vi.fn();
   }),
   removeSavedTrack: vi.fn(),
-  updateSavedTrackPlaybackStatus: mocks.updateSavedTrackPlaybackStatus,
 }));
-beforeEach(() => {
-  mocks.updateSavedTrackPlaybackStatus.mockResolvedValue(undefined);
-});
 
 function renderLikesPage() {
   return render(
@@ -66,7 +60,6 @@ const baseTrack: SavedTrack = {
 afterEach(() => {
   cleanup();
   mocks.showToast.mockClear();
-  mocks.updateSavedTrackPlaybackStatus.mockReset();
   mocks.onSuccess = undefined;
   mocks.onError = undefined;
   usePlayerStore.setState({
@@ -156,96 +149,38 @@ it('shows a playback error toast when the selected bookmark fails', () => {
   });
 });
 
-it('persists a confirmed playlist status for the matching bookmark', async () => {
-  usePlayerStore.setState({
-    tracks: [{ ...savedTrack, playbackStatus: 'blocked' }],
-  });
-
-  renderPage();
-  act(() => mocks.onSuccess?.([savedTrack]));
-
-  await waitFor(() => {
-    expect(mocks.updateSavedTrackPlaybackStatus).toHaveBeenCalledWith(
-      'user-1',
-      savedTrack.id,
-      'blocked'
-    );
-  });
-});
-
-it('shows a fresh cached blocked status after entering the page', () => {
-  renderPage();
-  act(() =>
-    mocks.onSuccess?.([
-      {
-        ...savedTrack,
-        playbackStatus: 'blocked',
-        playbackStatusCheckedAt: Timestamp.now(),
-      },
-    ])
+it('ignores legacy blocked metadata and checks again after reopening Likes', () => {
+  const legacyTrack = {
+    ...savedTrack,
+    playbackStatus: 'blocked' as const,
+    playbackStatusCheckedAt: Timestamp.now(),
+  };
+  usePlayerStore.setState({ tracks: [legacyTrack] });
+  const onPlaySingleTrack = vi.fn();
+  renderPage(onPlaySingleTrack);
+  act(() => mocks.onSuccess?.([legacyTrack]));
+  fireEvent.click(screen.getByRole('button', { name: savedTrack.title + ' 재생' }));
+  expect(onPlaySingleTrack).toHaveBeenCalledWith(
+    expect.objectContaining({ playbackStatus: 'unknown' }), expect.any(Object)
   );
-
+  act(() => onPlaySingleTrack.mock.calls[0][1].onResolved(legacyTrack));
   expect(screen.getByText('재생 불가')).toBeTruthy();
-  expect(
-    (screen.getByRole('button', {
-      name: /회복된 트랙 재생, 재생 불가/,
-    }) as HTMLButtonElement).disabled
-  ).toBe(true);
-});
 
-it('treats an expired blocked cache as unknown', () => {
-  const onPlaySingleTrack = vi.fn();
-  renderPage(onPlaySingleTrack);
-  act(() =>
-    mocks.onSuccess?.([
-      {
-        ...savedTrack,
-        playbackStatus: 'blocked',
-        playbackStatusCheckedAt: Timestamp.fromMillis(
-          Date.now() - 30 * 24 * 60 * 60 * 1000
-        ),
-      },
-    ])
-  );
-
-  const playButton = screen.getByRole('button', {
-    name: savedTrack.title + ' 재생',
-  });
-  expect((playButton as HTMLButtonElement).disabled).toBe(false);
-
-  fireEvent.click(playButton);
-  expect(onPlaySingleTrack).toHaveBeenCalledWith(
-    expect.objectContaining({ playbackStatus: 'unknown' }),
-    expect.any(Object)
+  // A Firestore refresh must not replace the result confirmed on this page.
+  const refreshedTrack = { ...legacyTrack, playbackStatus: 'allowed' as const };
+  act(() => mocks.onSuccess?.([refreshedTrack]));
+  expect(screen.getByText('재생 불가')).toBeTruthy();
+  cleanup();
+  const replay = vi.fn();
+  renderPage(replay);
+  act(() => mocks.onSuccess?.([legacyTrack]));
+  fireEvent.click(screen.getByRole('button', { name: savedTrack.title + ' 재생' }));
+  expect(replay).toHaveBeenCalledWith(
+    expect.objectContaining({ playbackStatus: 'unknown' }), expect.any(Object)
   );
 });
 
-it('prefers the current playlist status over the saved cache', () => {
-  const onPlaySingleTrack = vi.fn();
-  usePlayerStore.setState({
-    tracks: [{ ...savedTrack, playbackStatus: 'allowed' }],
-  });
-  renderPage(onPlaySingleTrack);
-  act(() =>
-    mocks.onSuccess?.([
-      {
-        ...savedTrack,
-        playbackStatus: 'blocked',
-        playbackStatusCheckedAt: Timestamp.now(),
-      },
-    ])
-  );
-
-  fireEvent.click(
-    screen.getByRole('button', { name: savedTrack.title + ' 재생' })
-  );
-  expect(onPlaySingleTrack).toHaveBeenCalledWith(
-    expect.objectContaining({ playbackStatus: 'allowed' }),
-    expect.any(Object)
-  );
-});
-
-it('persists a blocked lookup, disables only that bookmark, and shows one warning', async () => {
+it('keeps a blocked lookup on the page, disables only that bookmark, and shows one warning', () => {
   const onPlaySingleTrack = vi.fn();
   const otherTrack: SavedTrack = {
     ...savedTrack,
@@ -267,13 +202,6 @@ it('persists a blocked lookup, disables only that bookmark, and shows one warnin
     })
   );
 
-  await waitFor(() => {
-    expect(mocks.updateSavedTrackPlaybackStatus).toHaveBeenCalledWith(
-      'user-1',
-      savedTrack.id,
-      'blocked'
-    );
-  });
   expect(screen.getByText('재생 불가')).toBeTruthy();
   expect(
     (screen.getByRole('button', {
@@ -307,7 +235,6 @@ it('does not persist or block an unknown lookup result', () => {
     })
   );
 
-  expect(mocks.updateSavedTrackPlaybackStatus).not.toHaveBeenCalled();
   expect(screen.queryByText('재생 불가')).toBeNull();
   expect(
     (screen.getByRole('button', {
@@ -316,25 +243,14 @@ it('does not persist or block an unknown lookup result', () => {
   ).toBe(false);
 });
 
-it('does not overwrite an expired blocked cache when lookup fails', () => {
+it('keeps retry available when the lookup fails', () => {
   const onPlaySingleTrack = vi.fn();
   renderPage(onPlaySingleTrack);
-  act(() =>
-    mocks.onSuccess?.([
-      {
-        ...savedTrack,
-        playbackStatus: 'blocked',
-        playbackStatusCheckedAt: Timestamp.fromMillis(
-          Date.now() - 30 * 24 * 60 * 60 * 1000
-        ),
-      },
-    ])
-  );
-  fireEvent.click(
-    screen.getByRole('button', { name: savedTrack.title + ' 재생' })
-  );
-
+  act(() => mocks.onSuccess?.([savedTrack]));
+  const button = screen.getByRole('button', { name: savedTrack.title + ' 재생' });
+  fireEvent.click(button);
   act(() => onPlaySingleTrack.mock.calls[0][1].onFailure());
-
-  expect(mocks.updateSavedTrackPlaybackStatus).not.toHaveBeenCalled();
+  fireEvent.click(button);
+  expect(onPlaySingleTrack).toHaveBeenCalledTimes(2);
+  expect(screen.queryByText('재생 불가')).toBeNull();
 });

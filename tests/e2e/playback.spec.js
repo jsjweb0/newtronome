@@ -89,3 +89,47 @@ test('missing READY times out and retry can finish with an empty result', async 
   await expect(page.locator('main')).toContainText('플레이리스트가 비어 있어요');
   await expectNoLoading(page);
 });
+
+test('late responses from A do not overwrite B after consecutive track selections', async ({ page }, testInfo) => {
+  try {
+    await emit(page, 'READY');
+    await expect(page.getByRole('heading', { name: 'Now Playlist' })).toBeVisible();
+    await page.evaluate(() => {
+      window.soundCloudTest.deferNext('getCurrentSound');
+      window.soundCloudTest.deferNext('getDuration');
+    });
+
+    await page.locator('main').getByRole('button', { name: /E2E First/ }).click();
+    await page.locator('main').getByRole('button', { name: /E2E Second/ }).click();
+    const player = page.locator('footer');
+    await expect(player).toContainText('E2E Second');
+    await page.evaluate(() => window.soundCloudTest.emit('PLAY_PROGRESS', { currentPosition: 45000 }));
+    await expect(player.getByRole('slider')).toHaveValue('45');
+
+    const delayed = await page.evaluate(() => window.soundCloudTest.history.filter(entry => entry.type === 'deferred'));
+    expect(delayed).toEqual([
+      expect.objectContaining({ method: 'getCurrentSound', value: expect.objectContaining({ id: 1 }) }),
+      expect.objectContaining({ method: 'getDuration', value: 180000 }),
+    ]);
+    for (const response of delayed) {
+      await page.evaluate(id => window.soundCloudTest.release(id), response.requestId);
+    }
+
+    await expect(player).toContainText('E2E Second');
+    await expect(player).not.toContainText('E2E First');
+    await expect(player.getByRole('button', { name: '정지', exact: true })).toBeVisible();
+    await expect(player.getByRole('slider')).toHaveValue('45');
+    await expect(player.getByRole('slider')).toHaveAttribute('max', '210');
+    const panelToggle = page.getByRole('button', { name: '플레이리스트 열기', exact: true });
+    if (await panelToggle.count()) await panelToggle.click();
+    await expect(page.locator('aside').getByRole('button', { name: 'E2E Second 일시정지' })).toBeVisible();
+    await expect(page.locator('aside').getByRole('button', { name: 'E2E First 일시정지' })).toHaveCount(0);
+  } finally {
+    // Attach on success too, so the same event sequence is available for every run.
+    const history = await page.evaluate(() => window.soundCloudTest.history);
+    await testInfo.attach('soundcloud-history', {
+      body: JSON.stringify(history, null, 2),
+      contentType: 'application/json',
+    });
+  }
+});

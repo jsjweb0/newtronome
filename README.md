@@ -27,6 +27,7 @@
 ## 핵심 요약
 
 - **재생**: 비공식 API 의존을 공식 SoundCloud Widget API로 바꾸고 Widget 이벤트와 React 상태(Zustand)를 동기화했습니다.
+- **북마크 재생 확인**: 곡 정보만 저장하고 재생 가능 여부는 사용자가 재생할 때 확인합니다. 확인 결과는 Likes 화면에 머무는 동안만 유지하며 DB에 저장하지 않습니다.
 - **비동기 상태**: Query Key, 요청 번호, mutation variables로 늦게 끝난 요청이 최신 화면을 덮어쓰지 않게 했습니다.
 - **서버 상태**: 게시판의 직접 구현한 캐시를 TanStack Query로 전환하고 변경 후 영향받는 Query만 갱신합니다.
 - **데이터 무결성**: 게시글 번호 발급과 좋아요·권한 검사를 클라이언트 계산에서 Firestore 트랜잭션과 보안 규칙으로 옮겼습니다.
@@ -162,9 +163,9 @@ Firebase Admin SDK 스크립트([set-admin-claim.mjs](scripts/set-admin-claim.mj
 
 | 워크플로                                         | 실행 시점      | 내용                                               |
 | ------------------------------------------------ | -------------- | -------------------------------------------------- |
-| [PR Checks](.github/workflows/pr-checks.yml)     | PR             | typecheck, lint, 단위 테스트, build, Firestore 규칙 |
+| [PR Checks](.github/workflows/pr-checks.yml)     | PR              | typecheck, lint, 단위 테스트, build, Firestore 규칙 |
 | [Playwright](.github/workflows/playwright.yml)   | PR, `main` push | Chromium E2E                                       |
-| [Deploy](.github/workflows/deploy.yml)           | `main` push    | Cloudflare Workers, GitHub Pages 배포              |
+| [Verify and Deploy](.github/workflows/deploy.yml) | `main` push     | 필수 검증 통과 후 Cloudflare Workers 배포          |
 
 로컬 실행:
 
@@ -207,9 +208,11 @@ npm run dev
 
 ### 배포
 
-Cloudflare Workers Static Assets로 배포합니다. `main` 브랜치에 push하면 GitHub Actions가 빌드 후 Cloudflare Workers와 GitHub Pages에 자동 배포합니다.
+Cloudflare Workers Static Assets로 배포합니다. `main` 브랜치에 push하면 GitHub Actions가 typecheck, lint, Vitest, build, Firestore 규칙 테스트를 순서대로 실행합니다. 모든 검증이 통과한 경우에만 Wrangler가 Cloudflare Workers에 배포합니다.
 
-Cloudflare Workers Builds를 사용할 때는 Node.js 22와 빌드 명령 `npm run build`를 사용합니다. `vite.config.js`의 `maxParallelFileOps: 32`는 빌드 중 동시 파일 작업 수를 제한합니다. Cloudflare에서 패키지 경로를 찾지 못하던 빌드가 이 제한을 적용한 뒤 통과했습니다.
+배포 워크플로는 Node.js 22와 기존 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` GitHub Actions 시크릿을 사용합니다. `vite.config.js`의 `maxParallelFileOps: 32`는 빌드 중 동시 파일 작업 수를 제한합니다.
+
+Cloudflare Dashboard의 Workers Builds Git 자동 배포는 비활성화합니다. 이 설정이 활성화되어 있으면 GitHub Actions 검증과 별도로 배포가 시작되어 검증 게이트를 우회하고 중복 배포가 발생할 수 있습니다.
 
 ## 폴더 구조
 

@@ -1,17 +1,10 @@
 import type { FieldValue, Timestamp } from 'firebase/firestore';
-import type { PlaybackStatus, PlayerTrack } from '../../player/types/player.types';
+import type { PlayerTrack } from '../../player/types/player.types';
 
-export interface SavedTrack extends PlayerTrack {
+export interface SavedTrack extends Omit<PlayerTrack, 'playbackStatus'> {
   savedAt: Timestamp | null;
-
-  playbackStatus?: PlaybackStatus;
-  playbackStatusCheckedAt?: Timestamp | null;
 }
 
-export type SavedTrackWrite = Omit<
-  SavedTrack,
-  'savedAt' | 'playbackStatusCheckedAt'
-> & {
+export type SavedTrackWrite = Omit<SavedTrack, 'savedAt'> & {
   savedAt: FieldValue;
-  playbackStatusCheckedAt?: FieldValue;
 };
