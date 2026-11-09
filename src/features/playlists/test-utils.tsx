@@ -5,6 +5,8 @@ import type { PlayerOutletContext } from '../../layouts/MainLayout';
 export const createOutletContext = (): PlayerOutletContext => ({
   isSidebarCollapsed: false,
   playlistUrl: 'https://soundcloud.com/ssu-1/sets/m3stc8ixvqcw',
+  currentPlaylistId: 'm3stc8ixvqcw',
+  onPlayPlaylist: vi.fn(),
   onSelectTrack: vi.fn(),
   onToggleTrack: vi.fn(),
   onPauseSoundCloud: vi.fn(),

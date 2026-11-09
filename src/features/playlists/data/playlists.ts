@@ -3,6 +3,12 @@ export interface Playlist {
     soundCloudUrl: string;
     title: string;
     coverUrl: string | null;
+    /**
+     * 플레이리스트를 마지막으로 손본 날짜 (YYYY-MM-DD, 선택).
+     * SoundCloud oEmbed · Widget API는 플레이리스트 수정일을 주지 않아서 직접 적는다.
+     * 없으면 상세 화면의 큐레이션 줄에서 날짜만 숨긴다.
+     */
+    updatedAt?: string;
 }
 
 export const PLAYLISTS: ReadonlyArray<Playlist> = [

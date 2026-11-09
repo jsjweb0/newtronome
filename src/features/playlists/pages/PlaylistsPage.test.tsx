@@ -10,6 +10,9 @@ import { createOutletContext, fakeSound, installFakeSoundCloud } from '../test-u
 
 vi.mock('../../../components/ui/Slider', () => ({ default: () => <div /> }));
 vi.mock('../../../components/track/TrackItemActions', () => ({ default: () => null }));
+vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
+vi.mock('../../../contexts/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
+
 
 const playingTrack: PlayerTrack = {
   id: 1,

@@ -6,6 +6,8 @@ import HomePageSkeleton from '../../../pages/HomePageSkeleton';
 import type { PlayerOutletContext } from '../../../layouts/MainLayout';
 import { selectCurrentTrack, usePlayerStore } from '../../player/stores/usePlayerStore';
 import type { PlayerTrack } from '../../player/types/player.types';
+import PlaylistActions from '../components/PlaylistActions';
+import PlaylistCuration from '../components/PlaylistCuration';
 import PlaylistHero from '../components/PlaylistHero';
 import PlaylistTrackList from '../components/PlaylistTrackList';
 import { findPlaylistById } from '../data/playlists';
@@ -33,8 +35,13 @@ export default function PlaylistDetailPage() {
   // URL id로 카탈로그를 바로 조회해서 새로고침 · 직접 접근에도 같은 화면을 보여 줌
   const playlist = findPlaylistById(playlistId);
 
-  const { onPlaySingleTrack, onToggleTrack } = useOutletContext<PlayerOutletContext>();
-  // 재생 목록(tracks)은 쓰지 않고, 지금 한 곡 재생 중인 곡만 표시에 사용
+  const {
+    currentPlaylistId,
+    onPlayPlaylist,
+    onPlaySingleTrack,
+    onToggleTrack,
+  } = useOutletContext<PlayerOutletContext>();
+  // 재생 목록(tracks)은 읽지 않고, 재생 중인 곡 · 상태만 표시에 사용
   const playbackMode = usePlayerStore((state) => state.playbackMode);
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
@@ -78,6 +85,9 @@ export default function PlaylistDetailPage() {
     onPlaySingleTrack(track);
   };
 
+  const isThisPlaylistPlaying =
+    currentPlaylistId === playlist.id && playbackMode === 'playlist' && isPlaying;
+
   let content;
 
   if (status === 'loading') {
@@ -96,8 +106,15 @@ export default function PlaylistDetailPage() {
           title={playlist.title}
           titleAs="h1"
           tracks={tracks}
-          soundCloudUrl={playlist.soundCloudUrl}
           fallbackArtwork={playlist.coverUrl}
+          curation={<PlaylistCuration updatedAt={playlist.updatedAt} />}
+          actions={
+            <PlaylistActions
+              playlist={playlist}
+              isPlaying={isThisPlaylistPlaying}
+              onPlay={() => onPlayPlaylist(playlist.id)}
+            />
+          }
         />
         {status === 'empty' ? (
           <p className="px-3 py-14 text-textSub text-sm">플레이리스트가 비어 있어요</p>

@@ -11,6 +11,9 @@ vi.mock('../../../components/ui/Slider', () => ({
 }));
 
 vi.mock('../../../components/track/TrackItemActions', () => ({ default: () => null }));
+vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
+vi.mock('../../../contexts/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
+
 const playlistTrack: PlayerTrack = {
   id: 99,
   title: 'Main Playlist Song',
@@ -70,8 +73,11 @@ describe('PlaylistDetailPage', () => {
     expect(screen.getByRole('button', { name: /Second Song/ })).toBeTruthy();
 
     expect(
-      screen.getByRole('link', { name: 'SoundCloud에서 플레이리스트 열기 (새 창)' }).getAttribute('href')
+      screen.getByRole('link', { name: 'SoundCloud에서 듣기 (새 창)' }).getAttribute('href')
     ).toBe('https://soundcloud.com/ssu-1/sets/2024-spring');
+    expect(screen.getByText('newtronome')).toBeTruthy();
+    // updatedAt이 없으면 날짜 부분은 숨김
+    expect(screen.queryByText(/업데이트/)).toBeNull();
     expect(screen.getByRole('link', { name: '목록으로' }).getAttribute('href')).toBe('/playlists');
 
     const frame = container.querySelector('iframe');
@@ -94,6 +100,15 @@ describe('PlaylistDetailPage', () => {
     const state = usePlayerStore.getState();
     expect(state.tracks).toEqual([playlistTrack]);
     expect(state.currentTime).toBe(10);
+  });
+
+  it('asks the main player to play the whole playlist', async () => {
+    installFakeSoundCloud([fakeSound(1, 'First Song')]);
+    const { context } = renderAt('/playlists/2024-spring');
+
+    fireEvent.click(await screen.findByRole('button', { name: '전체 재생' }));
+
+    expect(context.onPlayPlaylist).toHaveBeenCalledWith('2024-spring');
   });
 
   it('shows a retry state when the tracks cannot be loaded', async () => {

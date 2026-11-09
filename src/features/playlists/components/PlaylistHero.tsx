@@ -19,11 +19,14 @@ interface PlaylistHeroProps {
   titleAs?: 'h1' | 'h2';
   titleId?: string;
   tracks: PlayerTrack[];
+  /** 'Music provided by' 링크 (홈). 상세는 버튼 줄의 SoundCloud 버튼으로 대신함 */
   soundCloudUrl?: string | null;
   /** 커버 있는 곡이 없을 때 배경으로 쓸 이미지 */
   fallbackArtwork?: string | null;
-  /** 제목 위 PLAYLIST 배지 옆에 붙일 내용 (예: 목록으로) */
-  children?: ReactNode;
+  /** 제목 아래 큐레이션 줄 (플레이리스트 상세) */
+  curation?: ReactNode;
+  /** 곡 수 · 재생시간 아래 버튼 줄 (플레이리스트 상세) */
+  actions?: ReactNode;
 }
 
 /** 플레이리스트 상단: 곡 커버 슬라이더 + PLAYLIST 정보 (시안 Playlists Detail) */
@@ -34,7 +37,8 @@ export default function PlaylistHero({
   tracks,
   soundCloudUrl,
   fallbackArtwork = null,
-  children,
+  curation,
+  actions,
 }: PlaylistHeroProps) {
   const [slideIndex, setSlideIndex] = useState(0);
 
@@ -85,18 +89,16 @@ export default function PlaylistHero({
       </div>
 
       <div className="grow flex flex-col items-start gap-y-5 min-w-0 max-lg:w-full">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-block px-2.5 py-1 rounded-full bg-primary text-black font-inter text-[11px] font-extrabold tracking-[0.1em]">
-            PLAYLIST
-          </span>
-          {children}
-        </div>
+        <span className="inline-block px-2.5 py-1 rounded-full bg-primary text-black font-inter text-[11px] font-extrabold tracking-[0.1em]">
+          PLAYLIST
+        </span>
         <TitleTag
           id={titleId}
           className="font-black font-inter text-[44px] lg:text-[68px] leading-[0.95] tracking-[-0.03em] break-keep"
         >
           {title}
         </TitleTag>
+        {curation}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-textSub">
           <span className="flex items-center gap-1.5">
             <ListMusic aria-hidden="true" className="size-4" />
@@ -107,6 +109,7 @@ export default function PlaylistHero({
             {formatDuration(totalDurationMinutes)}
           </span>
         </div>
+        {actions}
         {soundCloudUrl && (
           <p className="flex items-center gap-1.5 text-[11px] md:text-sm text-textSub">
             Music provided by{' '}
