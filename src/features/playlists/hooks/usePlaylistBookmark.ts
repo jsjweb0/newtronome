@@ -8,7 +8,6 @@ import {
   subscribeToSavedPlaylist,
 } from '../services/savedPlaylists';
 
-/** 플레이리스트 좋아요(저장) 상태 · 토글 */
 export function usePlaylistBookmark(playlist: Playlist) {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -21,8 +20,10 @@ export function usePlaylistBookmark(playlist: Playlist) {
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [retryCount, setRetryCount] = useState(0);
+
   // 사용자나 플레이리스트가 바뀌면 이전 결과는 쓰지 않음
-  const stateKey = `${uid ?? ''}/${playlist.id}`;
+  const stateKey = `${uid ?? ''}/${playlist.id}/${retryCount}`;
   const current = state?.key === stateKey ? state : null;
 
   useEffect(() => {
@@ -44,6 +45,15 @@ export function usePlaylistBookmark(playlist: Playlist) {
   const isLoading = uid !== null && current === null;
   const isSaved = uid !== null && (current?.isSaved ?? false);
   const error = uid !== null ? current?.error ?? null : null;
+
+  const retrySubscription = () => {
+    showToast({
+      message: '플레이리스트 상태를 확인하지 못해 다시 조회합니다.',
+      type: 'error',
+    });
+
+    setRetryCount((previousCount) => previousCount + 1);
+  };
 
   const toggleSaved = async () => {
     if (!uid) {
@@ -70,5 +80,5 @@ export function usePlaylistBookmark(playlist: Playlist) {
     }
   };
 
-  return { isSaved, isLoading, isSaving, error, toggleSaved };
+  return { isSaved, isLoading, isSaving, error, retrySubscription, toggleSaved };
 }

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import { createPlaylistPath } from '../../../constants/routes';
 import PlaylistCoverArt from './PlaylistCoverArt';
@@ -9,13 +9,15 @@ interface PlaylistCardProps {
   playlist: Playlist;
 }
 
-/** 카드 전체가 플레이리스트 상세로 이동하는 링크 */
 export default function PlaylistCard({ playlist }: PlaylistCardProps) {
   const stack = getGeneratedCover(playlist.id).palette;
+
+  const { search } = useLocation();
 
   return (
     <Link
       to={createPlaylistPath(playlist.id)}
+      state={{ playlistListSearch: search }}
       aria-label={`${playlist.title} 플레이리스트, NEWTRONOME`}
       className={clsx(
         'group flex flex-col gap-3 rounded-xl text-textBase',
@@ -24,7 +26,7 @@ export default function PlaylistCard({ playlist }: PlaylistCardProps) {
     >
       {/* 썸네일 + 뒤로 겹쳐 보이는 카드 두 장 */}
       <span aria-hidden="true" className="relative block aspect-square mt-3">
-        {/* 뒷장 c3 .35, 앞장 c2 .6 (실제 커버도 같은 id 색) */}
+        {/* 뒷장과 앞장에 생성 커버와 같은 팔레트를 사용 */}
         <span
           className="absolute inset-x-[12%] -top-3 h-10 rounded-[10px] opacity-35"
           style={{ backgroundColor: stack.c3 }}

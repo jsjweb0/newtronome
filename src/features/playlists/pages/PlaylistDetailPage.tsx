@@ -1,17 +1,20 @@
-import { Link, useOutletContext, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom';
 import { ChevronLeft, ListMusic } from 'lucide-react';
 import { ROUTES } from '../../../constants/routes';
 import RetryErrorState from '../../../components/ui/RetryErrorState';
 import HomePageSkeleton from '../../../pages/HomePageSkeleton';
 import type { PlayerOutletContext } from '../../../layouts/MainLayout';
 import { selectCurrentTrack, usePlayerStore } from '../../player/stores/usePlayerStore';
-import type { PlayerTrack } from '../../player/types/player.types';
+import type { PlaybackStatus, PlayerTrack } from '../../player/types/player.types';
 import PlaylistActions from '../components/PlaylistActions';
+import PlaylistCoverArt from '../components/PlaylistCoverArt';
 import PlaylistCuration from '../components/PlaylistCuration';
 import PlaylistHero from '../components/PlaylistHero';
 import PlaylistTrackList from '../components/PlaylistTrackList';
 import { findPlaylistById } from '../data/playlists';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
+import { useToast } from '../../../contexts/ToastContext';
 
 const focusRingClass =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
@@ -19,9 +22,15 @@ const focusRingClass =
 const WIDGET_PRELOAD_HEIGHT = 3000;
 
 function BackToListLink() {
+  const { state } = useLocation();
+  const listSearch =
+    typeof state?.playlistListSearch === 'string'
+      ? state.playlistListSearch
+      : '';
+
   return (
     <Link
-      to={ROUTES.playlists.path}
+      to={{ pathname: ROUTES.playlists.path, search: listSearch }}
       className={`inline-flex items-center gap-0.5 min-h-11 pr-3 pl-1.5 rounded-full text-sm text-textSub hover:text-primary transition-colors ${focusRingClass}`}
     >
       <ChevronLeft aria-hidden="true" className="size-5" />
@@ -31,8 +40,9 @@ function BackToListLink() {
 }
 
 export default function PlaylistDetailPage() {
+  const { showToast } = useToast();
+
   const { playlistId } = useParams<{ playlistId: string }>();
-  // URL id로 카탈로그를 바로 조회해서 새로고침 · 직접 접근에도 같은 화면을 보여 줌
   const playlist = findPlaylistById(playlistId);
 
   const {
@@ -45,6 +55,10 @@ export default function PlaylistDetailPage() {
   const playbackMode = usePlayerStore((state) => state.playbackMode);
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
+
+  const [resolvedStatuses, setResolvedStatuses] = useState<
+    Record<string, PlaybackStatus>
+  >({});
 
   const { iframeRef, frameKey, widgetUrl, status, tracks, retry } = usePlaylistTracks(
     playlist?.soundCloudUrl ?? null
@@ -82,11 +96,42 @@ export default function PlaylistDetailPage() {
       return;
     }
 
-    onPlaySingleTrack(track);
+    onPlaySingleTrack(track, {
+      onResolved: (resolvedTrack) => {
+        const status =
+          resolvedTrack.playbackStatus ?? 'unknown';
+
+        setResolvedStatuses((current) => ({
+          ...current,
+          [String(resolvedTrack.id)]: status,
+        }));
+
+        if (status === 'blocked') {
+          showToast({
+            message: '재생할 수 없는 곡입니다.',
+            type: 'warning',
+          });
+        }
+      },
+
+      onFailure: () => {
+        showToast({
+          message: '곡 상태를 확인하지 못했습니다.',
+          type: 'error',
+        });
+      },
+    });
   };
 
   const isThisPlaylistPlaying =
     currentPlaylistId === playlist.id && playbackMode === 'playlist' && isPlaying;
+
+  const hasTrackArtwork = tracks.some((track) => Boolean(track.artworkUrl));
+
+  const displayedTracks = tracks.map((track) => ({
+    ...track,
+    playbackStatus: resolvedStatuses[String(track.id)] ?? track.playbackStatus,
+  }));
 
   let content;
 
@@ -106,7 +151,13 @@ export default function PlaylistDetailPage() {
           title={playlist.title}
           titleAs="h1"
           tracks={tracks}
-          fallbackArtwork={playlist.coverUrl}
+          cover={
+            hasTrackArtwork ? undefined : (
+              <div className="relative mx-auto w-full max-w-sm aspect-square overflow-hidden rounded-xl">
+                <PlaylistCoverArt playlist={playlist} titleClassName="text-xl md:text-3xl" />
+              </div>
+            )
+          }
           curation={<PlaylistCuration updatedAt={playlist.updatedAt} />}
           actions={
             <PlaylistActions
@@ -120,7 +171,7 @@ export default function PlaylistDetailPage() {
           <p className="px-3 py-14 text-textSub text-sm">플레이리스트가 비어 있어요</p>
         ) : (
           <PlaylistTrackList
-            tracks={tracks}
+            tracks={displayedTracks}
             currentTrack={playbackMode === 'single' ? currentTrack : null}
             isPlaying={isPlaying}
             onTrackClick={handleTrackClick}
@@ -140,24 +191,26 @@ export default function PlaylistDetailPage() {
       {content}
 
       {/* 곡 목록만 읽어 오는 숨김 위젯 (재생용 위젯과 별개) */}
-      {widgetUrl && (
-        <div
-          aria-hidden="true"
-          className="absolute -left-2500 top-0 w-75 h-750 overflow-hidden opacity-0 pointer-events-none"
-        >
-          <iframe
-            key={frameKey}
-            ref={iframeRef}
-            title={`${playlist.title} 곡 목록 불러오기`}
-            tabIndex={-1}
-            src={widgetUrl}
-            width="100%"
-            height={WIDGET_PRELOAD_HEIGHT}
-            allow="encrypted-media"
-            className="block w-full"
-          />
-        </div>
-      )}
+      <div className="relative overflow-hidden">
+        {widgetUrl && (
+          <div
+            aria-hidden="true"
+            className="absolute -left-2500 top-0 w-75 h-750 overflow-hidden opacity-0 pointer-events-none"
+          >
+            <iframe
+              key={frameKey}
+              ref={iframeRef}
+              title={`${playlist.title} 곡 목록 불러오기`}
+              tabIndex={-1}
+              src={widgetUrl}
+              width="100%"
+              height={WIDGET_PRELOAD_HEIGHT}
+              allow="encrypted-media"
+              className="block w-full"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -21,15 +21,14 @@ interface PlaylistHeroProps {
   tracks: PlayerTrack[];
   /** 'Music provided by' 링크 (홈). 상세는 버튼 줄의 SoundCloud 버튼으로 대신함 */
   soundCloudUrl?: string | null;
-  /** 커버 있는 곡이 없을 때 배경으로 쓸 이미지 */
   fallbackArtwork?: string | null;
+  cover?: ReactNode;
   /** 제목 아래 큐레이션 줄 (플레이리스트 상세) */
   curation?: ReactNode;
   /** 곡 수 · 재생시간 아래 버튼 줄 (플레이리스트 상세) */
   actions?: ReactNode;
 }
 
-/** 플레이리스트 상단: 곡 커버 슬라이더 + PLAYLIST 정보 (시안 Playlists Detail) */
 export default function PlaylistHero({
   title,
   titleAs: TitleTag = 'h2',
@@ -37,6 +36,7 @@ export default function PlaylistHero({
   tracks,
   soundCloudUrl,
   fallbackArtwork = null,
+  cover,
   curation,
   actions,
 }: PlaylistHeroProps) {
@@ -63,13 +63,10 @@ export default function PlaylistHero({
       aria-label="플레이리스트 정보"
       className="relative isolate flex max-lg:flex-col items-center gap-7 lg:gap-12 px-5 py-6 lg:px-11 lg:-mt-10 lg:pt-[50px] lg:pb-10"
     >
-      {/* 배경: 지금 보이는 슬라이드 커버를 크게 흐려서 깔고, 가장자리는 서서히 사라지게 (박스 경계 없이 페이지로 이어짐)
-          - 마스크는 바깥 래퍼, 블러는 안쪽 이미지에 따로 줘야 블러 번짐이 박스 모서리에서 직선으로 잘리지 않음
-          - 마스크가 래퍼 가장자리보다 안쪽에서 완전히 투명해지도록 설정 (아래쪽은 Track List 전에 사라짐) */}
-      {heroArtwork && (
+      {!cover && heroArtwork && (
         <div
           aria-hidden="true"
-          className="pointer-events-none -z-10 absolute -inset-x-10 -top-16 bottom-0 [mask-image:radial-gradient(ellipse_70%_65%_at_50%_45%,black_25%,transparent_70%)]"
+          className="pointer-events-none -z-10 absolute -inset-x-10 -top-16 bottom-0 [mask-image:radial-gradient(ellipse_85%_55%_at_45%_45%,black_0%,transparent_90%)]"
         >
           <img
             key={heroArtwork}
@@ -81,11 +78,13 @@ export default function PlaylistHero({
       )}
 
       <div className="shrink-0 w-full max-w-[620px] lg:w-[56%]">
-        <ImageSlider
-          images={slides.map((slide) => slide.src)}
-          captions={slides}
-          onSlideChange={setSlideIndex}
-        />
+        {cover ?? (
+          <ImageSlider
+            images={slides.map((slide) => slide.src)}
+            captions={slides}
+            onSlideChange={setSlideIndex}
+          />
+        )}
       </div>
 
       <div className="grow flex flex-col items-start gap-y-5 min-w-0 max-lg:w-full">

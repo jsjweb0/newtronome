@@ -123,7 +123,8 @@
     background: var(--color-background);
   }
 
-  .music-search-input::-webkit-search-cancel-button {
+  .music-search-input::-webkit-search-cancel-button,
+  #search-playlist-input::-webkit-search-cancel-button {
     display: none;
     appearance: none;
     -webkit-appearance: none;
@@ -248,7 +249,8 @@
     opacity: 0.5;
   }
   /* 바로 옆 카드만 보이고, 그 너머 카드는 숨김 */
-  .nt-coverflow .nt-coverflow-slide:not(.swiper-slide-active):not(.swiper-slide-prev):not(.swiper-slide-next) {
+  .nt-coverflow
+    .nt-coverflow-slide:not(.swiper-slide-active):not(.swiper-slide-prev):not(.swiper-slide-next) {
     opacity: 0;
   }
   .nt-coverflow .nt-coverflow-slide img {
