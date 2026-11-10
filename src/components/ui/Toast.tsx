@@ -82,6 +82,15 @@ const TYPE_ICON: Record<ToastType, ReactNode> = {
   ),
 };
 
+const isAlertType = (type: ToastType) => type === 'warning' || type === 'error';
+
+interface Announcement {
+  /** 같은 메시지를 다시 알려도 새 노드로 바뀌어 다시 낭독되도록 매번 바뀌는 값 */
+  key: number;
+  message: string;
+  isAlert: boolean;
+}
+
 // 최신 토스트(맨 아래)에서 멀어질수록 작고 흐리게
 const DEPTH_CLASS = ['', 'scale-97 opacity-85', 'scale-94 opacity-70'];
 
@@ -97,7 +106,6 @@ function ToastCard({ toast, depth, onDismiss }: ToastCardProps) {
   const [isFocused, setIsFocused] = useState(false);
   const isPaused = isHovered || isFocused;
   const remainingRef = useRef(duration);
-  const isAlert = type === 'warning' || type === 'error';
 
   // 새로 뜨거나 같은 메시지로 다시 시작되면 남은 시간을 처음으로 되돌림
   useEffect(() => {
@@ -124,8 +132,6 @@ function ToastCard({ toast, depth, onDismiss }: ToastCardProps) {
 
   return (
     <div
-      role={isAlert ? 'alert' : 'status'}
-      aria-live={isAlert ? undefined : 'polite'}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onFocus={() => setIsFocused(true)}
@@ -182,6 +188,8 @@ function ToastCard({ toast, depth, onDismiss }: ToastCardProps) {
 
 const Toast = forwardRef<ToastContextValue>(function Toast(_, ref) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  // 낭독 영역에 넣을 마지막 메시지. 화면의 카드와 따로 두어 영역을 미리 렌더링해 둠
+  const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const nextIdRef = useRef(0);
 
   const dismissToast = useCallback((id: number) => {
@@ -196,7 +204,10 @@ const Toast = forwardRef<ToastContextValue>(function Toast(_, ref) {
         duration: duration ?? DEFAULT_DURATION[type],
         action,
       };
+      nextIdRef.current += 1;
+      const id = nextIdRef.current;
 
+      setAnnouncement({ key: id, message, isAlert: isAlertType(type) });
       setToasts((prev) => {
         const sameToast = prev.find((toast) => toast.message === message);
 
@@ -208,8 +219,7 @@ const Toast = forwardRef<ToastContextValue>(function Toast(_, ref) {
           );
         }
 
-        nextIdRef.current += 1;
-        const newToast: ToastItem = { id: nextIdRef.current, ...nextFields, restartCount: 0 };
+        const newToast: ToastItem = { id, ...nextFields, restartCount: 0 };
 
         return [...prev, newToast].slice(-MAX_TOASTS);
       });
@@ -219,27 +229,39 @@ const Toast = forwardRef<ToastContextValue>(function Toast(_, ref) {
 
   useImperativeHandle(ref, () => ({ showToast }), [showToast]);
 
-  if (toasts.length === 0) return null;
+  // 토스트가 모두 닫히면 낭독 영역도 비워서 지난 메시지가 남지 않게 함
+  const liveMessage = toasts.length > 0 ? announcement : null;
 
   return (
-    <section
-      aria-label="알림 메시지"
-      className={clsx(
-        'pointer-events-none fixed z-700 left-3 right-3 bottom-24 flex flex-col gap-2',
-        'sm:left-auto sm:w-95 xl:bottom-35',
-        // 오른쪽 플레이리스트 패널(300px)이 열려 있으면 패널 왼쪽에 붙임
-        'lg:[:root:has(#playlist-panel[data-state=open])_&]:right-[calc(300px+1.5rem)]'
+    <>
+      {/* 메시지가 생기기 전부터 있어야 스크린 리더가 바뀐 내용을 읽어 줌 */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {liveMessage && !liveMessage.isAlert && <p key={liveMessage.key}>{liveMessage.message}</p>}
+      </div>
+      <div role="alert" className="sr-only">
+        {liveMessage?.isAlert && <p key={liveMessage.key}>{liveMessage.message}</p>}
+      </div>
+      {toasts.length > 0 && (
+        <section
+          aria-label="알림 메시지"
+          className={clsx(
+            'pointer-events-none fixed z-700 left-3 right-3 bottom-24 flex flex-col gap-2',
+            'sm:left-auto sm:w-95 xl:bottom-35',
+            // 오른쪽 플레이리스트 패널(300px)이 열려 있으면 패널 왼쪽에 붙임
+            'lg:[:root:has(#playlist-panel[data-state=open])_&]:right-[calc(300px+1.5rem)]'
+          )}
+        >
+          {toasts.map((toast, index) => (
+            <ToastCard
+              key={toast.id}
+              toast={toast}
+              depth={toasts.length - 1 - index}
+              onDismiss={dismissToast}
+            />
+          ))}
+        </section>
       )}
-    >
-      {toasts.map((toast, index) => (
-        <ToastCard
-          key={toast.id}
-          toast={toast}
-          depth={toasts.length - 1 - index}
-          onDismiss={dismissToast}
-        />
-      ))}
-    </section>
+    </>
   );
 });
 

@@ -11,6 +11,8 @@ export type TrackBookmarkButtonProps = {
   /** 아이콘 옆에 보이는 글자 (예: Likes) */
   children?: ReactNode;
   'aria-describedby'?: string;
+  /** 로그아웃 상태에서 누르면 로그인 토스트 대신 호출 */
+  onLoginRequired?: () => void;
 };
 
 export default function TrackBookmarkButton({
@@ -19,6 +21,7 @@ export default function TrackBookmarkButton({
   iconClassName,
   children,
   'aria-describedby': ariaDescribedBy,
+  onLoginRequired,
 }: TrackBookmarkButtonProps) {
   const {
     isBookmarked,
@@ -28,7 +31,7 @@ export default function TrackBookmarkButton({
     error,
     retrySubscription,
     toggleBookmark,
-  } = useTrackBookmark(track);
+  } = useTrackBookmark(track, onLoginRequired);
 
   const isAddBlocked = error === null && isBookmarkBlocked;
 

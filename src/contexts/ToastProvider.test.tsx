@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useToast } from './ToastContext';
@@ -38,10 +38,22 @@ function advance(ms: number) {
   });
 }
 
+// 낭독 전용 영역에도 같은 글자가 있으므로 화면의 토스트 영역 안에서만 찾음
+function queryVisibleToast(message: string) {
+  const region = screen.queryByRole('region', { name: '알림 메시지' });
+  return region ? within(region).queryByText(message) : null;
+}
+
 function getToastCard(message: string) {
-  const card = screen.getByText(message).closest('[role]');
+  const card = queryVisibleToast(message)?.parentElement;
   if (!card) throw new Error(`${message} 토스트를 찾을 수 없습니다.`);
   return card;
+}
+
+function getLiveRegion(role: 'status' | 'alert') {
+  const region = screen.getAllByRole(role).find((element) => element.classList.contains('sr-only'));
+  if (!region) throw new Error(`${role} 낭독 영역을 찾을 수 없습니다.`);
+  return region;
 }
 
 beforeEach(() => {
@@ -54,22 +66,51 @@ afterEach(() => {
 });
 
 describe('Toast', () => {
-  it('성공·안내는 status, 주의·오류는 alert 역할로 알린다', () => {
+  it('낭독 영역을 미리 렌더링해 두고 성공·안내는 status, 주의·오류는 alert 영역에 넣는다', () => {
     renderToast();
 
-    show({ message: '저장했습니다.', type: 'success' });
-    show({ message: '링크가 복사되었습니다!', type: 'info' });
-    show({ message: '내용을 입력해주세요!', type: 'warning' });
+    const statusRegion = getLiveRegion('status');
+    const alertRegion = getLiveRegion('alert');
+    expect(statusRegion.getAttribute('aria-live')).toBe('polite');
+    expect(statusRegion.textContent).toBe('');
+    expect(alertRegion.textContent).toBe('');
 
-    expect(getToastCard('저장했습니다.').getAttribute('role')).toBe('status');
-    expect(getToastCard('저장했습니다.').getAttribute('aria-live')).toBe('polite');
-    expect(getToastCard('링크가 복사되었습니다!').getAttribute('role')).toBe('status');
-    expect(getToastCard('내용을 입력해주세요!').getAttribute('role')).toBe('alert');
+    show({ message: '저장했습니다.', type: 'success' });
+    expect(getLiveRegion('status')).toBe(statusRegion);
+    expect(statusRegion.textContent).toBe('저장했습니다.');
+
+    show({ message: '링크가 복사되었습니다!', type: 'info' });
+    expect(statusRegion.textContent).toBe('링크가 복사되었습니다!');
 
     show({ message: '처리에 실패했습니다.', type: 'error' });
+    expect(alertRegion.textContent).toBe('처리에 실패했습니다.');
+    expect(statusRegion.textContent).toBe('');
 
-    expect(getToastCard('처리에 실패했습니다.').getAttribute('role')).toBe('alert');
-    expect(screen.getByRole('region', { name: '알림 메시지' })).toBeTruthy();
+    show({ message: '내용을 입력해주세요!', type: 'warning' });
+    expect(alertRegion.textContent).toBe('내용을 입력해주세요!');
+
+    // 화면의 카드는 낭독 영역과 겹치지 않도록 live 역할을 갖지 않음
+    expect(getToastCard('내용을 입력해주세요!').hasAttribute('role')).toBe(false);
+  });
+
+  it('같은 메시지를 다시 알리면 낭독 노드를 새로 만들어 다시 읽히게 한다', () => {
+    renderToast();
+
+    show({ message: '알림' });
+    const firstNode = getLiveRegion('status').firstElementChild;
+    show({ message: '알림' });
+
+    expect(getLiveRegion('status').textContent).toBe('알림');
+    expect(getLiveRegion('status').firstElementChild).not.toBe(firstNode);
+  });
+
+  it('토스트가 모두 닫히면 낭독 영역을 비운다', () => {
+    renderToast();
+
+    show({ message: '알림' });
+    advance(3000);
+
+    expect(getLiveRegion('status').textContent).toBe('');
   });
 
   it.each([
@@ -82,20 +123,20 @@ describe('Toast', () => {
 
     show({ message: '알림', type });
     advance(duration - 1);
-    expect(screen.queryByText('알림')).not.toBeNull();
+    expect(queryVisibleToast('알림')).not.toBeNull();
 
     advance(1);
-    expect(screen.queryByText('알림')).toBeNull();
+    expect(queryVisibleToast('알림')).toBeNull();
   });
 
   it('type을 생략하면 성공 토스트로, duration을 넘기면 그 시간만큼 보인다', () => {
     renderToast();
 
     show({ message: '알림', duration: 1000 });
-    expect(getToastCard('알림').getAttribute('role')).toBe('status');
+    expect(getLiveRegion('status').textContent).toBe('알림');
 
     advance(1000);
-    expect(screen.queryByText('알림')).toBeNull();
+    expect(queryVisibleToast('알림')).toBeNull();
   });
 
   it('같은 메시지는 새로 띄우지 않고 기존 토스트의 타이머를 처음부터 다시 시작한다', () => {
@@ -105,13 +146,13 @@ describe('Toast', () => {
     advance(2000);
     show({ message: '알림', type: 'success' });
 
-    expect(screen.getAllByText('알림')).toHaveLength(1);
+    expect(within(screen.getByRole('region', { name: '알림 메시지' })).getAllByText('알림')).toHaveLength(1);
 
     advance(2000);
-    expect(screen.queryByText('알림')).not.toBeNull();
+    expect(queryVisibleToast('알림')).not.toBeNull();
 
     advance(1000);
-    expect(screen.queryByText('알림')).toBeNull();
+    expect(queryVisibleToast('알림')).toBeNull();
   });
 
   it('최대 3개까지만 보이고 넘치면 가장 오래된 토스트부터 뺀다', () => {
@@ -122,8 +163,9 @@ describe('Toast', () => {
     show({ message: '세 번째' });
     show({ message: '네 번째' });
 
-    expect(screen.queryByText('첫 번째')).toBeNull();
-    expect(screen.getAllByRole('status').map((card) => card.textContent)).toEqual([
+    expect(queryVisibleToast('첫 번째')).toBeNull();
+    const region = screen.getByRole('region', { name: '알림 메시지' });
+    expect(Array.from(region.children, (card) => card.textContent)).toEqual([
       '두 번째',
       '세 번째',
       '네 번째',
@@ -142,8 +184,8 @@ describe('Toast', () => {
       getToastCard('첫 번째').querySelector('button[aria-label="알림 닫기"]') as HTMLButtonElement
     );
 
-    expect(screen.queryByText('첫 번째')).toBeNull();
-    expect(screen.queryByText('두 번째')).not.toBeNull();
+    expect(queryVisibleToast('첫 번째')).toBeNull();
+    expect(queryVisibleToast('두 번째')).not.toBeNull();
   });
 
   it('닫기 버튼을 누르면 바로 닫힌다', () => {
@@ -152,7 +194,7 @@ describe('Toast', () => {
     show({ message: '알림' });
     fireEvent.click(screen.getByRole('button', { name: '알림 닫기' }));
 
-    expect(screen.queryByText('알림')).toBeNull();
+    expect(queryVisibleToast('알림')).toBeNull();
     expect(screen.queryByRole('region', { name: '알림 메시지' })).toBeNull();
   });
 
@@ -163,14 +205,14 @@ describe('Toast', () => {
     advance(1000);
     fireEvent.mouseEnter(getToastCard('알림'));
     advance(10000);
-    expect(screen.queryByText('알림')).not.toBeNull();
+    expect(queryVisibleToast('알림')).not.toBeNull();
 
     fireEvent.mouseLeave(getToastCard('알림'));
     advance(1999);
-    expect(screen.queryByText('알림')).not.toBeNull();
+    expect(queryVisibleToast('알림')).not.toBeNull();
 
     advance(1);
-    expect(screen.queryByText('알림')).toBeNull();
+    expect(queryVisibleToast('알림')).toBeNull();
   });
 
   it('키보드 포커스가 토스트 안에 있으면 타이머를 멈춘다', () => {
@@ -183,13 +225,13 @@ describe('Toast', () => {
       closeButton.focus();
     });
     advance(10000);
-    expect(screen.queryByText('알림')).not.toBeNull();
+    expect(queryVisibleToast('알림')).not.toBeNull();
 
     act(() => {
       closeButton.blur();
     });
     advance(3000);
-    expect(screen.queryByText('알림')).toBeNull();
+    expect(queryVisibleToast('알림')).toBeNull();
   });
 
   it('action이 있으면 로그인 버튼을 보여 주고, 누르면 이동하면서 토스트를 닫는다', () => {
@@ -206,7 +248,7 @@ describe('Toast', () => {
 
     fireEvent.click(loginLink);
 
-    expect(screen.queryByText('로그인 후 이용해 주세요!')).toBeNull();
+    expect(queryVisibleToast('로그인 후 이용해 주세요!')).toBeNull();
     expect(screen.queryByText('로그인 화면')).not.toBeNull();
   });
 

@@ -4,7 +4,11 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { removeSavedTrack, saveTrack, subscribeToSavedTrack } from '../services/savedTracks';
 
-export function useTrackBookmark(track: PlayerTrack) {
+/**
+ * @param onLoginRequired 로그아웃 상태에서 누르면 토스트 대신 호출.
+ * 포커스가 갇힌 모달 안처럼 전역 토스트에 갈 수 없는 곳에서 안내를 직접 보여 줄 때 사용
+ */
+export function useTrackBookmark(track: PlayerTrack, onLoginRequired?: () => void) {
   const { user } = useAuth();
   const { showToast } = useToast();
 
@@ -53,6 +57,11 @@ export function useTrackBookmark(track: PlayerTrack) {
 
   const toggleBookmark = async () => {
     if (!user?.uid) {
+      if (onLoginRequired) {
+        onLoginRequired();
+        return;
+      }
+
       showToast({
         message: '로그인 후 북마크할 수 있습니다.',
         type: 'info',

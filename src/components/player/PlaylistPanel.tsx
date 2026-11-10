@@ -13,7 +13,8 @@ import type { PlayerTrack } from '../../features/player/types/player.types';
 import type { useSoundCloudWidget } from '../../features/player/hooks/useSoundCloudWidget';
 import TrackBookmarkButton from '../../features/bookmarks/components/TrackBookmarkButton';
 import RetryErrorState from '../ui/RetryErrorState';
-import { RefObject, useEffect, useRef } from 'react';
+import { RefObject, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface PlaylistPanelProps {
   playlistUrl: string;
@@ -58,6 +59,23 @@ export default function PlaylistPanel({
 
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // 모달은 포커스가 패널 안에서만 돌아서 전역 토스트의 로그인 링크에 갈 수 없음.
+  // 그래서 모달일 때는 로그인 안내를 패널 안에 보여 줌
+  const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
+  const loginNoticeTriggerRef = useRef<HTMLElement | null>(null);
+
+  const openLoginNotice = () => {
+    loginNoticeTriggerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setIsLoginNoticeOpen(true);
+  };
+
+  const dismissLoginNotice = () => {
+    setIsLoginNoticeOpen(false);
+    // 닫기 버튼이 사라지면서 포커스가 패널 밖으로 빠지지 않게 누른 버튼으로 되돌림
+    (loginNoticeTriggerRef.current ?? closeButtonRef.current)?.focus();
+  };
 
   useEffect(() => {
     if (!isModal || !collapsed) return;
@@ -110,6 +128,7 @@ export default function PlaylistPanel({
 
     return () => {
       panel?.removeEventListener('keydown', handleKeyDown);
+      setIsLoginNoticeOpen(false);
       toggleButton?.focus();
     };
   }, [
@@ -237,6 +256,7 @@ export default function PlaylistPanel({
                     <div className="flex items-center gap-x-2.5">
                       <TrackBookmarkButton
                         track={playlistTrack}
+                        onLoginRequired={isModal ? openLoginNotice : undefined}
                         className="gap-1.5 min-h-9 px-3 rounded-full border border-textThr text-xs font-bold aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary"
                         iconClassName="size-[15px]!"
                       >
@@ -402,6 +422,7 @@ export default function PlaylistPanel({
                             ) : (
                               <TrackBookmarkButton
                                 track={track}
+                                onLoginRequired={isModal ? openLoginNotice : undefined}
                                 className="w-9 h-11 rounded-[10px] text-textSub hover:bg-textThr hover:text-textBase transition-colors"
                                 iconClassName="size-4!"
                               />
@@ -418,6 +439,40 @@ export default function PlaylistPanel({
             </div>
           </div>
         </div>
+        {isModal && (
+          // 안내가 생기기 전부터 있어야 스크린 리더가 바뀐 내용을 읽어 줌
+          <div role="status" aria-live="polite" className="absolute inset-x-3 bottom-3 z-10">
+            {collapsed && isLoginNoticeOpen && (
+              <div
+                className={clsx(
+                  'flex items-center gap-3 min-h-14 py-2.5 pr-2 pl-4 rounded-2xl text-[#2B6CB0] dark:text-[#7CC4FF]',
+                  'bg-background/92 dark:bg-background/88 backdrop-blur-[18px] backdrop-saturate-140',
+                  'border border-black/8 dark:border-white/8',
+                  'shadow-[0_12px_32px_rgba(0,0,0,0.14)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.5)]'
+                )}
+              >
+                <p className="grow min-w-0 text-sm font-medium leading-[1.45] text-textBase break-keep">
+                  로그인 후 북마크할 수 있습니다.
+                </p>
+                <Link
+                  to="/login"
+                  onClick={onClose}
+                  className="shrink-0 inline-flex items-center min-h-9 px-3 rounded-full bg-current/16 text-[13px] font-bold hover:bg-current/24 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+                >
+                  로그인
+                </Link>
+                <button
+                  type="button"
+                  aria-label="안내 닫기"
+                  onClick={dismissLoginNotice}
+                  className="shrink-0 inline-flex items-center justify-center size-8 rounded-full text-textSub hover:text-textBase hover:bg-black/6 dark:hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-primary"
+                >
+                  <XIcon aria-hidden="true" className="size-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </aside>
       {isModal && collapsed && (
         <div
