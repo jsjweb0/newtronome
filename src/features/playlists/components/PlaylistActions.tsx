@@ -23,7 +23,7 @@ const outlineClass =
 /** 상세 상단 버튼 줄: 전체 재생 · SoundCloud에서 듣기 · 좋아요 · 공유 (시안 순서) */
 export default function PlaylistActions({ playlist, isPlaying, onPlay }: PlaylistActionsProps) {
   const { showToast } = useToast();
-  const { isSaved, isLoading, isSaving, error, toggleSaved } = usePlaylistBookmark(playlist);
+  const { isSaved, isLoading, isSaving, error, retrySubscription, toggleSaved } = usePlaylistBookmark(playlist);
 
   const handleShare = async () => {
     const url = new URL(createPlaylistPath(playlist.id), window.location.origin).href;
@@ -47,7 +47,12 @@ export default function PlaylistActions({ playlist, isPlaying, onPlay }: Playlis
     }
   };
 
-  const likeLabel = error ?? (isSaved ? '플레이리스트 저장 취소 (좋아요)' : '플레이리스트 저장 (좋아요)');
+  const likeLabel =
+    error !== null
+      ? `${error} 다시 시도`
+      : isLoading
+        ? '플레이리스트 상태 확인 중'
+        : (isSaved ? '플레이리스트 저장 취소' : '플레이리스트 저장');
 
   return (
     <div className="flex flex-wrap items-center gap-2.5 mt-1">
@@ -71,13 +76,11 @@ export default function PlaylistActions({ playlist, isPlaying, onPlay }: Playlis
         href={playlist.soundCloudUrl}
         label="SoundCloud에서 듣기"
         className={clsx(
-          // 좁은 화면에서 글자가 두 줄로 꺾이지 않게: 버튼째 다음 줄로 넘어감
           'shrink-0 inline-flex items-center gap-2.5 min-h-13 pl-4.5 pr-5.5 rounded-full text-[15px] font-bold whitespace-nowrap',
           outlineClass,
           focusRingClass
         )}
       >
-        {/* 미디어킷 규칙: 밝은 배경엔 검정, 어두운 배경엔 흰색 로고 */}
         <img src={soundCloudFaviconBlack} alt="" className="h-4 w-auto dark:hidden" />
         <img src={soundCloudFaviconWhite} alt="" className="hidden h-4 w-auto dark:block" />
         SoundCloud에서 듣기
@@ -86,15 +89,16 @@ export default function PlaylistActions({ playlist, isPlaying, onPlay }: Playlis
 
       <button
         type="button"
-        onClick={toggleSaved}
-        disabled={isLoading || isSaving || error !== null}
+        onClick={error !== null ? retrySubscription : toggleSaved}
+        disabled={isLoading || isSaving}
         aria-pressed={isLoading || error !== null ? undefined : isSaved}
         aria-label={likeLabel}
         title={likeLabel}
         className={clsx(
           'inline-flex items-center justify-center size-13 rounded-full disabled:opacity-50 disabled:cursor-wait',
           outlineClass,
-          focusRingClass
+          focusRingClass,
+          'aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary'
         )}
       >
         <Heart

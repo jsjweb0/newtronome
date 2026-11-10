@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   savePlaylist: vi.fn(() => Promise.resolve()),
   removeSavedPlaylist: vi.fn(() => Promise.resolve()),
   savedCallback: null as ((isSaved: boolean) => void) | null,
+  subscriptionErrorCallback: null as ((error: Error) => void) | null,
+  unsubscribe: vi.fn(),
 }));
 
 vi.mock('../../../contexts/AuthContext', () => ({
@@ -20,17 +22,19 @@ vi.mock('../../../contexts/ToastContext', () => ({
 vi.mock('../services/savedPlaylists', () => ({
   savePlaylist: mocks.savePlaylist,
   removeSavedPlaylist: mocks.removeSavedPlaylist,
-  subscribeToSavedPlaylist: vi.fn((_uid, _id, callback: (isSaved: boolean) => void) => {
-    mocks.savedCallback = callback;
-    return vi.fn();
-  }),
+  subscribeToSavedPlaylist: vi.fn(
+    (_uid, _id, callback: (isSaved: boolean) => void, onError: (error: Error) => void) => {
+      mocks.savedCallback = callback;
+      mocks.subscriptionErrorCallback = onError;
+      return mocks.unsubscribe;
+    }
+  ),
 }));
 
 const playlist: Playlist = {
   id: '2024-spring',
   soundCloudUrl: 'https://soundcloud.com/ssu-1/sets/2024-spring',
   title: '2024 입하 디스코',
-  coverUrl: null,
 };
 
 const renderActions = (isPlaying = false) => {
@@ -43,6 +47,8 @@ describe('PlaylistActions', () => {
   beforeEach(() => {
     mocks.user = { uid: 'user-1' };
     mocks.savedCallback = null;
+    mocks.subscriptionErrorCallback = null;
+    mocks.unsubscribe.mockClear();
     mocks.showToast.mockClear();
     mocks.savePlaylist.mockClear();
     mocks.removeSavedPlaylist.mockClear();
@@ -106,25 +112,48 @@ describe('PlaylistActions', () => {
     renderActions();
     act(() => mocks.savedCallback?.(false));
 
-    const likeButton = screen.getByRole('button', { name: '플레이리스트 저장 (좋아요)' });
+    const likeButton = screen.getByRole('button', { name: '플레이리스트 저장' });
     expect(likeButton.getAttribute('aria-pressed')).toBe('false');
 
     fireEvent.click(likeButton);
     await waitFor(() => expect(mocks.savePlaylist).toHaveBeenCalledWith('user-1', playlist));
 
     act(() => mocks.savedCallback?.(true));
-    const savedButton = screen.getByRole('button', { name: '플레이리스트 저장 취소 (좋아요)' });
+    const savedButton = screen.getByRole('button', { name: '플레이리스트 저장 취소' });
     expect(savedButton.getAttribute('aria-pressed')).toBe('true');
 
     fireEvent.click(savedButton);
     await waitFor(() => expect(mocks.removeSavedPlaylist).toHaveBeenCalledWith('user-1', '2024-spring'));
   });
 
+  it('restarts a failed saved state subscription and restores the save button', async () => {
+    renderActions();
+    const firstCallback = mocks.savedCallback;
+    act(() => mocks.subscriptionErrorCallback?.(new Error('subscription failed')));
+
+    const retryButton = screen.getByRole('button', { name: /다시 시도/ });
+    expect(retryButton.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(retryButton);
+
+    const loadingButton = screen.getByRole('button', { name: '플레이리스트 상태 확인 중' });
+    expect(loadingButton.hasAttribute('disabled')).toBe(true);
+    expect(mocks.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(mocks.savedCallback).not.toBe(firstCallback);
+    expect(mocks.savePlaylist).not.toHaveBeenCalled();
+
+    act(() => mocks.savedCallback?.(false));
+
+    const saveButton = screen.getByRole('button', { name: '플레이리스트 저장' });
+    expect(saveButton.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(saveButton);
+    await waitFor(() => expect(mocks.savePlaylist).toHaveBeenCalledWith('user-1', playlist));
+  });
+
   it('asks a signed-out user to log in instead of saving', () => {
     mocks.user = null;
     renderActions();
 
-    const likeButton = screen.getByRole('button', { name: '플레이리스트 저장 (좋아요)' });
+    const likeButton = screen.getByRole('button', { name: '플레이리스트 저장' });
     expect(likeButton.getAttribute('aria-pressed')).toBe('false');
 
     fireEvent.click(likeButton);

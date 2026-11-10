@@ -40,6 +40,11 @@ export default function PlaylistPanel({
   onClose,
   toggleButtonRef,
 }: PlaylistPanelProps) {
+  const { playlistStatus } = soundCloudWidget;
+  const hasTracks = tracks.length > 0;
+  const showTrackList =
+    hasTracks && (playlistStatus === 'ready' || playlistStatus === 'loading');
+
   const widgetTrack = soundCloudWidget.widgetTrack;
   const playlistTrack =
     tracks.find((track) => String(track.id) === String(widgetTrack?.id)) ?? widgetTrack;
@@ -282,13 +287,13 @@ export default function PlaylistPanel({
                 <div className="flex items-center justify-between">
                   <h3 className="flex items-baseline gap-1.5 text-[15px] font-extrabold">
                     All Playlists
-                    {soundCloudWidget.playlistStatus === 'ready' && tracks.length > 0 && (
+                    {showTrackList && (
                       <span className="text-xs font-medium text-textSub">{tracks.length}곡</span>
                     )}
                   </h3>
-                  <ListMusic aria-hidden="true" className="size-[18px] text-textSub" />
+                  <ListMusic aria-hidden="true" className="size-4.5 text-textSub" />
                 </div>
-                {soundCloudWidget.playlistStatus === 'loading' ? (
+                {playlistStatus === 'loading' && !hasTracks ? (
                   <p
                     className="flex items-center gap-2 py-2 text-sm text-textBase"
                     role="status"
@@ -313,7 +318,7 @@ export default function PlaylistPanel({
                           onRetry={soundCloudWidget.retryLoad}
                         />
                       </li>
-                    ) : soundCloudWidget.playlistStatus === 'ready' && tracks.length > 0 ? (
+                    ) : showTrackList ? (
                       tracks.map((track, index) => {
                         const isActive =
                           isPlaylistMode &&

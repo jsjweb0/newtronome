@@ -10,7 +10,6 @@ describe('PLAYLISTS catalog', () => {
   it('keeps every SoundCloud URL matching its id', () => {
     PLAYLISTS.forEach((playlist) => {
       expect(playlist.soundCloudUrl).toBe(`https://soundcloud.com/ssu-1/sets/${playlist.id}`);
-      expect(playlist).toHaveProperty('coverUrl');
     });
   });
 
