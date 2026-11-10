@@ -56,6 +56,7 @@ export function useTrackBookmark(track: PlayerTrack) {
       showToast({
         message: '로그인 후 북마크할 수 있습니다.',
         type: 'info',
+        action: { label: '로그인', to: '/login' },
       });
       return;
     }

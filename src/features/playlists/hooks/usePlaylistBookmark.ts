@@ -47,7 +47,11 @@ export function usePlaylistBookmark(playlist: Playlist) {
 
   const toggleSaved = async () => {
     if (!uid) {
-      showToast({ message: '로그인 후 이용해 주세요!', type: 'info' });
+      showToast({
+        message: '로그인 후 이용해 주세요!',
+        type: 'info',
+        action: { label: '로그인', to: '/login' },
+      });
       return;
     }
 

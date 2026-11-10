@@ -123,7 +123,11 @@ describe('TrackBookmarkButton subscription failures', () => {
     expect(subscriptions[1].unsubscribe).toHaveBeenCalledTimes(1);
     expect(subscribeToSavedTrack).toHaveBeenCalledTimes(2);
     fireEvent.click(screen.getByRole('button', { name: '북마크 추가' }));
-    expect(mocks.showToast).toHaveBeenCalledWith({ message: '로그인 후 북마크할 수 있습니다.', type: 'info' });
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      message: '로그인 후 북마크할 수 있습니다.',
+      type: 'info',
+      action: { label: '로그인', to: '/login' },
+    });
     expect(saveTrack).not.toHaveBeenCalled();
     expect(removeSavedTrack).not.toHaveBeenCalled();
   });

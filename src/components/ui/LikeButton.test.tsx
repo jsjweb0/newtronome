@@ -102,6 +102,7 @@ describe('LikeButton 공개 좋아요 수', () => {
     expect(mocks.showToast).toHaveBeenCalledWith({
       message: '로그인 후 이용해 주세요!',
       type: 'info',
+      action: { label: '로그인', to: '/login' },
     });
   });
 

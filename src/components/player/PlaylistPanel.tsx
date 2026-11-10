@@ -124,6 +124,7 @@ export default function PlaylistPanel({
       <aside
         ref={panelRef}
         id="playlist-panel"
+        data-state={collapsed ? 'open' : 'closed'}
         role={isModal ? 'dialog' : undefined}
         aria-modal={isModal ? true : undefined}
         aria-labelledby="playlist-panel-title"

@@ -129,7 +129,11 @@ describe('PlaylistActions', () => {
 
     fireEvent.click(likeButton);
 
-    expect(mocks.showToast).toHaveBeenCalledWith({ message: '로그인 후 이용해 주세요!', type: 'info' });
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      message: '로그인 후 이용해 주세요!',
+      type: 'info',
+      action: { label: '로그인', to: '/login' },
+    });
     expect(mocks.savePlaylist).not.toHaveBeenCalled();
   });
 });
