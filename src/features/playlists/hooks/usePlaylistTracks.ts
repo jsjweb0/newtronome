@@ -55,11 +55,13 @@ export function usePlaylistTracks(soundCloudUrl: string | null) {
     let retryTimer: number | undefined;
 
     const timeoutTimer = window.setTimeout(() => {
-      if (isActive) finish('error');
+      if (isActive) done('error');
     }, LOAD_TIMEOUT_MS);
 
     const done = (status: PlaylistTracksStatus, tracks: PlayerTrack[] = []) => {
       if (!isActive) return;
+
+      isActive = false;
       window.clearTimeout(timeoutTimer);
       finish(status, tracks);
     };
@@ -77,7 +79,7 @@ export function usePlaylistTracks(soundCloudUrl: string | null) {
           return;
         }
 
-        if (list === null) {
+        if (list === null || tracks.length < list.length) {
           done('error');
           return;
         }
@@ -97,12 +99,11 @@ export function usePlaylistTracks(soundCloudUrl: string | null) {
       window.clearTimeout(timeoutTimer);
       if (retryTimer !== undefined) window.clearTimeout(retryTimer);
 
-      // iframe이 먼저 사라진 경우 SoundCloud 위젯이 오류를 던질 수 있음
       try {
         widget.unbind(READY);
         widget.unbind(ERROR);
       } catch {
-        // 무시
+
       }
     };
   }, [iframeElement, loadKey, soundCloudUrl]);

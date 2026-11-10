@@ -6,6 +6,7 @@ const WIDGET_PRELOAD_HEIGHT = 3000;
 interface SoundCloudWidgetController {
   iframeRef: RefCallback<HTMLIFrameElement>;
   isReady: boolean;
+  frameVersion: number;
 }
 
 interface SoundCloudWidgetProps {
@@ -38,7 +39,7 @@ export default function SoundCloudWidget({
 
       {/* 전체 재생으로 플레이리스트가 바뀌면 iframe을 새로 만들어 위젯 이벤트를 새로 연결 */}
       <iframe
-        key={widgetUrl}
+        key={`${widgetUrl}:${controller.frameVersion}`}
         ref={iframeRef}
         title="SoundCloud 플레이리스트"
         tabIndex={-1}

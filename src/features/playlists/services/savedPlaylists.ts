@@ -9,7 +9,6 @@ import {
 import { db } from '../../../firebase';
 import type { Playlist } from '../data/playlists';
 
-// 곡 북마크(users/{uid}/savedTracks)와 같은 방식으로 플레이리스트를 저장
 const getSavedPlaylistRef = (uid: string, playlistId: string) =>
   doc(db, 'users', uid, 'savedPlaylists', playlistId);
 

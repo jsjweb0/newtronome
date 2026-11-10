@@ -35,6 +35,12 @@ export function useSoundCloudWidget(playlistUrl: string) {
   const [widgetTrack, setWidgetTrack] = useState<PlayerTrack | null>(null);
   const [widgetError, setWidgetError] = useState<string | null>(null);
 
+  const [frameVersion, setFrameVersion] = useState(0);
+
+  const reloadPlaylistFrame = useCallback(() => {
+    setFrameVersion((version) => version + 1);
+  }, []);
+
   const setPlaying = usePlayerStore((state) => state.setPlaying);
   const setCurrentTime = usePlayerStore((state) => state.setCurrentTime);
   const setDuration = usePlayerStore((state) => state.setDuration);
@@ -662,5 +668,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
     playSingleTrack,
     selectTrack,
     widgetTrack,
+    frameVersion,
+    reloadPlaylistFrame
   };
 }

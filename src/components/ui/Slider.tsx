@@ -148,7 +148,7 @@ export default function ImageSlider({
               type="button"
               onClick={() => swiperRef.current?.slidePrev()}
               aria-label="이전 이미지"
-              className="absolute z-10 left-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center size-11 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm transition-colors"
+              className="absolute z-10 -left-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center size-11 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm transition-colors"
             >
               <ChevronLeft aria-hidden="true" className="size-[22px]" />
             </button>
@@ -156,7 +156,7 @@ export default function ImageSlider({
               type="button"
               onClick={() => swiperRef.current?.slideNext()}
               aria-label="다음 이미지"
-              className="absolute z-10 right-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center size-11 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm transition-colors"
+              className="absolute z-10 -right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center size-11 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm transition-colors"
             >
               <ChevronRight aria-hidden="true" className="size-[22px]" />
             </button>
@@ -165,7 +165,7 @@ export default function ImageSlider({
       </div>
 
       {caption && (
-        <div className="mt-7.5 lg:mt-[54px] text-center">
+        <div className="mt-7.5 lg:mt-[76px] text-center">
           <p className="font-bold text-base lg:text-[17px] truncate">{caption.title}</p>
           {caption.subtitle && (
             <p className="mt-0.5 text-[13px] text-textSub truncate">{caption.subtitle}</p>

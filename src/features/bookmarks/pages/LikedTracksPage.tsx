@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Heart } from 'lucide-react';
+import { CircleX, Heart } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import TrackItem from '../../../components/track/TrackItem';
@@ -36,6 +36,8 @@ export default function LikedTracksPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
 
+  const [searchKeyword, setSearchKeyword] = useState('');
+
   useEffect(() => {
     if (isAuthLoading) return;
 
@@ -65,19 +67,16 @@ export default function LikedTracksPage() {
     );
   }, [isAuthLoading, user?.uid, retryCount]);
 
-  const displayedTracks = useMemo(
-    () =>
-      tracks.map((track) => {
-        const trackId = String(track.id);
+  const displayedTracks = useMemo(() => {
+    const keyword = searchKeyword.trim().toLowerCase();
 
-        return {
-          ...track,
-          playbackStatus:
-            resolvedStatuses[trackId] ?? 'unknown',
-        };
-      }),
-    [resolvedStatuses, tracks]
-  );
+    return tracks
+      .filter((track) => track.title.toLowerCase().includes(keyword))
+      .map((track) => ({
+        ...track,
+        playbackStatus: resolvedStatuses[String(track.id)] ?? 'unknown',
+      }));
+  }, [resolvedStatuses, tracks, searchKeyword]);
 
   const handleTrackClick = (track: PlayerTrack) => {
     if (track.playbackStatus === 'blocked') {
@@ -85,8 +84,7 @@ export default function LikedTracksPage() {
     }
 
     const isCurrentSingleTrack =
-      playbackMode === 'single' &&
-      String(currentTrack?.id) === String(track.id);
+      playbackMode === 'single' && String(currentTrack?.id) === String(track.id);
 
     if (isCurrentSingleTrack) {
       onToggleTrack();
@@ -155,17 +153,39 @@ export default function LikedTracksPage() {
 
   return (
     <section className="mx-auto w-full px-1 md:px-7 pb-6 lg:pb-10">
-      {/* 게시판 · 검색과 같은 페이지 제목 */}
-      <header className="flex items-center gap-3 mb-4 md:mb-5">
-        <Heart aria-hidden="true" className="shrink-0 size-6.5 text-primary" />
-        <div>
-          <h1 className="text-[28px] leading-tight font-extrabold tracking-tight text-textBase">
-            Likes
-          </h1>
-          <p className="mt-0.5 text-[13px] text-textSub">
-            좋아요한 곡
-            {hasLoadedTracks && ` · 총 ${displayedTracks.length}개`}
-          </p>
+      <header className="flex flex-wrap items-end justify-between gap-3 mb-6 md:mb-8">
+        <div className="flex items-center gap-x-2.5">
+          <Heart aria-hidden="true" className="shrink-0 size-6.5 text-primary" />
+          <div>
+            <h1 className="text-[28px] leading-tight font-extrabold tracking-tight text-textBase">
+              Likes
+            </h1>
+            <p className="mt-0.5 text-[13px] text-textSub">
+              좋아요한 곡
+              {hasLoadedTracks && ` · 총 ${tracks.length}개`}
+            </p>
+          </div>
+        </div>
+        <div className="relative">
+          <label htmlFor="search-track-input" className="sr-only">좋아요한 곡 검색어</label>
+          <input
+            type="text"
+            id="search-track-input"
+            className="block w-full h-11 mb-0 pl-3.5 pr-10 border border-textThr dark:border-none rounded-[10px] bg-background text-sm disabled:opacity-50 disabled:pointer-events-none focus:ring-primary"
+            placeholder="Filter"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+          />
+          {searchKeyword && (
+            <button
+              type="button"
+              onClick={() => setSearchKeyword('')}
+              className="inline-flex items-center justify-center absolute top-0 right-0 h-full w-10 text-textSub hover:text-textBase"
+              aria-label="검색어 삭제"
+            >
+              <CircleX className="size-4" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </header>
 

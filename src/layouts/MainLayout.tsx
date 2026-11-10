@@ -22,12 +22,10 @@ const getPageTitle = (pathname: string) => {
     pathname.split('/').filter(Boolean);
 
   if (section === 'playlists' && boardType) {
-    // 두 번째 경로 조각이 플레이리스트 id
     let playlistId = boardType;
     try {
       playlistId = decodeURIComponent(boardType);
     } catch {
-      // 잘못된 % 인코딩은 그대로 조회해서 '찾을 수 없음'으로 처리
     }
 
     return findPlaylistById(playlistId)?.title ?? '플레이리스트를 찾을 수 없음';
@@ -62,12 +60,8 @@ export interface PlayerOutletContext {
   isSidebarCollapsed: boolean;
 
   playlistUrl: string;
-  /** 메인 플레이어에 불러온 플레이리스트 id */
   currentPlaylistId: string;
-  /**
-   * 메인 플레이어를 이 플레이리스트로 바꾸고 첫 곡(재생 가능한 곡)부터 재생.
-   * 이미 불러온 플레이리스트면 다시 불러오지 않고 재생/일시정지하거나 첫 곡으로 이동
-   */
+
   onPlayPlaylist: (playlistId: string) => void;
   onSelectTrack: (index: number) => void;
   onToggleTrack: () => void;
@@ -81,6 +75,10 @@ export interface PlayerOutletContext {
   widgetError: string | null;
   retryLoad: () => void;
 }
+
+type PendingPlayback =
+  | { kind: 'playlist' }
+  | { kind: 'single'; track: PlayerTrack; options?: PlaySingleTrackOptions };
 
 export default function MainLayout() {
   const location = useLocation();
@@ -100,8 +98,28 @@ export default function MainLayout() {
   const playbackMode = usePlayerStore((state) => state.playbackMode);
 
   // 전체 재생: 새 플레이리스트 곡이 다 불러와지면 첫 곡부터 재생
-  const pendingPlayFromStartRef = useRef(false);
-  const { selectTrack, toggle: toggleSoundCloud, playlistStatus, isReady } = soundCloudWidget;
+  const pendingPlaybackRef = useRef<PendingPlayback | null>(null);
+  const {
+    selectTrack,
+    toggle: toggleSoundCloud,
+    playlistStatus,
+    isReady,
+    playSingleTrack,
+    reloadPlaylistFrame,
+  } = soundCloudWidget;
+
+  const requestSingleTrack = useCallback<PlayerOutletContext['onPlaySingleTrack']>(
+    (track, options) => {
+      if (pendingPlaybackRef.current && playlistStatus === 'loading') {
+        pendingPlaybackRef.current = { kind: 'single', track, options };
+        return;
+      }
+
+      pendingPlaybackRef.current = null;
+      playSingleTrack(track, options);
+    },
+    [playSingleTrack, playlistStatus]
+  );
 
   const playFirstPlayableTrack = useCallback(() => {
     const firstIndex = usePlayerStore
@@ -115,17 +133,35 @@ export default function MainLayout() {
     const nextPlaylist = findPlaylistById(playlistId);
     if (!nextPlaylist) return;
 
+    pendingPlaybackRef.current = null;
+
     if (nextPlaylist.id === selectedPlaylist.id) {
       const { playbackMode: mode, currentTrack, tracks: loadedTracks } = usePlayerStore.getState();
 
       // 같은 플레이리스트는 다시 불러오지 않음
-      if (mode === 'playlist' && currentTrack) {
+      if (
+        mode === 'playlist' &&
+        currentTrack &&
+        playlistStatus === 'ready' &&
+        loadedTracks.length > 0
+      ) {
         toggleSoundCloud();
         return;
       }
 
+      if (mode === 'single' && loadedTracks.length === 0) {
+        pendingPlaybackRef.current = { kind: 'playlist' };
+
+        const { setPlaybackMode, setPlaylist } = usePlayerStore.getState();
+        setPlaybackMode('playlist');
+        setPlaylist([]);
+
+        reloadPlaylistFrame();
+        return;
+      }
+
       if (loadedTracks.length === 0 || playlistStatus !== 'ready') {
-        pendingPlayFromStartRef.current = true;
+        pendingPlaybackRef.current = { kind: 'playlist' };
         return;
       }
 
@@ -133,22 +169,36 @@ export default function MainLayout() {
       return;
     }
 
-    pendingPlayFromStartRef.current = true;
+    pendingPlaybackRef.current = { kind: 'playlist' };
 
     const { setPlaybackMode, setPlaylist, setPlaying } = usePlayerStore.getState();
     setPlaying(false);
     setPlaybackMode('playlist');
     setPlaylist([]);
     setSelectedPlaylist(nextPlaylist);
-  }, [playFirstPlayableTrack, playlistStatus, selectedPlaylist.id, toggleSoundCloud]);
+  }, [
+    playFirstPlayableTrack,
+    playlistStatus,
+    selectedPlaylist.id,
+    toggleSoundCloud,
+    reloadPlaylistFrame
+  ]);
 
   useEffect(() => {
-    if (!pendingPlayFromStartRef.current) return;
+    const pending = pendingPlaybackRef.current;
+    if (!pending || playlistStatus === 'loading') return;
+
+    if (pending.kind === 'single') {
+      pendingPlaybackRef.current = null;
+      playSingleTrack(pending.track, pending.options);
+      return;
+    }
+
     if (!isReady || playlistStatus !== 'ready' || tracks.length === 0) return;
 
-    pendingPlayFromStartRef.current = false;
+    pendingPlaybackRef.current = null;
     playFirstPlayableTrack();
-  }, [isReady, playFirstPlayableTrack, playlistStatus, tracks]);
+  }, [isReady, playFirstPlayableTrack, playSingleTrack, playlistStatus, tracks]);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
@@ -191,7 +241,7 @@ export default function MainLayout() {
     onSelectTrack: soundCloudWidget.selectTrack,
     onToggleTrack: soundCloudWidget.toggle,
     onPauseSoundCloud: soundCloudWidget.pause,
-    onPlaySingleTrack: soundCloudWidget.playSingleTrack,
+    onPlaySingleTrack: requestSingleTrack,
 
     playlistStatus: soundCloudWidget.playlistStatus,
     widgetError: soundCloudWidget.widgetError,

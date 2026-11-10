@@ -1,13 +1,20 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PlaylistCard from '../components/PlaylistCard';
 import { PLAYLISTS } from '../data/playlists';
+import { CircleX } from 'lucide-react';
 
-// 탐색 페이지라서 재생 상태(Zustand 재생 목록 · 위젯)는 읽지도 바꾸지도 않음
 export default function PlaylistsPage() {
-  // 필터를 주소(?q=)에 두어 상세에서 뒤로 가기로 돌아와도 유지
   const [searchParams, setSearchParams] = useSearchParams();
   const filter = searchParams.get('q') ?? '';
+  const [draftFilter, setDraftFilter] = useState(filter);
+  const isComposingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isComposingRef.current) {
+      setDraftFilter(filter);
+    }
+  }, [filter]);
 
   const handleFilterChange = (value: string) => {
     setSearchParams(
@@ -21,7 +28,7 @@ export default function PlaylistsPage() {
     );
   };
 
-  const keyword = filter.trim().toLowerCase();
+  const keyword = draftFilter.trim().toLowerCase();
   const filteredPlaylists = useMemo(
     () =>
       PLAYLISTS.filter(
@@ -57,18 +64,50 @@ export default function PlaylistsPage() {
           </div>
         </div>
 
-        <input
-          type="search"
-          value={filter}
-          onChange={(event) => handleFilterChange(event.target.value)}
-          aria-label="플레이리스트 검색"
-          placeholder="Filter"
-          autoComplete="off"
-          className={
-            'w-full md:w-50 min-h-11 px-3.5 rounded-[10px] border border-textThr dark:border-line bg-field ' +
-            'text-sm text-textBase placeholder:text-textSub/70 outline-none focus:border-primary focus:ring-0 transition-colors'
-          }
-        />
+        <div className="relative">
+          <label htmlFor="search-playlist-input" className="sr-only">플레이리스트 검색</label>
+          <input
+            type="search"
+            id="search-playlist-input"
+            value={draftFilter}
+            onCompositionStart={() => {
+              isComposingRef.current = true;
+            }}
+            onChange={(event) => {
+              const value = event.currentTarget.value;
+              setDraftFilter(value);
+
+              if (!isComposingRef.current) {
+                handleFilterChange(value);
+              }
+            }}
+            onCompositionEnd={(event) => {
+              const value = event.currentTarget.value;
+              isComposingRef.current = false;
+              setDraftFilter(value);
+              handleFilterChange(value);
+            }}
+            placeholder="Filter"
+            autoComplete="off"
+            className={
+              'w-full md:w-50 min-h-11 pl-3.5 pr-8 rounded-[10px] border border-textThr dark:border-line bg-field ' +
+              'text-sm text-textBase placeholder:text-textSub/70 outline-none focus:border-primary focus:ring-0 transition-colors'
+            }
+          />
+          {draftFilter !== '' && (
+            <button
+              type="button"
+              onClick={() => {
+                setDraftFilter('');
+                handleFilterChange('');
+              }}
+              className="inline-flex items-center justify-center absolute top-0 right-0 h-full w-10 text-textSub hover:text-textBase"
+              aria-label="검색어 삭제"
+            >
+              <CircleX className="size-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </header>
 
       {filteredPlaylists.length > 0 ? (
@@ -84,7 +123,7 @@ export default function PlaylistsPage() {
         </ul>
       ) : (
         <p className="py-10 text-center text-sm text-textSub">
-          “{filter.trim()}”에 맞는 플레이리스트가 없습니다.
+          “{draftFilter.trim()}”에 맞는 플레이리스트가 없습니다.
         </p>
       )}
     </section>

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import PlaylistCard from './PlaylistCard';
@@ -8,7 +8,6 @@ const playlist: Playlist = {
   id: '2024-spring',
   soundCloudUrl: 'https://soundcloud.com/ssu-1/sets/2024-spring',
   title: '2024 입하 디스코',
-  coverUrl: 'https://i1.sndcdn.com/artworks-example-t500x500.jpg',
 };
 
 const renderCard = (card: Playlist = playlist) =>
@@ -33,20 +32,8 @@ describe('PlaylistCard', () => {
     expect(links[0].className).toContain('focus-visible:outline-primary');
   });
 
-  it('swaps in the fallback image when the cover fails to load', () => {
+  it('renders the generated cover without an external image', () => {
     const { container } = renderCard();
-    const image = container.querySelector('img');
-
-    expect(image?.getAttribute('src')).toBe(playlist.coverUrl);
-    expect(container.querySelector('[data-generated-cover]')).toBeNull();
-
-    fireEvent.error(image!);
-
-    expect(image?.getAttribute('src')).toContain('no-image');
-  });
-
-  it('uses the id-based generated cover only when there is no cover', () => {
-    const { container } = renderCard({ ...playlist, coverUrl: null });
 
     expect(container.querySelector('img')).toBeNull();
     const cover = container.querySelector('[data-generated-cover]');

@@ -9,15 +9,12 @@ type ViewMode = 'grid' | 'list';
 
 interface PlaylistTrackListProps {
   tracks: PlayerTrack[];
-  /** 이 목록에서 재생 중인 곡 (해당 없으면 null) */
   currentTrack: PlayerTrack | null;
   isPlaying: boolean;
   onTrackClick: (track: PlayerTrack) => void;
-  /** 홈은 h3, 플레이리스트 상세는 h2 */
   headingAs?: 'h2' | 'h3';
 }
 
-/** 플레이리스트 하단 Track List: 제목 + 곡 수, 필터, 앨범형/목록형 전환 */
 export default function PlaylistTrackList({
   tracks,
   currentTrack,

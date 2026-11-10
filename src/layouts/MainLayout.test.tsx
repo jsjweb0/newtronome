@@ -10,6 +10,9 @@ import MainLayout from './MainLayout';
 const widgetMocks = vi.hoisted(() => ({
   urls: [] as string[],
   selectTrack: vi.fn(),
+  playSingleTrack: vi.fn(),
+  reloadPlaylistFrame: vi.fn(),
+  playlistStatus: 'ready' as PlayerOutletContext['playlistStatus'],
   toggle: vi.fn(),
 }));
 
@@ -18,9 +21,10 @@ vi.mock('../features/player/hooks/useSoundCloudWidget', () => ({
     selectTrack: widgetMocks.selectTrack,
     toggle: widgetMocks.toggle,
     pause: vi.fn(),
-    playSingleTrack: vi.fn(),
+    playSingleTrack: widgetMocks.playSingleTrack,
+    reloadPlaylistFrame: widgetMocks.reloadPlaylistFrame,
     retryLoad: vi.fn(),
-    playlistStatus: 'ready',
+    playlistStatus: widgetMocks.playlistStatus,
     widgetError: null,
     isReady: true,
   }),
@@ -49,14 +53,31 @@ const track = (id: number, playbackStatus: PlayerTrack['playbackStatus']): Playe
   playbackStatus,
 });
 
+const singleTrack = {
+  ...track(3, 'allowed'),
+  permalinkUrl: 'https://soundcloud.com/artist/track-3',
+};
+const singleTrackOptions = { onFailure: vi.fn() };
+const nextSingleTrack = {
+  ...track(4, 'allowed'),
+  permalinkUrl: 'https://soundcloud.com/artist/track-4',
+};
+
 function PlayButton({ playlistId }: { playlistId: string }) {
-  const { currentPlaylistId, onPlayPlaylist } = useOutletContext<PlayerOutletContext>();
+  const { currentPlaylistId, onPlayPlaylist, onPlaySingleTrack } =
+    useOutletContext<PlayerOutletContext>();
 
   return (
     <>
       <p>현재: {currentPlaylistId}</p>
       <button type="button" onClick={() => onPlayPlaylist(playlistId)}>
         전체 재생
+      </button>
+      <button type="button" onClick={() => onPlaySingleTrack(singleTrack, singleTrackOptions)}>
+        개별 곡 재생
+      </button>
+      <button type="button" onClick={() => onPlaySingleTrack(nextSingleTrack, singleTrackOptions)}>
+        다른 개별 곡 재생
       </button>
     </>
   );
@@ -75,6 +96,9 @@ const renderWithPlayButton = (playlistId: string) =>
 
 describe('MainLayout', () => {
   beforeEach(() => {
+    widgetMocks.playlistStatus = 'ready';
+    widgetMocks.playSingleTrack.mockClear();
+    widgetMocks.reloadPlaylistFrame.mockClear();
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
       value: vi.fn().mockImplementation(() => ({
@@ -158,6 +182,108 @@ describe('MainLayout', () => {
     expect(widgetMocks.selectTrack).toHaveBeenCalledWith(1);
   });
 
+  it('does not start a pending playlist after a single track is requested', () => {
+    widgetMocks.selectTrack.mockClear();
+    widgetMocks.playSingleTrack.mockClear();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    usePlayerStore.setState({
+      tracks: [track(9, 'allowed')],
+      playbackMode: 'playlist',
+    });
+
+    renderWithPlayButton('autumn-disco');
+    fireEvent.click(screen.getByRole('button', { name: '전체 재생' }));
+    expect(usePlayerStore.getState().tracks).toEqual([]);
+
+    fireEvent.click(screen.getByRole('button', { name: '개별 곡 재생' }));
+    expect(widgetMocks.playSingleTrack).toHaveBeenCalledExactlyOnceWith(singleTrack, singleTrackOptions);
+
+    act(() => {
+      usePlayerStore.setState({ tracks: [track(1, 'allowed')] });
+    });
+
+    expect(widgetMocks.selectTrack).not.toHaveBeenCalled();
+  });
+
+  it('keeps the loaded playlist and plays only the latest single track requested during loading', () => {
+    widgetMocks.selectTrack.mockClear();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    usePlayerStore.setState({ tracks: [track(9, 'allowed')], playbackMode: 'playlist' });
+
+    renderWithPlayButton('autumn-disco');
+    widgetMocks.playlistStatus = 'loading';
+    fireEvent.click(screen.getByRole('button', { name: '전체 재생' }));
+    fireEvent.click(screen.getByRole('button', { name: '개별 곡 재생' }));
+    fireEvent.click(screen.getByRole('button', { name: '다른 개별 곡 재생' }));
+
+    expect(widgetMocks.playSingleTrack).not.toHaveBeenCalled();
+    expect(usePlayerStore.getState().tracks).toEqual([]);
+
+    const loadedTracks = [track(1, 'allowed'), nextSingleTrack];
+    act(() => {
+      widgetMocks.playlistStatus = 'ready';
+      usePlayerStore.setState({ tracks: loadedTracks });
+    });
+
+    expect(widgetMocks.playSingleTrack).toHaveBeenCalledExactlyOnceWith(nextSingleTrack, singleTrackOptions);
+    expect(widgetMocks.selectTrack).not.toHaveBeenCalled();
+    expect(usePlayerStore.getState().tracks).toBe(loadedTracks);
+  });
+
+  it.each(['empty', 'error'] as const)('releases a pending single track when playlist loading ends as %s', (status) => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    usePlayerStore.setState({ tracks: [], playbackMode: 'playlist' });
+    renderWithPlayButton('autumn-disco');
+
+    widgetMocks.playlistStatus = 'loading';
+    fireEvent.click(screen.getByRole('button', { name: '전체 재생' }));
+    fireEvent.click(screen.getByRole('button', { name: '개별 곡 재생' }));
+    expect(widgetMocks.playSingleTrack).not.toHaveBeenCalled();
+
+    act(() => {
+      widgetMocks.playlistStatus = status;
+      usePlayerStore.setState({ tracks: [] });
+    });
+
+    expect(widgetMocks.playSingleTrack).toHaveBeenCalledExactlyOnceWith(singleTrack, singleTrackOptions);
+  });
+
+  it('reloads the selected playlist when returning from single mode with an empty queue', () => {
+    widgetMocks.selectTrack.mockClear();
+    widgetMocks.playSingleTrack.mockImplementationOnce(() => {
+      usePlayerStore.setState({ playbackMode: 'single', currentTrack: singleTrack });
+    });
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    usePlayerStore.setState({ tracks: [track(9, 'allowed')], playbackMode: 'playlist' });
+
+    renderWithPlayButton('autumn-disco');
+    const playAll = screen.getByRole('button', { name: '전체 재생' });
+
+    fireEvent.click(playAll);
+    fireEvent.click(screen.getByRole('button', { name: '개별 곡 재생' }));
+    expect(usePlayerStore.getState()).toMatchObject({
+      playbackMode: 'single',
+      tracks: [],
+      currentTrack: singleTrack,
+    });
+    expect(widgetMocks.reloadPlaylistFrame).not.toHaveBeenCalled();
+
+    fireEvent.click(playAll);
+    expect(widgetMocks.reloadPlaylistFrame).toHaveBeenCalledTimes(1);
+    expect(usePlayerStore.getState()).toMatchObject({
+      playbackMode: 'playlist',
+      tracks: [],
+      currentTrack: null,
+    });
+    expect(widgetMocks.selectTrack).not.toHaveBeenCalled();
+
+    act(() => {
+      usePlayerStore.setState({ tracks: [track(1, 'blocked'), track(2, 'allowed')] });
+    });
+
+    expect(widgetMocks.selectTrack).toHaveBeenCalledExactlyOnceWith(1);
+  });
+
   it('does not reload the playlist that is already loaded', () => {
     widgetMocks.urls.length = 0;
     widgetMocks.selectTrack.mockClear();
@@ -182,6 +308,7 @@ describe('MainLayout', () => {
     usePlayerStore.setState({ playbackMode: 'single' });
     fireEvent.click(screen.getByRole('button', { name: '전체 재생' }));
     expect(widgetMocks.selectTrack).toHaveBeenCalledWith(0);
+    expect(widgetMocks.reloadPlaylistFrame).not.toHaveBeenCalled();
   });
 
   it.each([

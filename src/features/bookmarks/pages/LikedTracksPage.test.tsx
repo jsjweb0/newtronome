@@ -129,6 +129,28 @@ it('shows the unsave button and a new-tab SoundCloud link on each saved track ca
   expect(screen.getByText('원곡 링크 없음')).toBeTruthy();
 });
 
+it('filters saved tracks by title and restores the list when the search is cleared', () => {
+  renderLikesPage();
+  act(() =>
+    mocks.onSuccess?.([
+      baseTrack,
+      { ...baseTrack, id: 2, title: 'Disco Night' },
+    ])
+  );
+
+  const searchInput = screen.getByRole('textbox', { name: '좋아요한 곡 검색어' });
+  fireEvent.change(searchInput, { target: { value: ' disco ' } });
+
+  expect(screen.getByText('Disco Night')).toBeTruthy();
+  expect(screen.queryByText('회복된 트랙')).toBeNull();
+  expect(screen.getByText('좋아요한 곡 · 총 2개')).toBeTruthy();
+
+  fireEvent.click(screen.getByRole('button', { name: '검색어 삭제' }));
+
+  expect(screen.getByText('Disco Night')).toBeTruthy();
+  expect(screen.getByText('회복된 트랙')).toBeTruthy();
+});
+
 it('shows a playback error toast when the selected bookmark fails', () => {
   const onPlaySingleTrack = vi.fn();
   renderPage(onPlaySingleTrack);
