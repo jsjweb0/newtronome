@@ -76,6 +76,8 @@ export default function PlaylistPanel({
     setIsLoginNoticeOpen(true);
   };
 
+  const isLoginNoticeVisible = isModal && collapsed && isLoginNoticeOpen;
+
   const dismissLoginNotice = () => {
     setIsLoginNoticeOpen(false);
     // 닫기 버튼이 사라지면서 포커스가 패널 밖으로 빠지지 않게 누른 버튼으로 되돌림
@@ -181,7 +183,9 @@ export default function PlaylistPanel({
               'overflow-y-auto grow relative bg-background rounded-2xl scrollbar transition-all transition-duration-600',
               'max-xl:pb-3',
               'border border-textThr dark:border-none',
-              collapsed ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+              collapsed ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0',
+              // 로그인 안내가 아래에 붙으면 한 면처럼 이어지게 아래 모서리를 펴 줌
+              isLoginNoticeVisible && 'rounded-b-none'
             )}
           >
             <div className="flex flex-col gap-y-4.5 p-4 max-lg:pb-6">
@@ -443,41 +447,41 @@ export default function PlaylistPanel({
               </div>
             </div>
           </div>
+          {isModal && (
+            // 목록 아래 별도 행으로 두어 목록을 덮지 않게 함(안내가 뜨면 목록 높이만 줄어듦).
+            // 안내가 생기기 전부터 있어야 스크린 리더가 바뀐 내용을 읽어 줌.
+            // -mt-3으로 flex gap을 없애 목록 바로 아래 붙는 하단 바로 보이게 함
+            <div role="status" aria-live="polite" className="shrink-0 -mt-3">
+              {isLoginNoticeVisible && (
+                <div
+                  className={clsx(
+                    'flex items-center gap-3 min-h-14 py-2.5 pr-2 pl-4 bg-background rounded-b-2xl text-[#2B6CB0] dark:text-[#7CC4FF]',
+                    'border-x border-b border-textThr dark:border-x-0 dark:border-b-0 dark:border-t dark:border-t-white/8'
+                  )}
+                >
+                  <p className="grow min-w-0 text-sm font-medium leading-[1.45] text-textBase break-keep">
+                    로그인 후 북마크할 수 있습니다.
+                  </p>
+                  <Link
+                    to="/login"
+                    onClick={onClose}
+                    className="shrink-0 inline-flex items-center min-h-9 px-3 rounded-full bg-current/16 text-[13px] font-bold hover:bg-current/24 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+                  >
+                    로그인
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label="안내 닫기"
+                    onClick={dismissLoginNotice}
+                    className="shrink-0 inline-flex items-center justify-center size-8 rounded-full text-textSub hover:text-textBase hover:bg-black/6 dark:hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    <XIcon aria-hidden="true" className="size-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        {isModal && (
-          // 안내가 생기기 전부터 있어야 스크린 리더가 바뀐 내용을 읽어 줌
-          <div role="status" aria-live="polite" className="absolute inset-x-3 bottom-3 z-10">
-            {collapsed && isLoginNoticeOpen && (
-              <div
-                className={clsx(
-                  'flex items-center gap-3 min-h-14 py-2.5 pr-2 pl-4 rounded-2xl text-[#2B6CB0] dark:text-[#7CC4FF]',
-                  'bg-background/92 dark:bg-background/88 backdrop-blur-[18px] backdrop-saturate-140',
-                  'border border-black/8 dark:border-white/8',
-                  'shadow-[0_12px_32px_rgba(0,0,0,0.14)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.5)]'
-                )}
-              >
-                <p className="grow min-w-0 text-sm font-medium leading-[1.45] text-textBase break-keep">
-                  로그인 후 북마크할 수 있습니다.
-                </p>
-                <Link
-                  to="/login"
-                  onClick={onClose}
-                  className="shrink-0 inline-flex items-center min-h-9 px-3 rounded-full bg-current/16 text-[13px] font-bold hover:bg-current/24 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-                >
-                  로그인
-                </Link>
-                <button
-                  type="button"
-                  aria-label="안내 닫기"
-                  onClick={dismissLoginNotice}
-                  className="shrink-0 inline-flex items-center justify-center size-8 rounded-full text-textSub hover:text-textBase hover:bg-black/6 dark:hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-primary"
-                >
-                  <XIcon aria-hidden="true" className="size-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </aside>
       {isModal && collapsed && (
         <div

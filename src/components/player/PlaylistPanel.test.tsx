@@ -117,6 +117,8 @@ describe('PlaylistPanel login notice', () => {
       (element) => element.getAttribute('aria-live') === 'polite'
     );
     expect(liveRegion?.textContent).toBe('');
+    // 목록 스크롤 영역 위에 겹치지 않고 아래 별도 행에 있어야 마지막 곡까지 조작할 수 있음
+    expect(liveRegion?.closest('.overflow-y-auto')).toBeNull();
 
     fireEvent.click(screen.getAllByRole('button', { name: '북마크 추가' })[0]);
 
