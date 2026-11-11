@@ -108,6 +108,7 @@ export default function PostCommentSection({
   if (isInitialError) {
     return (
       <RetryErrorState
+        size="compact"
         message="댓글을 불러오지 못했습니다."
         isRetrying={commentsQuery.isFetching}
         onRetry={() => {
@@ -120,6 +121,7 @@ export default function PostCommentSection({
     <section aria-labelledby="comments-title" className="flex flex-col gap-4 pt-2">
       {isBackgroundError && (
         <RetryErrorState
+          size="compact"
           message="최신 댓글을 불러오지 못했습니다. 이전 댓글을 표시합니다."
           isRetrying={commentsQuery.isFetching}
           onRetry={() => {

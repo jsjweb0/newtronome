@@ -109,6 +109,7 @@ export default function MyCommentSection({
   if (isError) {
     return (
       <RetryErrorState
+        size="compact"
         message="내 댓글을 불러오지 못했습니다."
         isRetrying={isFetching}
         onRetry={onRetry}

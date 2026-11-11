@@ -165,6 +165,7 @@ function MyActivityContent({ userId }: { userId: string }) {
           <>
             {isBackgroundError && (
               <RetryErrorState
+                size="compact"
                 message="최신 게시글을 불러오지 못했습니다. 이전 목록을 표시합니다."
                 isRetrying={isFetchingPosts}
                 onRetry={() => {

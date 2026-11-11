@@ -336,6 +336,7 @@ export default function PlaylistPanel({
                     {soundCloudWidget.playlistStatus === 'error' ? (
                       <li>
                         <RetryErrorState
+                          size="compact"
                           message={
                             soundCloudWidget.widgetError ??
                             '플레이리스트를 불러오지 못했습니다.'
