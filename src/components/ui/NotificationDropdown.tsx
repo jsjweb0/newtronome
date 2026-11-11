@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Bell, BellOff, X as CloseIcon, Ellipsis, Trash2 } from 'lucide-react';
+import { Bell, BellOff, CheckCheck, X as CloseIcon, Ellipsis, Trash2 } from 'lucide-react';
 import { useNotifications, type NotificationType } from '../../contexts/NotificationContext';
 import Tooltip from './Tooltip';
 import clsx from 'clsx';
 import { LogoMoIcon } from '../icons';
+import { formatRelativeTime } from '../../utils/format';
 
 // 아이콘 칩은 알림 종류(n.type)에 따라 색만 바뀜. 종류가 없으면 info 색
 const TONE_CLASS: Record<NotificationType, string> = {
@@ -37,6 +38,8 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
   const containerRef = useRef<HTMLUListElement | null>(null);
   const itemRefs = useRef<Record<number, HTMLLIElement | null>>({});
   const seen = useRef<Set<number>>(new Set());
+  // 상대 시간 계산 기준 시각. 열 때 갱신하고, 열려 있는 동안 1분마다 갱신
+  const [now, setNow] = useState(() => Date.now());
 
   const perPage = 10;
   const [visibleCount, setVisibleCount] = useState(perPage);
@@ -58,6 +61,12 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
       setOpenDropdownId(null);
     }
   }, [collapsed]);
+
+  useEffect(() => {
+    if (!open) return;
+    const timerId = window.setInterval(() => setNow(Date.now()), 60 * 1000);
+    return () => window.clearInterval(timerId);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -137,6 +146,7 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
             type="button"
             className="relative inline-flex justify-center items-center size-11 max-lg:pt-px rounded-full lg:hover:text-primary lg:hover:bg-primary/6"
             onClick={() => {
+              if (!open) setNow(Date.now());
               setOpen((prev) => {
                 const next = !prev;
                 if (!next) setOpenDropdownId(null);
@@ -187,6 +197,19 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
               </span>
             </h4>
             <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={markAllRead}
+                disabled={unreadCount === 0}
+                className={clsx(
+                  'inline-flex items-center gap-1.5 min-h-9 px-2.5 rounded-full text-xs font-bold text-textSub',
+                  'hover:text-textBase hover:bg-black/6 dark:hover:bg-white/8',
+                  'disabled:cursor-default disabled:text-textSub/40 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
+                )}
+              >
+                <CheckCheck className="size-[15px]" aria-hidden="true" />
+                모두 읽음
+              </button>
               <button
                 type="button"
                 onClick={clearNotifications}
@@ -261,15 +284,19 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                         >
                           {n.message}
                         </p>
-                        <p className="text-xs text-textSub/70">
-                          {new Date(n.timestamp).toLocaleString('ko-KR', {
+                        <time
+                          dateTime={new Date(n.timestamp).toISOString()}
+                          title={new Date(n.timestamp).toLocaleString('ko-KR', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
-                        </p>
+                          className="text-xs text-textSub/70"
+                        >
+                          {formatRelativeTime(n.timestamp, now)}
+                        </time>
                       </div>
                       <button
                         type="button"
