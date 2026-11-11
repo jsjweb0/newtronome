@@ -1,6 +1,19 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Bell, BellOff, CheckCheck, X as CloseIcon, Ellipsis, Trash2 } from 'lucide-react';
+import {
+  Bell,
+  BellOff,
+  Check,
+  CheckCheck,
+  CircleDot,
+  X as CloseIcon,
+  Ellipsis,
+  Info,
+  Trash2,
+  TriangleAlert,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { useNotifications, type NotificationType } from '../../contexts/NotificationContext';
 import Tooltip from './Tooltip';
 import clsx from 'clsx';
@@ -13,6 +26,14 @@ const TONE_CLASS: Record<NotificationType, string> = {
   warning: 'bg-[#B7791F]/14 text-[#B7791F] dark:bg-[#FFB54A]/14 dark:text-[#FFB54A]',
   error: 'bg-danger/14 text-danger',
   info: 'bg-[#2B6CB0]/14 text-[#2B6CB0] dark:bg-[#7CC4FF]/14 dark:text-[#7CC4FF]',
+};
+
+// 종류가 없는 알림은 기존 로고 아이콘을 그대로 씀
+const TYPE_ICON: Record<NotificationType, LucideIcon> = {
+  success: Check,
+  warning: TriangleAlert,
+  error: X,
+  info: Info,
 };
 
 type NotificationDropdownProps = {
@@ -144,7 +165,10 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
         <Tooltip content="알림" position="bottom">
           <button
             type="button"
-            className="relative inline-flex justify-center items-center size-11 max-lg:pt-px rounded-full lg:hover:text-primary lg:hover:bg-primary/6"
+            className={clsx(
+              'relative inline-flex justify-center items-center size-11 max-lg:pt-px rounded-full lg:hover:text-primary lg:hover:bg-primary/6',
+              open && 'bg-primary/12 lg:hover:bg-primary/12 text-primary'
+            )}
             onClick={() => {
               if (!open) setNow(Date.now());
               setOpen((prev) => {
@@ -160,7 +184,7 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
             {unreadCount > 0 && (
               <span
                 className={clsx(
-                  'absolute top-3 lg:top-1.5 inset-e-2.5 lg:inset-e-1 inline-flex items-center justify-center py-0.5 px-1 lg:py-1 lg:px-1.5 rounded-full text-[10px] lg:text-xs font-medium text-white bg-red-500 leading-none',
+                  'absolute top-3 lg:top-1.5 inset-e-2.5 lg:inset-e-1 inline-flex items-center justify-center py-0.5 px-1 lg:py-1 lg:px-1.5 rounded-full text-[10px] lg:text-xs font-extrabold text-onPrimary bg-primary ring-2 ring-background leading-none',
                   'transform -translate-y-1/2 translate-x-1/2'
                 )}
                 aria-hidden="true"
@@ -273,7 +297,11 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                           n.read && 'opacity-60'
                         )}
                       >
-                        <LogoMoIcon className="size-3.5" aria-hidden="true" />
+                        {(() => {
+                          if (!n.type) return <LogoMoIcon className="size-3.5" aria-hidden="true" />;
+                          const TypeIcon = TYPE_ICON[n.type];
+                          return <TypeIcon className="size-4" strokeWidth={2.4} aria-hidden="true" />;
+                        })()}
                       </button>
                       <div className="min-w-0 flex flex-col gap-1">
                         <p
@@ -332,6 +360,9 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                     <BellOff className="size-[26px]" />
                   </span>
                   <strong className="text-[15px] text-textBase">새 알림이 없습니다.</strong>
+                  <p className="-mt-1 text-[13px] leading-normal text-textSub/70 break-keep">
+                    댓글, 좋아요, 계정 관련 소식이 생기면 여기에 알려드릴게요.
+                  </p>
                 </li>
               )}
 
@@ -345,6 +376,7 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                 if (!listElement) return null;
 
                 const { top: liTop } = listElement.getBoundingClientRect();
+                const menuTarget = notifications.find((n) => n.id === openDropdownId);
 
                 return (
                   <div
@@ -363,6 +395,23 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                     aria-orientation="vertical"
                     aria-labelledby={`notification-menu-button-${openDropdownId}`}
                   >
+                    {menuTarget && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          toggleRead(menuTarget.id);
+                          setOpenDropdownId(null);
+                        }}
+                        role="menuitem"
+                        className={clsx(
+                          'flex items-center gap-2.5 w-full min-h-10 px-2.5 rounded-lg text-[13px] text-textBase',
+                          'hover:bg-black/5 focus-visible:bg-black/5 dark:hover:bg-[#2A2A2A] dark:focus-visible:bg-[#2A2A2A]'
+                        )}
+                      >
+                        <CircleDot className="shrink-0 size-4 text-textSub" aria-hidden="true" />
+                        {menuTarget.read ? '읽지 않음으로 표시' : '읽음으로 표시'}
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         removeNotification(openDropdownId);
@@ -395,7 +444,7 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                 'disabled:cursor-default disabled:text-textSub/50 disabled:hover:bg-black/5 dark:disabled:hover:bg-[#1C1C1C]'
               )}
             >
-              알림 더보기
+              {totalCount > 0 && visibleCount >= totalCount ? '모든 알림을 불러왔어요' : '알림 더보기'}
             </button>
           </div>
         </div>

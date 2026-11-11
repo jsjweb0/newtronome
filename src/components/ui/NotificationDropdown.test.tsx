@@ -113,4 +113,84 @@ describe('NotificationDropdown', () => {
 
     expect(screen.getByText('3분 전')).toBeTruthy();
   });
+  it('알림 종류별 아이콘을 보여주고, 종류가 없으면 기존 로고 아이콘을 쓴다', () => {
+    renderDropdown([
+      { id: 5, message: '로고', timestamp: NOW },
+      { id: 4, type: 'info', message: '안내', timestamp: NOW },
+      { id: 3, type: 'error', message: '오류', timestamp: NOW },
+      { id: 2, type: 'warning', message: '주의', timestamp: NOW },
+      { id: 1, type: 'success', message: '완료', timestamp: NOW },
+    ]);
+    openPanel();
+
+    const iconOf = (message: string) => {
+      const item = screen.getByText(message).closest('li');
+      return item?.querySelector('button[aria-label="읽음으로 표시"] svg');
+    };
+
+    expect(iconOf('완료')?.classList.contains('lucide-check')).toBe(true);
+    expect(iconOf('주의')?.classList.contains('lucide-triangle-alert')).toBe(true);
+    expect(iconOf('오류')?.classList.contains('lucide-x')).toBe(true);
+    expect(iconOf('안내')?.classList.contains('lucide-info')).toBe(true);
+    expect(iconOf('로고')).toBeTruthy();
+    expect(iconOf('로고')?.classList.contains('lucide')).toBe(false);
+  });
+
+  it('메뉴의 읽음 전환 항목은 상태에 맞는 문구를 보여주고 누르면 전환 후 메뉴를 닫는다', () => {
+    renderDropdown([{ id: 1, message: '알림', timestamp: NOW }]);
+    openPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: '알림 메뉴 열기' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '읽음으로 표시' }));
+
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.getByRole('button', { name: '읽지 않음으로 표시' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: '알림 메뉴 열기' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '읽지 않음으로 표시' }));
+
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.getByRole('button', { name: '읽음으로 표시' })).toBeTruthy();
+  });
+
+  it('모든 알림을 불러오면 더보기 버튼이 비활성화되고 문구가 바뀐다', () => {
+    const items = Array.from({ length: 12 }, (_, i) => ({
+      id: i + 1,
+      message: `알림 ${i + 1}`,
+      timestamp: NOW,
+    }));
+    renderDropdown(items);
+    openPanel();
+
+    const moreButton = screen.getByRole('button', { name: '알림 더보기' });
+    expect(moreButton).toHaveProperty('disabled', false);
+
+    fireEvent.click(moreButton);
+
+    const loadedButton = screen.getByRole('button', { name: '모든 알림을 불러왔어요' });
+    expect(loadedButton).toHaveProperty('disabled', true);
+  });
+
+  it('알림이 없으면 빈 상태 설명을 보여주고 더보기 문구는 그대로 비활성화된다', () => {
+    renderDropdown([]);
+    openPanel();
+
+    expect(screen.getByText('새 알림이 없습니다.')).toBeTruthy();
+    expect(screen.getByText('댓글, 좋아요, 계정 관련 소식이 생기면 여기에 알려드릴게요.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '알림 더보기' })).toHaveProperty('disabled', true);
+  });
+
+  it('열려 있는 동안 종 버튼에 열림 상태 색을 적용한다', () => {
+    renderDropdown([{ id: 1, message: '알림', timestamp: NOW }]);
+    const bell = screen.getByRole('button', { name: /^알림/ });
+
+    expect(bell.classList.contains('bg-primary/12')).toBe(false);
+    expect(bell.classList.contains('text-primary')).toBe(false);
+
+    openPanel();
+
+    expect(bell.getAttribute('aria-expanded')).toBe('true');
+    expect(bell.classList.contains('bg-primary/12')).toBe(true);
+    expect(bell.classList.contains('text-primary')).toBe(true);
+  });
 });
