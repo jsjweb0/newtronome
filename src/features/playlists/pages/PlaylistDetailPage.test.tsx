@@ -169,6 +169,48 @@ describe('PlaylistDetailPage', () => {
     expect(await screen.findByText('플레이리스트 곡 목록을 불러오지 못했습니다.')).toBeTruthy();
   });
 
+  it('ignores a late response after timeout and loads tracks on retry', async () => {
+    vi.useFakeTimers();
+
+    const sounds = [fakeSound(1, 'First Song')];
+    const widgets = installFakeSoundCloud(sounds);
+    renderAt('/playlists/2024-spring');
+
+    // READY arrives in a microtask, so defer the first response before it runs.
+    const pendingResponses: Array<(value: unknown) => void> = [];
+    widgets[0].getSounds.mockImplementation((callback: (value: unknown) => void) => {
+      pendingResponses.push(callback);
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(pendingResponses).toHaveLength(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+
+    const errorMessage = '플레이리스트 곡 목록을 불러오지 못했습니다.';
+    expect(screen.getByText(errorMessage)).toBeTruthy();
+
+    act(() => {
+      pendingResponses[0](sounds);
+    });
+
+    expect(screen.getByText(errorMessage)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /First Song/ })).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('button', { name: /First Song/ })).toBeTruthy();
+    expect(screen.queryByText(errorMessage)).toBeNull();
+  });
+
   it.each([
     {
       label: 'partially valid',

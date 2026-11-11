@@ -39,34 +39,39 @@ export function usePlaylistTracks(soundCloudUrl: string | null) {
   useEffect(() => {
     if (!soundCloudUrl || !iframeElement) return;
 
-    const finish = (status: PlaylistTracksStatus, tracks: PlayerTrack[] = []) => {
-      setResult({ key: loadKey, status, tracks });
-    };
+    let isActive = true;
+    let retryTimer: number | undefined;
+
+    const timeoutTimer = window.setTimeout(() => {
+      completeLoad('error');
+    }, LOAD_TIMEOUT_MS);
+
+    const completeLoad = (
+      status: PlaylistTracksStatus,
+      tracks: PlayerTrack[] = []
+    ) => {
+      if (!isActive) return;
+
+      isActive = false;
+
+      window.clearTimeout(timeoutTimer);
+      window.clearTimeout(retryTimer);
+
+      setResult({ key: loadKey, status, tracks })
+    }
 
     const soundCloud = window.SC;
     if (!soundCloud) {
-      finish('error');
+      completeLoad('error');
       return;
     }
 
     const widget = soundCloud.Widget(iframeElement);
     const { READY, ERROR } = soundCloud.Widget.Events;
-    let isActive = true;
-    let retryTimer: number | undefined;
-
-    const timeoutTimer = window.setTimeout(() => {
-      if (isActive) done('error');
-    }, LOAD_TIMEOUT_MS);
-
-    const done = (status: PlaylistTracksStatus, tracks: PlayerTrack[] = []) => {
-      if (!isActive) return;
-
-      isActive = false;
-      window.clearTimeout(timeoutTimer);
-      finish(status, tracks);
-    };
 
     const readSounds = (retryCount = 0) => {
+      if (!isActive) return;
+
       widget.getSounds((sounds) => {
         if (!isActive) return;
 
@@ -80,16 +85,16 @@ export function usePlaylistTracks(soundCloudUrl: string | null) {
         }
 
         if (list === null || tracks.length < list.length) {
-          done('error');
+          completeLoad('error');
           return;
         }
 
-        done(tracks.length === 0 ? 'empty' : 'ready', tracks);
+        completeLoad(tracks.length === 0 ? 'empty' : 'ready', tracks);
       });
     };
 
     const handleReady = () => readSounds();
-    const handleError = () => done('error');
+    const handleError = () => completeLoad('error');
 
     widget.bind(READY, handleReady);
     widget.bind(ERROR, handleError);
