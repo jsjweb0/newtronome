@@ -1,10 +1,18 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Bell, X as CloseIcon, Ellipsis, Trash2 } from 'lucide-react';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { Bell, BellOff, X as CloseIcon, Ellipsis, Trash2 } from 'lucide-react';
+import { useNotifications, type NotificationType } from '../../contexts/NotificationContext';
 import Tooltip from './Tooltip';
 import clsx from 'clsx';
 import { LogoMoIcon } from '../icons';
+
+// 아이콘 칩은 알림 종류(n.type)에 따라 색만 바뀜. 종류가 없으면 info 색
+const TONE_CLASS: Record<NotificationType, string> = {
+  success: 'bg-primary/14 text-primary',
+  warning: 'bg-[#B7791F]/14 text-[#B7791F] dark:bg-[#FFB54A]/14 dark:text-[#FFB54A]',
+  error: 'bg-danger/14 text-danger',
+  info: 'bg-[#2B6CB0]/14 text-[#2B6CB0] dark:bg-[#7CC4FF]/14 dark:text-[#7CC4FF]',
+};
 
 type NotificationDropdownProps = {
   collapsed?: boolean;
@@ -162,31 +170,52 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
           role="region"
           aria-label="알림 목록"
           className={clsx(
-            'z-300 fixed sm:absolute right-3 lg:right-0 mt-0.5 lg:mt-2 w-[calc(100%-1.5em)] sm:w-sm bg-background rounded-xl shadow-xl',
+            'z-300 fixed sm:absolute right-3 lg:right-0 mt-0.5 lg:mt-2 w-[calc(100%-1.5em)] sm:w-[392px]',
+            'flex flex-col overflow-hidden rounded-[18px] border border-black/8 dark:border-white/8',
+            'bg-background/85 dark:bg-[#181818]/72 backdrop-blur-[20px] backdrop-saturate-140',
+            'shadow-[0_24px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]',
             open && !isClosing && 'animate-fade-in',
             isClosing && 'animate-fade-out'
           )}
         >
-          <div className="flex justify-between items-center py-4 pl-6 pr-4 border-b border-b-textThr">
-            <h4 className="font-bold text-gray-900 dark:text-white">알림 {totalCount}</h4>
-            <div className="flex gap-3">
-              <button onClick={clearNotifications} className="text-sm text-textSub hover:underline">
+          <div className="flex justify-between items-center gap-2 pt-4 pb-3 pl-[18px] pr-3 border-b border-black/8 dark:border-white/8">
+            <h4 className="flex items-center gap-2 text-[17px] font-extrabold text-textBase">
+              알림
+              <span className="py-0.5 px-2 rounded-full bg-primary/14 text-primary text-xs font-extrabold">
+                <span className="sr-only">전체 </span>
+                {totalCount}
+              </span>
+            </h4>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={clearNotifications}
+                className={clsx(
+                  'inline-flex items-center gap-1.5 min-h-9 px-2.5 rounded-full text-xs font-bold text-textSub',
+                  'hover:text-danger hover:bg-danger/10'
+                )}
+              >
+                <Trash2 className="size-3.5" aria-hidden="true" />
                 전체 삭제
               </button>
               <Tooltip content="닫기" position="bottom">
                 <button
+                  type="button"
                   onClick={startClose}
                   aria-label="닫기"
-                  className="flex items-center justify-center size-8 rounded-full hover:bg-primary/10"
+                  className="flex items-center justify-center size-9 rounded-full text-textSub hover:text-textBase hover:bg-black/6 dark:hover:bg-white/8"
                 >
-                  <CloseIcon className="size-5" aria-hidden="true" />
+                  <CloseIcon className="size-[18px]" aria-hidden="true" />
                 </button>
               </Tooltip>
             </div>
           </div>
 
           <div id="notificationList" className="relative">
-            <ul ref={containerRef} className="overflow-y-auto h-[377px] scrollbar">
+            <ul
+              ref={containerRef}
+              className="overflow-y-auto h-[377px] max-h-[60dvh] p-1.5 pb-2 scrollbar"
+            >
               {currentList.length > 0 ? (
                 currentList.map((n) => {
                   const menuButtonId = `notification-menu-button-${n.id}`;
@@ -199,73 +228,83 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                         itemRefs.current[n.id] = el
                       }}
                       className={clsx(
-                        'group flex justify-between items-start relative p-4 border-b border-b-textThr text-sm break-words',
-                        'last:border-b-0',
-                        'hover:bg-textThr/30'
+                        'group relative grid grid-cols-[34px_minmax(0,1fr)_36px] items-start gap-3 min-h-11 py-3 pr-1.5 pl-4 rounded-xl text-sm break-words',
+                        'hover:bg-black/4 dark:hover:bg-white/5',
+                        !n.read && 'bg-primary/5'
                       )}
                     >
-                      <div className="relative pl-6">
-                        <button
-                          onClick={() => toggleRead(n.id)}
-                          aria-label={n.read ? '읽지 않음으로 표시' : '읽음으로 표시'}
-                          className="absolute top-1.5 left-0"
-                        >
-                          <span
-                            aria-hidden="true"
-                            className={clsx(
-                              'block size-2 rounded-full',
-                              !n.read && 'bg-primary'
-                            )}
-                          />
-                        </button>
-                        <div>
-                          <div className="flex gap-2 items-center font-semibold">
-                            <span className="">
-                              <LogoMoIcon className="size-3.5 text-primary" aria-hidden="true" />
-                            </span>
-                            <p>{n.message}</p>
-                          </div>
-                          <p className="mt-1 text-textSub/70 text-[13px]">
-                            {new Date(n.timestamp).toLocaleString('ko-KR', {
-                              year: 'numeric',
-                              month: '2-digit',
-                              day: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="shrink-0 relative inline-flex">
-                        <button
-                          type="button"
-                          id={menuButtonId}
+                      {!n.read && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-[5px] top-[25px] size-1.5 rounded-full bg-primary"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleRead(n.id)}
+                        aria-label={n.read ? '읽지 않음으로 표시' : '읽음으로 표시'}
+                        className={clsx(
+                          'flex items-center justify-center size-[34px] rounded-full transition-opacity',
+                          'hover:ring-2 hover:ring-current/30',
+                          TONE_CLASS[n.type ?? 'info'],
+                          n.read && 'opacity-60'
+                        )}
+                      >
+                        <LogoMoIcon className="size-3.5" aria-hidden="true" />
+                      </button>
+                      <div className="min-w-0 flex flex-col gap-1">
+                        <p
                           className={clsx(
-                            'flex justify-center items-center size-9 text-sm rounded-lg text-gray-800',
-                            'transition-all duration-200',
-                            'focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none',
-                            'dark:border-neutral-700 dark:text-textBase dark:focus:bg-neutral-800',
-                            'group-hover:opacity-100! group-hover:visible!',
-                            'group-focus-within:opacity-100! group-focus-within:visible!',
-                            openDropdownId === n.id ? 'opacity-100 visible' : 'opacity-0 invisible'
+                            'leading-[1.45] break-keep',
+                            n.read ? 'font-medium text-textSub/80' : 'font-bold text-textBase'
                           )}
-                          onClick={(e) => {
-                            setOpenDropdownId((prev) => (prev === n.id ? null : n.id));
-                            setAnchorEl(e.currentTarget);
-                          }}
-                          aria-haspopup="menu"
-                          aria-expanded={openDropdownId === n.id}
-                          aria-label="알림 메뉴 열기"
                         >
-                          <Ellipsis className="size-5" aria-hidden="true" />
-                        </button>
+                          {n.message}
+                        </p>
+                        <p className="text-xs text-textSub/70">
+                          {new Date(n.timestamp).toLocaleString('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
                       </div>
+                      <button
+                        type="button"
+                        id={menuButtonId}
+                        className={clsx(
+                          'flex justify-center items-center size-9 rounded-[10px] text-textSub',
+                          'transition-opacity duration-150',
+                          'hover:text-textBase hover:bg-black/6 dark:hover:bg-white/8',
+                          'focus-visible:opacity-100 group-hover:opacity-100',
+                          openDropdownId === n.id
+                            ? 'opacity-100 bg-black/6 dark:bg-white/8'
+                            : 'opacity-0 max-lg:opacity-100'
+                        )}
+                        onClick={(e) => {
+                          setOpenDropdownId((prev) => (prev === n.id ? null : n.id));
+                          setAnchorEl(e.currentTarget);
+                        }}
+                        aria-haspopup="menu"
+                        aria-expanded={openDropdownId === n.id}
+                        aria-label="알림 메뉴 열기"
+                      >
+                        <Ellipsis className="size-[18px]" aria-hidden="true" />
+                      </button>
                     </li>
                   )
                 })
               ) : (
-                <li className="flex justify-between items-start relative px-8 py-4 text-sm break-words">
-                  새 알림이 없습니다.
+                <li className="flex flex-col items-center justify-center gap-3 h-full px-6 text-center">
+                  <span
+                    aria-hidden="true"
+                    className="flex items-center justify-center size-15 rounded-full bg-black/5 dark:bg-white/6 text-textSub/70"
+                  >
+                    <BellOff className="size-[26px]" />
+                  </span>
+                  <strong className="text-[15px] text-textBase">새 알림이 없습니다.</strong>
                 </li>
               )}
 
@@ -283,48 +322,51 @@ export default function NotificationDropdown({ collapsed = false, }: Notificatio
                 return (
                   <div
                     className={clsx(
-                      'z-200 absolute w-30 bg-white shadow-md rounded-lg',
+                      'z-200 absolute min-w-[168px] p-1.5 rounded-xl',
+                      'bg-background border border-black/8 shadow-[0_12px_30px_rgba(0,0,0,0.15)]',
+                      'dark:bg-[#1E1E1E] dark:border-[#2E2E2E] dark:shadow-[0_12px_30px_rgba(0,0,0,0.5)]',
                       'transition-all duration-200 transform origin-top-right',
-                      'dark:bg-neutral-800 dark:border dark:border-neutral-700',
                       openDropdownId !== null ? 'animate-fade-in' : 'animate-fade-out'
                     )}
                     style={{
-                      top: elTop + height - liTop,
-                      right: '30px',
+                      top: elTop + height - liTop + 4,
+                      right: '12px',
                     }}
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby={`notification-menu-button-${openDropdownId}`}
                   >
-                    <div className="p-1 space-y-0.5">
-                      <button
-                        onClick={() => {
-                          removeNotification(openDropdownId);
-                          setOpenDropdownId(null);
-                        }}
-                        role="menuitem"
-                        aria-label="알림 삭제"
-                        className={clsx(
-                          'flex items-center gap-x-2.5 w-full py-2 px-3 rounded-lg text-sm text-textSub',
-                          'hover:bg-gray-100 focus:bg-gray-100',
-                          'dark:hover:bg-neutral-700 dark:focus:bg-neutral-700'
-                        )}
-                      >
-                        <Trash2 className="shrink-0 size-4" aria-hidden="true" />
-                        삭제하기
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        removeNotification(openDropdownId);
+                        setOpenDropdownId(null);
+                      }}
+                      role="menuitem"
+                      aria-label="알림 삭제"
+                      className={clsx(
+                        'flex items-center gap-2.5 w-full min-h-10 px-2.5 rounded-lg text-[13px] text-danger',
+                        'hover:bg-danger/12 focus-visible:bg-danger/12'
+                      )}
+                    >
+                      <Trash2 className="shrink-0 size-4" aria-hidden="true" />
+                      삭제하기
+                    </button>
                   </div>
                 );
               })()}
           </div>
 
-          <div className="border-t border-t-textThr">
+          <div className="pt-2 px-3 pb-3 border-t border-black/8 dark:border-white/8">
             <button
               type="button"
               onClick={() => setVisibleCount((c) => Math.min(c + perPage, notifications.length))}
               disabled={visibleCount >= totalCount}
-              className="flex items-center justify-center w-full p-4 text-primary text-sm font-semibold cursor-pointer disabled:text-textThr"
+              className={clsx(
+                'flex items-center justify-center w-full min-h-11 rounded-xl text-[13px] font-bold cursor-pointer',
+                'bg-black/5 text-textBase hover:bg-black/8',
+                'dark:bg-[#1C1C1C] dark:hover:bg-[#262626]',
+                'disabled:cursor-default disabled:text-textSub/50 disabled:hover:bg-black/5 dark:disabled:hover:bg-[#1C1C1C]'
+              )}
             >
               알림 더보기
             </button>
