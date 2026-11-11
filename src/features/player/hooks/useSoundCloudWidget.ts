@@ -16,6 +16,7 @@ const isRecord = (
 const PLAYLIST_LOAD_RETRY_DELAY_MS = 250;
 const PLAYLIST_LOAD_MAX_RETRIES = 12;
 const WIDGET_LOAD_TIMEOUT_MS = 10_000;
+const TRACK_PLAY_CONFIRM_TIMEOUT_MS = 10_000;
 type PlaylistStatus = 'loading' | 'ready' | 'empty' | 'error';
 
 const isPlayerTrack = (track: PlayerTrack | null): track is PlayerTrack => track !== null;
@@ -172,7 +173,7 @@ export function useSoundCloudWidget(playlistUrl: string) {
           );
 
           retryLoadRef.current = () => selectTrack(index, true);
-        }, 10_000);
+        }, TRACK_PLAY_CONFIRM_TIMEOUT_MS);
 
         widget.skip(index);
         return;

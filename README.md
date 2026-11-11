@@ -2,28 +2,30 @@
 
 [서비스 바로가기](https://newtronome.jsjweb0.workers.dev/) · [GitHub](https://github.com/jsjweb0/newtronome)
 
-직접 고른 누디스코·하우스 음악을 SoundCloud 플레이리스트로 소개하고 랜덤으로 재생하는 음악 큐레이션 서비스입니다. iTunes 곡 검색·미리듣기, 사용자별 트랙 저장, 게시판도 함께 제공합니다.
+직접 고른 누디스코·하우스 플레이리스트를 탐색·검색하고, 상세 화면에서 곡 목록을 확인하거나 전체 재생하는 음악 큐레이션 서비스입니다. SoundCloud Widget 기반 랜덤 재생, 플레이리스트·트랙 저장, Likes 곡 제목 검색, iTunes 곡 검색·미리듣기와 게시판을 제공합니다.
 
-| 항목      | 내용                                                         |
-| --------- | ------------------------------------------------------------ |
-| 개발 기간 | 2025.08 최초 제작 · 2026.07부터 리팩터링 및 기능 개선 진행 중 |
-| 담당 범위 | 1인 개발 (기획, 디자인, 프론트엔드, Firestore 데이터 설계, 배포) |
-| AI 활용   | 구현은 ChatGPT·Codex와 함께 진행, 기능·동작 정책 결정과 코드 리뷰 반영, 테스트 검증을 담당 |
-| 디자인    | 메인 화면 레이아웃은 레퍼런스 참고, 게시판·공통 컴포넌트는 shadcn/ui 코드를 가져와 프로젝트에 맞게 수정, 별도 시안 없이 코드로 구현 |
+| 항목      | 내용                                                                                                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 개발 기간 | 2025.08 최초 제작 · 2026.07부터 리팩터링 및 기능 개선 진행 중                                                                                                                |
+| 담당 범위 | 1인 개발 (기획, 레이아웃·기능 설계, 프론트엔드, Firestore 데이터 설계, 배포)                                                                                                 |
+| AI 활용   | 구현은 ChatGPT·Codex와 함께 진행했으며, 기능·동작 정책 결정, 코드 리뷰 반영과 테스트 검증을 담당                                                                             |
+| 디자인    | 초기에는 레퍼런스와 shadcn/ui 컴포넌트 코드를 참고해 별도 시안 없이 구현했습니다. 이후 Claude를 활용해 시각 디자인을 리뉴얼했으며, 레이아웃과 기능 설계는 직접 담당했습니다. |
 
-![데스크톱 플레이리스트 화면](docs/images/newtronome-playlist-desktop.png)
+![데스크톱 플레이리스트 화면](docs/images/newtronome-new-desktop.png)
 
-![모바일 플레이리스트 화면](docs/images/newtronome-playlist-mobile.jpg)
+![모바일 플레이리스트 화면](docs/images/newtronome-new-mobile.png)
 
 ## 반응형·접근성
 
-| 구분       | 구현 내용                                                                                       |
-| ---------- | ----------------------------------------------------------------------------------------------- |
-| 반응형     | 큰 화면은 접이식 사이드바와 고정 플레이리스트, 작은 화면은 드롭다운 메뉴와 열고 닫는 플레이리스트 |
+| 구분       | 구현 내용                                                                                                                                    |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 반응형     | 큰 화면은 접이식 사이드바와 고정 플레이리스트, 작은 화면은 드롭다운 메뉴와 열고 닫는 플레이리스트                                            |
 | 키보드     | 본문 바로가기 링크, 모바일 플레이리스트의 포커스 가두기와 `Escape` 닫기, 열린 동안 뒤쪽 화면 `inert` 처리, 닫은 뒤 여는 버튼으로 포커스 복귀 |
-| 스크린리더 | 재생·패널 버튼의 상태별 접근성 이름, 재생 위치 슬라이더의 `aria-valuetext`, 페이지별 문서 제목     |
-| 대화상자   | 아티스트 곡 패널을 Dialog로 구성하고 닫기 버튼에 초기 포커스                                     |
-| 모션       | `prefers-reduced-motion` 설정 시 배너 슬라이더 자동 재생 중지                                   |
+| 스크린리더 | 재생·패널 버튼의 상태별 접근성 이름, 재생 위치 슬라이더의 `aria-valuetext`, 페이지별 문서 제목                                               |
+| 대화상자   | 아티스트 곡 패널을 Dialog로 구성하고 닫기 버튼에 초기 포커스                                                                                 |
+| 모션       | `prefers-reduced-motion` 설정 시 배너 슬라이더 자동 재생 중지                                                                                |
+| 자동 검사  | axe 기반으로 메인·검색·게시판·로그인·404 페이지의 접근성을 로컬 검사하며, CI 실행 범위에는 포함하지 않음                                     |
+
 ## 핵심 요약
 
 - **재생**: 비공식 API 의존을 공식 SoundCloud Widget API로 바꾸고 Widget 이벤트와 React 상태(Zustand)를 동기화했습니다.
@@ -31,25 +33,29 @@
 - **비동기 상태**: Query Key, 요청 번호, mutation variables로 늦게 끝난 요청이 최신 화면을 덮어쓰지 않게 했습니다.
 - **서버 상태**: 게시판의 직접 구현한 캐시를 TanStack Query로 전환하고 변경 후 영향받는 Query만 갱신합니다.
 - **데이터 무결성**: 게시글 번호 발급과 좋아요·권한 검사를 클라이언트 계산에서 Firestore 트랜잭션과 보안 규칙으로 옮겼습니다.
+- **개인정보 보호**: 누구나 읽을 수 있는 게시글·댓글에 작성자 이메일이 저장되던 문제를 수정하고, 작성자 식별을 UID로 통일했습니다. 이메일 필드의 생성·추가를 거부하는 규칙 테스트를 작성했습니다.
 - **검증**: 단위·컴포넌트 테스트, Playwright E2E, Firestore 규칙 테스트를 PR마다 GitHub Actions에서 실행합니다.
 
 ### 서비스 확인 순서
 
-1. 플레이리스트에서 곡을 재생하고 하단 플레이어의 현재 곡·재생 시간을 확인합니다.
-2. 곡을 검색하고 미리듣기를 실행해 SoundCloud 재생이 정지하는지 확인합니다.
-3. 검색 결과의 "다른 곡 보기"로 아티스트 최신곡 패널을 열고, 패널 안에서 다른 곡을 미리듣기합니다.
+1. Playlists에서 제목으로 검색하고 상세 화면의 곡 목록·큐레이션 소개를 확인합니다.
+2. 상세 화면에서 전체 재생을 실행하고 하단 플레이어의 현재 곡·재생 시간을 확인합니다. SoundCloud 이동과 공유도 사용할 수 있습니다.
+3. 로그인 후 플레이리스트·트랙을 저장하고, Likes에서 저장한 곡을 제목으로 검색해 재생합니다.
+4. Search에서 곡을 검색하고 미리듣기를 실행해 SoundCloud 재생이 정지하는지 확인합니다.
+5. 검색 결과의 "다른 곡 보기"로 아티스트 최신곡 패널을 열고, 패널 안에서 다른 곡을 미리듣기합니다.
 
-음악 탐색과 미리듣기는 로그인 없이 이용할 수 있습니다. Likes 저장과 게시글·댓글 작성에는 로그인이 필요합니다.
+음악 탐색과 미리듣기는 로그인 없이 이용할 수 있습니다. 플레이리스트·트랙 저장과 게시글·댓글 작성에는 로그인이 필요합니다.
 
 ## 기술 스택
 
 | 구분        | 사용 기술                                         |
 | ----------- | ------------------------------------------------- |
 | 프론트엔드  | React, TypeScript, Vite, Tailwind CSS             |
+| UI          | Headless UI (대화상자), Swiper (슬라이더)         |
 | 상태 관리   | Zustand, React Context, TanStack Query            |
 | 인증·데이터 | Firebase Authentication, Firestore                |
 | 음악 연동   | SoundCloud Widget API, iTunes Search / Lookup API |
-| 테스트      | Vitest, Testing Library, Playwright               |
+| 테스트      | Vitest, Testing Library, Playwright, axe          |
 | 배포        | Cloudflare Workers Static Assets, GitHub Actions  |
 
 ### 상태 관리 역할
@@ -90,7 +96,7 @@
 | 상황                             | 해결 방법                                                                                  |
 | -------------------------------- | ------------------------------------------------------------------------------------------ |
 | 아티스트 A 조회 중 B 선택        | 아티스트 ID별 Query Key로 응답을 분리하고, `AbortSignal`로 쓸모없어진 A 요청 취소          |
-| 미리듣기 곡을 빠르게 바꿈        | 재생 요청마다 번호를 매기고 최신 번호가 아닌 `play()` 결과는 무시                         |
+| 미리듣기 곡을 빠르게 바꿈        | 재생 요청마다 번호를 매기고 최신 번호가 아닌 `play()` 결과는 무시                          |
 | 게시글 A 조회수 요청 중 B로 이동 | 요청 시점의 게시판·게시글 ID를 mutation variables로 전달해 A의 응답이 B 캐시를 바꾸지 않음 |
 
 **검증** — [검색 화면 테스트](src/features/itunes/pages/ITunesSearchPage.test.tsx)에서 늦은 A 응답과 이전 재생 실패가 최신 미리듣기를 바꾸지 않는지, [게시판 경합 E2E](tests/e2e/board-races.spec.ts)에서 늦은 조회수·삭제 요청과 백그라운드 refetch 중 수정 입력 유지를 확인합니다.
@@ -130,11 +136,11 @@ TanStack Query는 아티스트 곡 조회에 먼저 적용했습니다. 아티�
 - Firestore 규칙에서도 `getAfter`로 "카운터가 정확히 1 증가했고, 새 문서 ID가 그 값과 같은지" 검사합니다. 앱 코드를 거치지 않은 요청도 번호를 건너뛰거나 중복시킬 수 없습니다.
 - 작성 시각은 클라이언트 시간이 아닌 `serverTimestamp()`로 저장합니다. 규칙은 이 값이 `request.time`과 같은지 확인합니다.
 
-**문제 — 이메일 기반 권한 판별**
-관리자는 특정 이메일 문자열로, 작성자는 UID 또는 이메일로 판별했습니다. 권한 기준이 코드와 규칙에 하드코딩되어 있었고 판별 기준도 여러 개였습니다.
+**문제 — 공개 문서의 작성자 이메일과 이메일 기반 권한 판별**
+로그인 없이 누구나 읽을 수 있는 게시글·댓글 문서에 `email`·`writerEmail`을 저장해 작성자 이메일을 조회할 수 있는 구조였습니다. 관리자는 특정 이메일 문자열로, 작성자는 UID 또는 이메일로 판별해 권한 기준도 여러 개였습니다.
 
 **해결 — Custom Claim과 UID로 통일**
-Firebase Admin SDK 스크립트([set-admin-claim.mjs](scripts/set-admin-claim.mjs))로 관리자 계정에 `admin` Custom Claim을 부여하고 규칙과 UI 모두 `token.admin`과 UID로만 판별하도록 바꿨습니다. 게시글·댓글에 이메일 필드를 저장하지 못하도록 규칙에서 허용 필드도 제한했습니다.
+게시글·댓글 저장 데이터에서 이메일을 제거하고 작성자 조회·판별을 UID로 통일했습니다. Firebase Admin SDK 스크립트([set-admin-claim.mjs](scripts/set-admin-claim.mjs))로 관리자 계정에 `admin` Custom Claim을 부여하고 관리자 판별도 Claim 기준으로 바꿨습니다. 규칙의 허용 필드를 제한하고 이메일 필드가 포함된 생성·수정 요청이 거부되는지 테스트합니다. 이 변경만으로 이미 저장된 운영 문서의 이메일이 삭제되는 것은 아니며, 기존 데이터 정리 여부는 별도 확인이 필요합니다.
 
 **좋아요 조작 방지**
 좋아요 수정은 한 번에 본인 UID 하나만 추가하거나 제거할 수 있고 `likeCount`도 그에 맞춰 정확히 1만 증가·감소하도록 규칙에서 제한합니다.
@@ -155,17 +161,18 @@ Firebase Admin SDK 스크립트([set-admin-claim.mjs](scripts/set-admin-claim.mj
 
 ## 테스트와 CI
 
-| 테스트                   | 검증 내용                                                                  |
-| ------------------------ | -------------------------------------------------------------------------- |
+| 테스트                   | 검증 내용                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------- |
 | Vitest + Testing Library | 재생 상태, 비동기 응답 순서, 검색·캐시, Query Key·무효화, mutation 실패 처리 |
-| Playwright               | 재생 UI, 게시글·댓글 CRUD, 경합·오류 시나리오                              |
-| Firestore Emulator       | 인증·권한·필드 조건에 따른 보안 규칙                                       |
+| Playwright               | 데스크톱·Pixel 7 에뮬레이션 재생 UI, 게시글·댓글 CRUD, 경합·오류 시나리오    |
+| axe + Playwright         | 메인·검색·게시판·로그인·404 페이지의 접근성 자동 검사 (로컬 실행)            |
+| Firestore Emulator       | 인증·권한·필드 조건에 따른 보안 규칙                                         |
 
-| 워크플로                                         | 실행 시점      | 내용                                               |
-| ------------------------------------------------ | -------------- | -------------------------------------------------- |
-| [PR Checks](.github/workflows/pr-checks.yml)     | PR              | typecheck, lint, 단위 테스트, build, Firestore 규칙 |
-| [Playwright](.github/workflows/playwright.yml)   | PR, `main` push | Chromium E2E                                       |
-| [Verify and Deploy](.github/workflows/deploy.yml) | `main` push     | 필수 검증 통과 후 Cloudflare Workers 배포          |
+| 워크플로                                          | 실행 시점                       | 내용                                                                   |
+| ------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| [PR Checks](.github/workflows/pr-checks.yml)      | PR                              | typecheck, lint, 단위 테스트, build, Firestore 규칙                    |
+| [Playwright](.github/workflows/playwright.yml)    | `main`·`master` 대상 PR 및 push | Chromium 재생 데스크톱·모바일, 게시판 E2E                              |
+| [Verify and Deploy](.github/workflows/deploy.yml) | `main` push, 수동 실행          | 타입·린트·단위 테스트·빌드·규칙 테스트 통과 후 Cloudflare Workers 배포 |
 
 로컬 실행:
 
@@ -181,6 +188,12 @@ npm run build
 ```bash
 npx playwright install chromium
 npm run test:e2e
+```
+
+접근성 검사만 로컬에서 실행하려면 다음 명령을 사용합니다. CI의 Playwright 작업에서는 `a11y-chromium`을 실행하지 않습니다.
+
+```bash
+npm run test:a11y
 ```
 
 Firestore 규칙 테스트는 Java가 설치된 환경에서 로컬 Emulator로 실행하며 `test:run`에는 포함되지 않습니다.
@@ -208,11 +221,18 @@ npm run dev
 
 ### 배포
 
-Cloudflare Workers Static Assets로 배포합니다. `main` 브랜치에 push하면 GitHub Actions가 typecheck, lint, Vitest, build, Firestore 규칙 테스트를 순서대로 실행합니다. 모든 검증이 통과한 경우에만 Wrangler가 Cloudflare Workers에 배포합니다.
+Cloudflare Workers Static Assets로 배포합니다. `main` 브랜치에 push하면 GitHub Actions가 typecheck, lint, Vitest, build, Firestore 규칙 테스트를 순서대로 실행합니다. 이 워크플로의 검증이 모두 통과한 경우에만 Wrangler가 프론트엔드를 배포합니다.
+
+Firestore 운영 규칙 배포는 이 워크플로에 포함되지 않습니다. 규칙은 별도로 수동 배포하며, 수동 규칙 배포에 테스트 통과를 강제하는 자동화는 없습니다.
+
+<details>
+<summary>배포 설정과 중복 배포 방지</summary>
 
 배포 워크플로는 Node.js 22와 기존 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` GitHub Actions 시크릿을 사용합니다. `vite.config.js`의 `maxParallelFileOps: 32`는 빌드 중 동시 파일 작업 수를 제한합니다.
 
 Cloudflare Dashboard의 Workers Builds Git 자동 배포는 비활성화합니다. 이 설정이 활성화되어 있으면 GitHub Actions 검증과 별도로 배포가 시작되어 검증 게이트를 우회하고 중복 배포가 발생할 수 있습니다.
+
+</details>
 
 ## 폴더 구조
 
@@ -226,6 +246,7 @@ src/
     bookmarks/     저장 트랙 UI와 데이터 처리
     itunes/        검색·미리듣기와 API 응답 검증
     player/        Widget 연동 훅, 스토어, 타입
+    playlists/     탐색·상세·저장 UI, 큐레이션 데이터, 조회 훅과 서비스, 커버 생성 유틸
   hooks/           공통 훅
   layouts/         페이지 레이아웃
   pages/           인증, 게시판, 사용자 페이지
