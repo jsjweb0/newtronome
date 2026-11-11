@@ -162,9 +162,77 @@
     }
   }
 
+  /* 로딩: 로고 위로 빛이 한 번 스쳐 지나감 */
+  .logo-sheen {
+    animation: logo-sheen 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes logo-sheen {
+    0% {
+      transform: translateX(-120%);
+    }
+    60%,
+    100% {
+      transform: translateX(320%);
+    }
+  }
+
+  /* 로딩: 이퀄라이저 막대 5개 */
+  .loading-eq > span {
+    display: block;
+    width: 4px;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--color-primary);
+    transform-origin: 50% 100%;
+    animation: loading-eq 1s ease-in-out infinite;
+  }
+
+  .loading-eq > span:nth-child(2) { animation-delay: -0.8s; }
+  .loading-eq > span:nth-child(3) { animation-delay: -0.6s; }
+  .loading-eq > span:nth-child(4) { animation-delay: -0.4s; }
+  .loading-eq > span:nth-child(5) { animation-delay: -0.2s; }
+
+  @keyframes loading-eq {
+    0%,
+    100% {
+      transform: scaleY(0.35);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  /* 로딩: LOADING 뒤 점 세 개 */
+  .loading-dots > i {
+    font-style: normal;
+    animation: loading-dots 1.2s infinite;
+  }
+
+  .loading-dots > i:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots > i:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes loading-dots {
+    0%,
+    80%,
+    100% {
+      opacity: 0.2;
+    }
+    40% {
+      opacity: 1;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .logo-fill {
+    .logo-fill,
+    .logo-sheen,
+    .loading-eq > span,
+    .loading-dots > i {
       animation: none;
+    }
+
+    .logo-sheen {
+      display: none;
     }
   }
 }
