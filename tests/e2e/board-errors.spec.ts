@@ -1,4 +1,16 @@
+import type { Page } from '@playwright/test';
 import { test, expect, makePost } from './fixtures/board';
+
+// 토스트 문구는 화면의 카드와 스크린 리더용 낭독 영역에 함께 들어가므로,
+// 보이는 토스트 영역 안에서 찾고 낭독 영역에도 들어갔는지 따로 확인함
+async function expectToast(page: Page, message: string) {
+  await expect(
+    page.getByRole('region', { name: '알림 메시지' }).getByText(message, { exact: true })
+  ).toBeVisible();
+  await expect(
+    page.locator('.sr-only:is([role="status"], [role="alert"])').getByText(message, { exact: true })
+  ).toHaveCount(1);
+}
 
 test('list read failure shows retry UI and recovers without production traffic', async ({ page, store }) => {
   store.fail('list', 4);
@@ -29,7 +41,7 @@ test('failed post create and update retain entered values and existing data', as
   await page.getByPlaceholder('제목을 입력해주세요').fill('실패해도 남을 제목');
   await page.getByPlaceholder('내용을 입력해주세요.').fill('실패해도 남을 본문');
   await page.getByRole('button', { name: '등록', exact: true }).click();
-  await expect(page.getByText('글 등록에 실패했습니다.', { exact: true })).toBeVisible();
+  await expectToast(page, '글 등록에 실패했습니다.');
   await expect(page.getByPlaceholder('제목을 입력해주세요')).toHaveValue('실패해도 남을 제목');
   await expect(page.getByPlaceholder('내용을 입력해주세요.')).toHaveValue('실패해도 남을 본문');
   expect(store.posts).toHaveLength(2);
@@ -39,7 +51,7 @@ test('failed post create and update retain entered values and existing data', as
   await page.getByPlaceholder('제목을 입력해주세요').fill('저장 실패 제목');
   await page.getByPlaceholder('내용을 입력해주세요.').fill('저장 실패 본문');
   await page.getByRole('button', { name: '수정', exact: true }).click();
-  await expect(page.getByText('게시글 수정에 실패했습니다.', { exact: true })).toBeVisible();
+  await expectToast(page, '게시글 수정에 실패했습니다.');
   await expect(page.getByPlaceholder('제목을 입력해주세요')).toHaveValue('저장 실패 제목');
   expect(store.posts.find((post) => post.id === 'a')?.title).toBe('게시글 A');
 });
@@ -50,7 +62,7 @@ test('failed comment mutations retain input and server-backed rows', async ({ pa
   store.fail('createComment');
   await composer.fill('등록 실패 댓글');
   await page.getByRole('button', { name: '등록', exact: true }).click();
-  await expect(page.getByText('댓글 등록에 실패했습니다.', { exact: true })).toBeVisible();
+  await expectToast(page, '댓글 등록에 실패했습니다.');
   await expect(composer).toHaveValue('등록 실패 댓글');
   await expect(page.getByText('A의 기존 댓글', { exact: true })).toBeVisible();
 
@@ -61,7 +73,7 @@ test('failed comment mutations retain input and server-backed rows', async ({ pa
   const editor = page.locator('textarea').last();
   await editor.fill('수정 실패 댓글');
   await page.getByRole('button', { name: '수정', exact: true }).click();
-  await expect(page.getByText('수정에 실패했습니다.', { exact: true })).toBeVisible();
+  await expectToast(page, '수정에 실패했습니다.');
   await expect(editor).toHaveValue('수정 실패 댓글');
   expect(store.comments.find((comment) => comment.id === 'ca')?.content).toBe('A의 기존 댓글');
 
@@ -71,7 +83,7 @@ test('failed comment mutations retain input and server-backed rows', async ({ pa
   await originalRow.getByRole('button', { name: '댓글 메뉴 (수정, 삭제)', exact: true }).click();
   await originalRow.getByRole('menuitem', { name: '삭제', exact: true }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: '확인', exact: true }).click();
-  await expect(page.getByText('삭제에 실패했습니다.', { exact: true })).toBeVisible();
+  await expectToast(page, '삭제에 실패했습니다.');
   await expect(page.getByText('A의 기존 댓글', { exact: true })).toBeVisible();
 });
 
@@ -80,7 +92,7 @@ test('failed post delete keeps the current post visible', async ({ page, store }
   page.on('dialog', (dialog) => dialog.accept());
   await page.goto('/board/free/a');
   await page.getByRole('button', { name: '삭제', exact: true }).click();
-  await expect(page.getByText('삭제에 실패했습니다.', { exact: true })).toBeVisible();
+  await expectToast(page, '삭제에 실패했습니다.');
   await expect(page.getByRole('heading', { name: /게시글 A/ })).toBeVisible();
   expect(store.posts.some((post) => post.id === 'a')).toBe(true);
 });

@@ -123,9 +123,25 @@ describe('TrackBookmarkButton subscription failures', () => {
     expect(subscriptions[1].unsubscribe).toHaveBeenCalledTimes(1);
     expect(subscribeToSavedTrack).toHaveBeenCalledTimes(2);
     fireEvent.click(screen.getByRole('button', { name: '북마크 추가' }));
-    expect(mocks.showToast).toHaveBeenCalledWith({ message: '로그인 후 북마크할 수 있습니다.', type: 'info' });
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      message: '로그인 후 북마크할 수 있습니다.',
+      type: 'info',
+      action: { label: '로그인', to: '/login' },
+    });
     expect(saveTrack).not.toHaveBeenCalled();
     expect(removeSavedTrack).not.toHaveBeenCalled();
+  });
+
+  it('calls onLoginRequired instead of the toast when signed out', () => {
+    mocks.user = null;
+    const onLoginRequired = vi.fn();
+    render(<TrackBookmarkButton track={track} onLoginRequired={onLoginRequired} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '북마크 추가' }));
+
+    expect(onLoginRequired).toHaveBeenCalledTimes(1);
+    expect(mocks.showToast).not.toHaveBeenCalled();
+    expect(saveTrack).not.toHaveBeenCalled();
   });
 
   it('guards writes inside the hook during loading and after subscription failure', async () => {

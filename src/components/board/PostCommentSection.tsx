@@ -69,6 +69,7 @@ export default function PostCommentSection({
       showToast({
         message: '로그인 후 작성할 수 있습니다.',
         type: 'error',
+        action: { label: '로그인', to: '/login' },
       });
       return;
     }

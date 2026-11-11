@@ -28,6 +28,7 @@
   --animate-fade-slide-in: fade-slide-in 0.2s ease-out forwards;
   --animate-fade-slide-out: fade-slide-out 0.15s ease-in forwards;
   --animate-like: like 0.4s ease-in-out;
+  --animate-toast-progress: toast-progress linear forwards;
 
   @keyframes fade-in {
     0% {
@@ -66,6 +67,15 @@
     100% {
       opacity: 0;
       transform: translateY(5px);
+    }
+  }
+
+  @keyframes toast-progress {
+    0% {
+      transform: scaleX(1);
+    }
+    100% {
+      transform: scaleX(0);
     }
   }
 

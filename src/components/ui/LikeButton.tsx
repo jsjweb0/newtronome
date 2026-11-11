@@ -122,7 +122,11 @@ export default function LikeButton({
 
   const handleLike = async () => {
     if (!user) {
-      showToast({ message: '로그인 후 이용해 주세요!', type: 'info' });
+      showToast({
+        message: '로그인 후 이용해 주세요!',
+        type: 'info',
+        action: { label: '로그인', to: '/login' },
+      });
       return;
     }
 
