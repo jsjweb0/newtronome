@@ -55,3 +55,22 @@ export function formatDate(timestamp: DateValue, withTime = false): string {
 
   return dayjs(date).format(withTime ? 'YYYY-MM-DD HH:mm' : 'YYYY-MM-DD');
 }
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+/**
+ * 알림 시각을 기준 시각(now)과 비교해 "방금 전", "N분 전", "N시간 전", "M월 D일"로 변환합니다.
+ * 기준 시각보다 늦은 시각은 "방금 전"으로 표시합니다.
+ */
+export function formatRelativeTime(timestamp: number, now: number): string {
+  const diff = now - timestamp;
+
+  if (diff < MINUTE) return '방금 전';
+  if (diff < HOUR) return `${Math.floor(diff / MINUTE)}분 전`;
+  if (diff < DAY) return `${Math.floor(diff / HOUR)}시간 전`;
+
+  const date = new Date(timestamp);
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
