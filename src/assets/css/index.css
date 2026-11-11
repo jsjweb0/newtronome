@@ -4,8 +4,6 @@
 @plugin "@tailwindcss/forms";
 @custom-variant dark (&:where(.dark, .dark *));
 
-@import 'preline/variants.css';
-
 @theme {
   --font-sans: 'Pretendard Variable', sans-serif;
   --font-inter: 'Inter', sans-serif;

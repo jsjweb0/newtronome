@@ -1,7 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { installSoundCloudMock } from './soundcloud';
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
+  if (testInfo.tags.includes('@virtual-time')) {
+    const startTime = new Date('2026-01-01T00:00:00Z');
+    await page.clock.install({ time: startTime });
+    await page.clock.pauseAt(startTime);
+  }
+
   await page.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname === '127.0.0.1') return route.continue();
@@ -11,7 +17,7 @@ test.beforeEach(async ({ page }) => {
     return route.fulfill({ status: 200, body: '' });
   });
   await page.goto('/');
-  await page.waitForFunction(() => window.soundCloudTest?.isBound());
+  await expect.poll(() => page.evaluate(() => window.soundCloudTest?.isBound())).toBe(true);
 });
 
 async function emit(page, event) {
@@ -80,14 +86,28 @@ test('Widget error ends loading and retry restores the playlist', async ({ page 
   await expect(page.locator('footer').getByRole('button', { name: '정지', exact: true })).toBeVisible();
 });
 
-test('missing READY times out and retry can finish with an empty result', async ({ page }) => {
-  await expect(page.locator('main').getByRole('alert')).toBeVisible({ timeout: 15000 });
-  await expectNoLoading(page);
-  await page.locator('main').getByRole('button', { name: '다시 시도' }).click();
-  await page.evaluate(() => window.soundCloudTest.empty());
-  await emit(page, 'READY');
-  await expect(page.locator('main')).toContainText('플레이리스트가 비어 있어요');
-  await expectNoLoading(page);
+test('missing READY times out and retry can finish with an empty result', { tag: '@virtual-time' }, async ({ page }, testInfo) => {
+  try {
+    const errorAlert = page.locator('main').getByRole('alert');
+    await page.clock.runFor(9_999);
+    await expect(errorAlert).toHaveCount(0);
+    await expect(page.locator('main .animate-pulse').first()).toBeVisible();
+    await page.clock.runFor(1);
+    await expect(errorAlert).toBeVisible();
+    await page.clock.resume();
+    await expectNoLoading(page);
+    await page.locator('main').getByRole('button', { name: '다시 시도' }).click();
+    await page.evaluate(() => window.soundCloudTest.empty());
+    await emit(page, 'READY');
+    await expect(page.locator('main')).toContainText('플레이리스트가 비어 있어요');
+    await expectNoLoading(page);
+  } finally {
+    const history = await page.evaluate(() => window.soundCloudTest.history);
+    await testInfo.attach('soundcloud-history', {
+      body: JSON.stringify(history, null, 2),
+      contentType: 'application/json',
+    });
+  }
 });
 
 test('late responses from A do not overwrite B after consecutive track selections', async ({ page }, testInfo) => {
