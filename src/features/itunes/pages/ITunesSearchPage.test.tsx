@@ -56,6 +56,8 @@ async function showSearchResults() {
 }
 
 beforeEach(() => {
+  // jsdom does not run CSS transitions, so there are no active animations to await.
+  vi.spyOn(Element.prototype, 'getAnimations').mockReturnValue([]);
   // jsdom does not implement MediaError or the audio.error property.
   vi.stubGlobal('MediaError', {
     MEDIA_ERR_ABORTED: 1,

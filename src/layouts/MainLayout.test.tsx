@@ -1,6 +1,5 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act } from 'react';
 import { MemoryRouter, Route, Routes, useOutletContext } from 'react-router-dom';
 import type { PlayerOutletContext } from './MainLayout';
 import { usePlayerStore } from '../features/player/stores/usePlayerStore';
@@ -305,7 +304,9 @@ describe('MainLayout', () => {
     expect(usePlayerStore.getState().tracks).toHaveLength(1);
 
     // 한 곡 재생 중이었다면 다시 불러오지 않고 이 플레이리스트 첫 곡으로
-    usePlayerStore.setState({ playbackMode: 'single' });
+    act(() => {
+      usePlayerStore.setState({ playbackMode: 'single' });
+    });
     fireEvent.click(screen.getByRole('button', { name: '전체 재생' }));
     expect(widgetMocks.selectTrack).toHaveBeenCalledWith(0);
     expect(widgetMocks.reloadPlaylistFrame).not.toHaveBeenCalled();
@@ -315,7 +316,6 @@ describe('MainLayout', () => {
     ['/playlists', '플레이리스트 | NEWTRONOME'],
     ['/playlists/2024-spring', '2024 입하 디스코 | NEWTRONOME'],
     ['/playlists/unknown', '플레이리스트를 찾을 수 없음 | NEWTRONOME'],
-    ['/playlists/%E0%A4%A', '플레이리스트를 찾을 수 없음 | NEWTRONOME'],
     ['/search', '음악 검색 | NEWTRONOME'],
     ['/board/free', '자유게시판 | NEWTRONOME'],
     ['/board/notice/write', '공지사항 글쓰기 | NEWTRONOME'],
@@ -332,5 +332,29 @@ describe('MainLayout', () => {
     );
 
     expect(document.title).toBe(expectedTitle);
+  });
+
+  it('handles a malformed playlist URL and reports the expected router warning', () => {
+    const pathname = '/playlists/%E0%A4%A';
+    const expectedWarning = `The URL path "${pathname}" could not be decoded because it is a malformed URL segment.`;
+    const originalWarn = console.warn;
+    const warn = vi.spyOn(console, 'warn').mockImplementation((...args: unknown[]) => {
+      if (typeof args[0] === 'string' && args[0].startsWith(expectedWarning)) return;
+      originalWarn(...args);
+    });
+
+    render(
+      <MemoryRouter initialEntries={[pathname]}>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route path="*" element={<div>페이지 본문</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(document.title).toBe('플레이리스트를 찾을 수 없음 | NEWTRONOME');
+    expect(screen.getByText('페이지 본문')).toBeTruthy();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(expectedWarning));
   });
 });
