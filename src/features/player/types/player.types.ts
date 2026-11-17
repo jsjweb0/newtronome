@@ -26,6 +26,7 @@ export interface PlayerState {
   currentTime: number;
   duration: number;
   isMuted: boolean;
+  isPlaybackLoading: boolean;
 }
 
 export interface PlayerActions {
@@ -36,6 +37,7 @@ export interface PlayerActions {
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
   setMuted: (isMuted: boolean) => void;
+  setPlaybackLoading: (loading: boolean) => void;
 }
 
 export type PlayerStore = PlayerState & PlayerActions;
@@ -44,3 +46,20 @@ export interface PlaySingleTrackOptions {
   onResolved?: (track: PlayerTrack) => void;
   onFailure?: () => void;
 }
+
+export type TrackSelectionRequest =
+  | {
+    kind: 'playlist';
+    requestKey: number;
+    playlistUrl: string;
+    trackId: PlayerTrack['id'];
+    index: number;
+    playAfterLoad: boolean;
+  }
+  | {
+    kind: 'single';
+    requestKey: number;
+    track: PlayerTrack;
+    options?: PlaySingleTrackOptions;
+    playAfterLoad: boolean;
+  };

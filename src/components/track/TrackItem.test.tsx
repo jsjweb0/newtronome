@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PlayerTrack } from '../../features/player/types/player.types';
 import TrackItem from './TrackItem';
@@ -51,4 +51,24 @@ describe('TrackItem accessibility', () => {
 
     expect(container.querySelector('img')?.getAttribute('alt')).toBe('');
   });
+});
+
+it('disables playback without disabling sibling actions, then restores playback', () => {
+  const play = vi.fn();
+  const action = vi.fn();
+  const props = { idx: 0, track, onTrackClick: play,
+    actions: <button onClick={action}>Save track</button> };
+  const { rerender } = render(<TrackItem {...props} disabled />);
+  const button = screen.getByRole<HTMLButtonElement>('button', { name: /Test track.*재생/ });
+  expect(button.disabled).toBe(true);
+  fireEvent.click(button);
+  expect(play).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Save track' }));
+  expect(action).toHaveBeenCalledTimes(1);
+  rerender(<TrackItem {...props} />);
+  expect(button.disabled).toBe(false);
+  fireEvent.click(button);
+  expect(play).toHaveBeenCalledWith(track);
+  rerender(<TrackItem {...props} track={{ ...track, playbackStatus: 'blocked' }} disabled={false} />);
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: /Test track.*재생/ }).disabled).toBe(true);
 });

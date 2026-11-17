@@ -49,6 +49,7 @@ describe('PlaylistDetailPage', () => {
       currentTrack: playlistTrack,
       playbackMode: 'playlist',
       isPlaying: true,
+      isPlaybackLoading: false,
       currentTime: 10,
       duration: 100,
     });
@@ -249,4 +250,29 @@ describe('PlaylistDetailPage', () => {
     ).toBe('/playlists');
     expect(container.querySelector('iframe')).toBeNull();
   });
+it('locks only the current single track in the detail page and releases it after loading', async () => {
+  installFakeSoundCloud([fakeSound(1, 'First Song'), fakeSound(2, 'Second Song')]);
+  usePlayerStore.setState({ currentTrack: { ...playlistTrack, id: 1 },
+    playbackMode: 'single', isPlaybackLoading: true });
+  const { context } = renderAt('/playlists/2024-spring');
+  const current = await screen.findByRole<HTMLButtonElement>('button', { name: /First Song/ });
+  const other = screen.getByRole<HTMLButtonElement>('button', { name: /Second Song/ });
+  expect(current.disabled).toBe(true);
+  expect(other.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(context.onToggleTrack).not.toHaveBeenCalled();
+  fireEvent.click(other);
+  expect(context.onPlaySingleTrack).toHaveBeenCalledWith(
+    expect.objectContaining({ id: 2 }), expect.any(Object));
+  act(() => usePlayerStore.getState().setPlaybackLoading(false));
+  expect(current.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(context.onToggleTrack).toHaveBeenCalledTimes(1);
+  act(() => usePlayerStore.setState({ playbackMode: 'playlist', isPlaybackLoading: true }));
+  expect(current.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(context.onPlaySingleTrack).toHaveBeenLastCalledWith(
+    expect.objectContaining({ id: 1 }), expect.any(Object));
+});
+
 });

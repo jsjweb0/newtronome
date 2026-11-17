@@ -25,6 +25,10 @@ export default function LikedTracksPage() {
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
 
+  const isPlaybackLoading = usePlayerStore(
+    (state) => state.isPlaybackLoading
+  );
+
   const [resolvedStatuses, setResolvedStatuses] = useState<
     Record<string, PlaybackStatus>
   >({});
@@ -237,6 +241,12 @@ export default function LikedTracksPage() {
                     currentTrack={playbackMode === 'single' ? currentTrack : null}
                     isPlaying={isPlaying}
                     onTrackClick={handleTrackClick}
+                    disabled={
+                      isPlaybackLoading &&
+                      playbackMode === 'single' &&
+                      currentTrack != null &&
+                      String(currentTrack.id) === String(track.id)
+                    }
                     actions={
                       <>
                         <button

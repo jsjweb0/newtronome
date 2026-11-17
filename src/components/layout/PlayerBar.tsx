@@ -185,7 +185,7 @@ export default function PlayerBar({
             onClick={toggle}
             className="inline-flex items-center justify-center size-12 bg-textBase rounded-full"
             aria-label={isPlaying ? '정지' : '재생'}
-            disabled={controlsDisabled}
+            disabled={controlsDisabled || soundCloudWidget.isPlaybackLoading}
           >
             {isPlaying ? (
               <Pause aria-hidden="true" className="size-[22px] fill-background stroke-1 stroke-background" />
