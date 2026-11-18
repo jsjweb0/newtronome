@@ -43,7 +43,9 @@ export default function HomePage() {
     onSelectTrack?.(trackIndex);
   };
 
-  if (playlistStatus === 'loading') return <HomePageSkeleton />;
+  if (playlistStatus === 'loading' && tracks.length === 0) {
+    return <HomePageSkeleton />;
+  }
 
   if (playlistStatus === 'error') {
     return (

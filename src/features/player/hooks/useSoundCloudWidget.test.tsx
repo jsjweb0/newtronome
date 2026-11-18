@@ -732,6 +732,101 @@ describe('useSoundCloudWidget source switching', () => {
     expect(usePlayerStore.getState().isPlaying).toBe(false);
   });
 
+  describe('request ownership regression boundaries', () => {
+    it('confirms only the final skip in A → B → A, even when the first A lookup arrives last', () => {
+      vi.useFakeTimers();
+      const { widget, events, listeners } = createWidgetMock();
+      const { result } = renderWidgetHook();
+      vi.mocked(widget.getSounds).mockImplementation(reply => reply(playlistTracks.map(toWidgetSound)));
+      act(() => listeners.get(events.READY)?.());
+      vi.mocked(widget.getCurrentSound).mockClear();
+      for (const index of [0, 1, 0]) {
+        act(() => result.current.selectTrack(index));
+        act(() => listeners.get(events.PLAY)?.());
+      }
+      const replies = vi.mocked(widget.getCurrentSound).mock.calls.map(([reply]) => reply);
+      expect(vi.mocked(widget.skip).mock.calls).toEqual([[0], [1], [0]]);
+      act(() => replies[2](toWidgetSound(playlistTracks[0])));
+      act(() => listeners.get(events.PLAY_PROGRESS)?.({ currentPosition: 5000 }));
+      const confirmed = usePlayerStore.getState();
+      act(() => {
+        replies[1](toWidgetSound(playlistTracks[1]));
+        replies[0](toWidgetSound(playlistTracks[0]));
+        vi.advanceTimersByTime(10_000);
+      });
+      expect(usePlayerStore.getState()).toBe(confirmed);
+      expect(confirmed).toMatchObject({ currentTrack: { id: 1 }, isPlaying: true, currentTime: 5 });
+      expect(widget.pause).not.toHaveBeenCalled();
+      expect(widget.load).not.toHaveBeenCalled();
+    });
+
+    it('accepts a natural next track after skip confirmation and rejects the previous PLAY lookup', () => {
+      const { widget, events, listeners } = createWidgetMock();
+      const { result } = renderWidgetHook();
+      act(() => result.current.selectTrack(0));
+      act(() => listeners.get(events.PLAY)?.());
+      act(() => vi.mocked(widget.getCurrentSound).mock.calls[0][0](toWidgetSound(playlistTracks[0])));
+      // A later PLAY of A starts a lookup that outlives the natural transition to B.
+      act(() => listeners.get(events.PLAY)?.());
+      const oldReply = vi.mocked(widget.getCurrentSound).mock.calls[1][0];
+      act(() => {
+        listeners.get(events.FINISH)?.();
+        listeners.get(events.PLAY)?.();
+      });
+      act(() => vi.mocked(widget.getCurrentSound).mock.calls[2][0](toWidgetSound(playlistTracks[1])));
+      const confirmed = usePlayerStore.getState();
+      act(() => oldReply(toWidgetSound(playlistTracks[0])));
+      expect(usePlayerStore.getState()).toBe(confirmed);
+      expect(confirmed).toMatchObject({ currentTrack: { id: 2 }, isPlaying: true });
+      expect(result.current.widgetTrack?.id).toBe(2);
+      expect(widget.skip).toHaveBeenCalledExactlyOnceWith(0);
+      expect(widget.next).not.toHaveBeenCalled();
+      expect(widget.load).not.toHaveBeenCalled();
+    });
+
+    it('ignores the first PLAY sound and duration replies after PAUSE and a newer PLAY', () => {
+      const { widget, events, listeners } = createWidgetMock();
+      renderWidgetHook();
+      act(() => listeners.get(events.PLAY)?.());
+      const oldSound = vi.mocked(widget.getCurrentSound).mock.calls[0][0];
+      const oldDuration = vi.mocked(widget.getDuration).mock.calls[0][0];
+      act(() => listeners.get(events.PAUSE)?.());
+      act(() => listeners.get(events.PLAY)?.());
+      act(() => {
+        vi.mocked(widget.getCurrentSound).mock.calls[1][0](toWidgetSound(playlistTracks[1]));
+        vi.mocked(widget.getDuration).mock.calls[1][0](210_000);
+      });
+      const confirmed = usePlayerStore.getState();
+      act(() => {
+        oldSound(toWidgetSound(playlistTracks[0]));
+        oldDuration(180_000);
+      });
+      expect(usePlayerStore.getState()).toBe(confirmed);
+      expect(confirmed).toMatchObject({ currentTrack: { id: 2 }, duration: 210, isPlaying: true });
+    });
+
+    it('clears an unconfirmed skip on iframe replacement so next uses the confirmed track', () => {
+      vi.useFakeTimers();
+      const old = createWidgetMock();
+      const { result } = renderWidgetHook();
+      const third = { ...playlistTracks[1], id: 3 };
+      usePlayerStore.setState({ tracks: [...playlistTracks, third] });
+      act(() => result.current.nextTrack());
+      act(() => old.listeners.get(old.events.PLAY)?.());
+      const oldReply = vi.mocked(old.widget.getCurrentSound).mock.calls[0][0];
+      const replacement = createWidgetMock();
+      act(() => result.current.iframeRef(document.createElement('iframe')));
+      act(() => result.current.nextTrack());
+      expect(replacement.widget.skip).toHaveBeenCalledExactlyOnceWith(1);
+      act(() => oldReply(toWidgetSound(playlistTracks[1])));
+      expect(usePlayerStore.getState().currentTrack?.id).toBe(1);
+      act(() => replacement.listeners.get(replacement.events.PLAY)?.());
+      act(() => vi.mocked(replacement.widget.getCurrentSound).mock.calls[0][0](toWidgetSound(playlistTracks[1])));
+      expect(usePlayerStore.getState()).toMatchObject({ currentTrack: { id: 2 }, isPlaying: true });
+      expect(old.widget.unbind).toHaveBeenCalledTimes(6);
+    });
+  });
+
   describe('플레이리스트 곡의 재생 확인 대기 시간', () => {
     function setupReadyPlaylist() {
       vi.useFakeTimers();
