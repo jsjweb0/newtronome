@@ -11,6 +11,7 @@ interface PlaylistTrackListProps {
   tracks: PlayerTrack[];
   currentTrack: PlayerTrack | null;
   isPlaying: boolean;
+  isPlaybackLoading?: boolean;
   onTrackClick: (track: PlayerTrack) => void;
   headingAs?: 'h2' | 'h3';
 }
@@ -19,6 +20,7 @@ export default function PlaylistTrackList({
   tracks,
   currentTrack,
   isPlaying,
+  isPlaybackLoading = false,
   onTrackClick,
   headingAs: HeadingTag = 'h3',
 }: PlaylistTrackListProps) {
@@ -116,6 +118,11 @@ export default function PlaylistTrackList({
               viewMode={viewMode}
               isPlaying={isPlaying}
               onTrackClick={onTrackClick}
+              disabled={
+                isPlaybackLoading &&
+                currentTrack != null &&
+                String(currentTrack.id) === String(track.id)
+              }
               actions={<TrackItemActions track={track} />}
             />
           );

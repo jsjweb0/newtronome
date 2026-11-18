@@ -79,14 +79,10 @@ describe('useSoundCloudControls', () => {
 
     act(() => {
       result.current.play();
-      result.current.pause();
-      result.current.toggle();
       result.current.rewindToStart();
     });
 
     expect(widget.play).toHaveBeenCalledOnce();
-    expect(widget.pause).toHaveBeenCalledOnce();
-    expect(widget.toggle).toHaveBeenCalledOnce();
     expect(widget.seekTo).toHaveBeenCalledWith(0);
   });
 

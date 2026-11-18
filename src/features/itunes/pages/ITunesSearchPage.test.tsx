@@ -69,7 +69,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getArtistTracks).mockReset();
   localStorage.clear();
-  usePlayerStore.setState({ tracks: [], isPlaying: false });
+  usePlayerStore.setState({ tracks: [], isPlaying: false, isPlaybackLoading: false });
   vi.mocked(searchITunesTracks).mockResolvedValue(tracks);
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
   vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined);
@@ -419,4 +419,22 @@ describe('recent searches', () => {
     expect(screen.getByText('최근 검색어가 없어요')).toBeTruthy();
     expect(JSON.parse(localStorage.getItem('recentSearches') ?? 'null')).toEqual([]);
   });
+});
+
+it('pauses SoundCloud before preview play during source loading and does not resume it on preview end', async () => {
+  usePlayerStore.setState({ isPlaybackLoading: true });
+  vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(async () => {
+    expect(mocks.onPauseSoundCloud).toHaveBeenCalledTimes(1);
+  });
+  await showSearchResults();
+  const stateBefore = usePlayerStore.getState();
+  fireEvent.click(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' }));
+  await screen.findByRole('button', { name: '첫 곡 미리듣기 정지' });
+  const audio = document.querySelector('audio');
+  expect(audio).not.toBeNull();
+  fireEvent.ended(audio!);
+  expect(screen.getByRole('button', { name: '첫 곡 30초 미리듣기' })).toBeTruthy();
+  expect(mocks.onPauseSoundCloud).toHaveBeenCalledTimes(1);
+  expect(usePlayerStore.getState()).toBe(stateBefore);
+  expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
 });

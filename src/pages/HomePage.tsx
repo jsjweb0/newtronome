@@ -22,6 +22,10 @@ export default function HomePage() {
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
 
+  const isPlaybackLoading = usePlayerStore(
+    (state) => state.isPlaybackLoading
+  );
+
   const handleTrackClick = (track: PlayerTrack) => {
     const isCurrentTrack =
       playbackMode === 'playlist' &&
@@ -39,7 +43,9 @@ export default function HomePage() {
     onSelectTrack?.(trackIndex);
   };
 
-  if (playlistStatus === 'loading') return <HomePageSkeleton />;
+  if (playlistStatus === 'loading' && tracks.length === 0) {
+    return <HomePageSkeleton />;
+  }
 
   if (playlistStatus === 'error') {
     return (
@@ -70,6 +76,7 @@ export default function HomePage() {
         currentTrack={playbackMode === 'playlist' ? currentTrack : null}
         isPlaying={isPlaying}
         onTrackClick={handleTrackClick}
+        isPlaybackLoading={isPlaybackLoading}
       />
     </div>
   );

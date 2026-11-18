@@ -9,6 +9,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   currentTime: 0,
   duration: 0,
   isMuted: false,
+  isPlaybackLoading: false,
 
   setPlaybackMode: (mode) => {
     set({ playbackMode: mode });
@@ -35,6 +36,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   setCurrentTime: (currentTime) => set({ currentTime }),
   setDuration: (duration) => set({ duration }),
   setMuted: (isMuted) => set({ isMuted }),
+  setPlaybackLoading: (isPlaybackLoading) => set({ isPlaybackLoading }),
 }));
 
 export const selectCurrentTrack = (state: PlayerStore) =>

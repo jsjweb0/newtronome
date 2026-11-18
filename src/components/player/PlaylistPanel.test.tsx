@@ -149,3 +149,29 @@ describe('PlaylistPanel login notice', () => {
     expect(screen.queryByRole('button', { name: '북마크 추가' })).toBeNull();
   });
 });
+
+it('locks only the active panel track while loading and unlocks when loading ends', () => {
+  const track: PlayerTrack = { id: 1, title: 'Loading Song', artist: 'Artist',
+    artworkUrl: null, permalinkUrl: null, durationMs: 1000, genre: '', tags: [] };
+  const props = createPanelProps();
+  props.tracks = [track, { ...track, id: 2, title: 'Other Song' }];
+  props.soundCloudWidget = { ...props.soundCloudWidget, widgetTrack: track,
+    playlistStatus: 'ready', isPlaybackLoading: true };
+  const { rerender } = render(<PlaylistPanel {...props} />);
+  const current = screen.getByRole<HTMLButtonElement>('button', { name: /Loading Song/ });
+  const other = screen.getByRole<HTMLButtonElement>('button', { name: /Other Song/ });
+  expect(current.disabled).toBe(true);
+  expect(other.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(props.soundCloudWidget.toggle).not.toHaveBeenCalled();
+  fireEvent.click(other);
+  expect(props.onSelect).toHaveBeenCalledWith(1);
+  rerender(<PlaylistPanel {...props} soundCloudWidget={{ ...props.soundCloudWidget, isPlaybackLoading: false }} />);
+  expect(current.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(props.soundCloudWidget.toggle).toHaveBeenCalledTimes(1);
+  rerender(<PlaylistPanel {...props} isPlaylistMode={false} />);
+  expect(current.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(props.onSelect).toHaveBeenLastCalledWith(0);
+});

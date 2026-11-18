@@ -184,7 +184,6 @@ export default function PlaylistPanel({
               'max-xl:pb-3',
               'border border-textThr dark:border-none',
               collapsed ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0',
-              // 로그인 안내가 아래에 붙으면 한 면처럼 이어지게 아래 모서리를 펴 줌
               isLoginNoticeVisible && 'rounded-b-none'
             )}
           >
@@ -372,7 +371,10 @@ export default function PlaylistPanel({
 
                                 onSelect(index);
                               }}
-                              disabled={isBlocked}
+                              disabled={
+                                isBlocked ||
+                                (isActive && soundCloudWidget.isPlaybackLoading)
+                              }
                               aria-current={isActive ? 'true' : undefined}
                               className="grid grid-cols-[18px_40px_minmax(0,1fr)] items-center gap-2.5 min-w-0 min-h-14 pl-2 text-left disabled:cursor-not-allowed"
                             >

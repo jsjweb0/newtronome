@@ -26,14 +26,6 @@ export function useSoundCloudControls({
         widgetRef.current?.play();
     }, [widgetRef]);
 
-    const pause = useCallback(() => {
-        widgetRef.current?.pause();
-    }, [widgetRef]);
-
-    const toggle = useCallback(() => {
-        widgetRef.current?.toggle();
-    }, [widgetRef]);
-
     const setCurrentTime = usePlayerStore((state) => state.setCurrentTime);
 
     const seek = useCallback((seconds: number) => {
@@ -104,8 +96,6 @@ export function useSoundCloudControls({
 
     return {
         play,
-        pause,
-        toggle,
         seek,
         previousTrack,
         nextTrack,

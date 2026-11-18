@@ -67,6 +67,34 @@ describe('PlayerBar single-track controls', () => {
     vi.clearAllMocks();
   });
 
+  it.each(['playlist', 'single'] as const)('PR-05 disables the %s playback toggle while loading and enables it after readiness', mode => {
+    usePlayerStore.setState({ playbackMode: mode, isPlaying: false });
+    const loadingWidget = {
+      ...soundCloudWidget,
+      widgetError: null,
+      playlistStatus: 'ready' as const,
+      isPlaylistLoading: false,
+      isPlaybackLoading: true,
+    };
+    const { rerender } = renderPlayerBar(loadingWidget);
+    const button = screen.getByRole('button', { name: '재생' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
+    expect(soundCloudWidget.toggle).not.toHaveBeenCalled();
+    rerender(
+      <PlayerBar
+        onPanelToggle={vi.fn()}
+        collapsed={true}
+        soundCloudWidget={{ ...loadingWidget, isPlaybackLoading: false }}
+        panelToggleRef={createRef<HTMLButtonElement>()}
+      />
+    );
+    const readyButton = screen.getByRole('button', { name: '재생' }) as HTMLButtonElement;
+    expect(readyButton.disabled).toBe(false);
+    fireEvent.click(readyButton);
+    expect(soundCloudWidget.toggle).toHaveBeenCalledOnce();
+  });
+
   it('disables playlist-only controls during saved-track playback', () => {
     renderPlayerBar();
 

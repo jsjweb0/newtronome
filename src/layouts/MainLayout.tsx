@@ -102,11 +102,17 @@ export default function MainLayout() {
   const {
     selectTrack,
     toggle: toggleSoundCloud,
+    pause: pauseWidget,
     playlistStatus,
     isReady,
     playSingleTrack,
     reloadPlaylistFrame,
   } = soundCloudWidget;
+
+  const pauseSoundCloud = useCallback(() => {
+    pendingPlaybackRef.current = null;
+    pauseWidget();
+  }, [pauseWidget]);
 
   const requestSingleTrack = useCallback<PlayerOutletContext['onPlaySingleTrack']>(
     (track, options) => {
@@ -240,7 +246,7 @@ export default function MainLayout() {
     onPlayPlaylist: playPlaylist,
     onSelectTrack: soundCloudWidget.selectTrack,
     onToggleTrack: soundCloudWidget.toggle,
-    onPauseSoundCloud: soundCloudWidget.pause,
+    onPauseSoundCloud: pauseSoundCloud,
     onPlaySingleTrack: requestSingleTrack,
 
     playlistStatus: soundCloudWidget.playlistStatus,

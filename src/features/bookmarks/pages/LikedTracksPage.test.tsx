@@ -33,11 +33,11 @@ vi.mock('../services/savedTracks', () => ({
   removeSavedTrack: vi.fn(),
 }));
 
-function renderLikesPage() {
+function renderLikesPage(onPlaySingleTrack = vi.fn(), onToggleTrack = vi.fn()) {
   return render(
     <MemoryRouter initialEntries={['/likes']}>
       <Routes>
-        <Route element={<Outlet context={{ onPlaySingleTrack: vi.fn(), onToggleTrack: vi.fn() }} />}>
+        <Route element={<Outlet context={{ onPlaySingleTrack, onToggleTrack }} />}>
           <Route path="/likes" element={<LikedTracksPage />} />
         </Route>
       </Routes>
@@ -67,6 +67,7 @@ afterEach(() => {
     currentTrack: null,
     playbackMode: 'playlist',
     isPlaying: false,
+    isPlaybackLoading: false,
   });
 });
 
@@ -275,4 +276,28 @@ it('keeps retry available when the lookup fails', () => {
   fireEvent.click(button);
   expect(onPlaySingleTrack).toHaveBeenCalledTimes(2);
   expect(screen.queryByText('재생 불가')).toBeNull();
+});
+
+it('locks only the current single track in Likes and releases it after loading', () => {
+  const play = vi.fn();
+  const toggle = vi.fn();
+  usePlayerStore.setState({ currentTrack: baseTrack, playbackMode: 'single', isPlaybackLoading: true });
+  renderLikesPage(play, toggle);
+  act(() => mocks.onSuccess?.([baseTrack, { ...baseTrack, id: 2, title: 'Other Song' }]));
+  const current = screen.getByRole<HTMLButtonElement>('button', { name: /회복된 트랙.*재생/ });
+  const other = screen.getByRole<HTMLButtonElement>('button', { name: /Other Song.*재생/ });
+  expect(current.disabled).toBe(true);
+  expect(other.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(toggle).not.toHaveBeenCalled();
+  fireEvent.click(other);
+  expect(play).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }), expect.any(Object));
+  act(() => usePlayerStore.getState().setPlaybackLoading(false));
+  expect(current.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(toggle).toHaveBeenCalledTimes(1);
+  act(() => usePlayerStore.setState({ playbackMode: 'playlist', isPlaybackLoading: true }));
+  expect(current.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(play).toHaveBeenLastCalledWith(expect.objectContaining({ id: 1 }), expect.any(Object));
 });

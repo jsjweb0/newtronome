@@ -51,10 +51,13 @@ export default function PlaylistDetailPage() {
     onPlaySingleTrack,
     onToggleTrack,
   } = useOutletContext<PlayerOutletContext>();
-  // 재생 목록(tracks)은 읽지 않고, 재생 중인 곡 · 상태만 표시에 사용
   const playbackMode = usePlayerStore((state) => state.playbackMode);
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
+
+  const isPlaybackLoading = usePlayerStore(
+    (state) => state.isPlaybackLoading
+  );
 
   const [resolvedStatuses, setResolvedStatuses] = useState<
     Record<string, PlaybackStatus>
@@ -174,6 +177,7 @@ export default function PlaylistDetailPage() {
             tracks={displayedTracks}
             currentTrack={playbackMode === 'single' ? currentTrack : null}
             isPlaying={isPlaying}
+            isPlaybackLoading={isPlaybackLoading}
             onTrackClick={handleTrackClick}
             headingAs="h2"
           />

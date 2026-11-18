@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom';
 import HomePage from './HomePage';
@@ -8,6 +8,8 @@ import type { PlayerOutletContext } from '../layouts/MainLayout';
 vi.mock('../components/ui/Slider', () => ({
   default: () => <div />,
 }));
+
+vi.mock('../components/track/TrackItemActions', () => ({ default: () => null }));
 
 type PlaylistStatus = 'loading' | 'ready' | 'empty' | 'error';
 
@@ -41,7 +43,7 @@ function renderHomePage(status: PlaylistStatus) {
     </MemoryRouter>
   );
 
-  return { ...view, retryLoad };
+  return { ...view, retryLoad, context };
 }
 
 describe('HomePage playlist status', () => {
@@ -51,6 +53,7 @@ describe('HomePage playlist status', () => {
       currentTrack: null,
       playbackMode: 'playlist',
       isPlaying: false,
+      isPlaybackLoading: false,
       currentTime: 0,
       duration: 0,
     });
@@ -103,4 +106,30 @@ describe('HomePage playlist status', () => {
 
     expect(screen.getByRole('heading', { level: 3, name: 'Track List' })).toBeTruthy();
   });
+it.each(['grid', 'list'])('locks only the current Home track during loading in %s view', (viewMode) => {
+  const track = { id: 1, title: 'Loading Song', artist: 'Artist', artworkUrl: null,
+    permalinkUrl: 'https://soundcloud.com/example/one', durationMs: 1000, genre: '', tags: [] };
+  const other = { ...track, id: 2, title: 'Other Song' };
+  usePlayerStore.setState({ tracks: [track, other], currentTrack: track,
+    playbackMode: 'playlist', isPlaybackLoading: true });
+  const { context } = renderHomePage('ready');
+  if (viewMode === 'list') fireEvent.click(screen.getByRole('button', { name: '목록형' }));
+  const current = screen.getByRole<HTMLButtonElement>('button', { name: /Loading Song/ });
+  const next = screen.getByRole<HTMLButtonElement>('button', { name: /Other Song/ });
+  expect(current.disabled).toBe(true);
+  expect(next.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(context.onToggleTrack).not.toHaveBeenCalled();
+  fireEvent.click(next);
+  expect(context.onSelectTrack).toHaveBeenCalledWith(1);
+  act(() => usePlayerStore.getState().setPlaybackLoading(false));
+  expect(current.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(context.onToggleTrack).toHaveBeenCalledTimes(1);
+  act(() => usePlayerStore.setState({ playbackMode: 'single', isPlaybackLoading: true }));
+  expect(current.disabled).toBe(false);
+  fireEvent.click(current);
+  expect(context.onSelectTrack).toHaveBeenLastCalledWith(0);
+});
+
 });

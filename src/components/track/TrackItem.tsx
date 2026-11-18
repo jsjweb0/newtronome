@@ -25,6 +25,7 @@ type TrackItemProps = {
     actions?: ReactNode;
     footerActions?: ReactNode;
     ariaLabel?: string;
+    disabled?: boolean;
 };
 
 export default function TrackItem({
@@ -40,6 +41,7 @@ export default function TrackItem({
     actions,
     footerActions,
     ariaLabel,
+    disabled = false,
 }: TrackItemProps) {
     const isList = viewMode === "list";
     const isBlocked = track.playbackStatus === 'blocked';
@@ -189,7 +191,7 @@ export default function TrackItem({
                 onTrackClick?.(track);
             }}
             className={contentClassName}
-            disabled={isBlocked}
+            disabled={isBlocked || disabled}
         >
             {trackContent}
             {' '}
