@@ -50,15 +50,14 @@ export interface PlaySingleTrackOptions {
 export type TrackSelectionRequest =
   | {
     kind: 'playlist';
-    requestKey: number;
     playlistUrl: string;
     trackId: PlayerTrack['id'];
     index: number;
     playAfterLoad: boolean;
+    awaitingPlayConfirmation: boolean;
   }
   | {
     kind: 'single';
-    requestKey: number;
     track: PlayerTrack;
     options?: PlaySingleTrackOptions;
     playAfterLoad: boolean;
