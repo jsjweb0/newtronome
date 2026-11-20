@@ -75,7 +75,7 @@ function PostViewContent({ boardType, postId }: {
   } = useBoardPost(boardType, postId);
   const postsQuery = useBoardPosts(boardType);
 
-  const { mutateAsync: incrementViewCount } = useIncrementPostViewCount();
+  const { mutate: incrementViewCount } = useIncrementPostViewCount();
 
   const commentsQuery = useCommentsQuery(
     boardType,
@@ -162,9 +162,8 @@ function PostViewContent({ boardType, postId }: {
 
     countedEntryRef.current = entryKey;
 
-    void incrementViewCount({ boardType, postId }).catch((error: unknown) => {
-      console.error('조회수 기록 실패:', error);
-    });
+    incrementViewCount({ boardType, postId });
+
   }, [boardType, postId, location.key, currentPost, incrementViewCount]);
 
   if (loading) {
@@ -212,8 +211,7 @@ function PostViewContent({ boardType, postId }: {
       if (activeLocationKeyRef.current === startedLocationKey) {
         navigate(`/board/${boardType}${boardSearch}`);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       showToast({ message: notificationErr.message });
       addNotification(notificationErr);
     } finally {

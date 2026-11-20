@@ -18,8 +18,6 @@ export interface AuthContextValue {
   signup: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   loading: boolean;
-  avatarUrl: string;
-  nicknameUrl: string;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);

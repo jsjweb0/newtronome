@@ -21,6 +21,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Tooltip from '../ui/Tooltip';
 import NotificationDropdown from '../ui/NotificationDropdown';
 import type { ComponentType, SVGProps } from 'react';
+import Avatar from '../ui/Avatar';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -45,7 +46,7 @@ type NavItem =
   });
 
 export default function Sidebar({ collapsed = false }: SidebarProps) {
-  const { user, logout, avatarUrl, nicknameUrl } = useAuth();
+  const { user, logout } = useAuth();
 
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -80,16 +81,6 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
       !isMobile && collapsed && 'lg:w-[48px]'
     );
   const navIconClasses = 'shrink-0 size-5 transition-colors';
-
-  const profileImage = () => {
-    if (user?.photoURL) {
-      return user.photoURL;
-    }
-    if (user?.displayName) {
-      return nicknameUrl;
-    }
-    return avatarUrl;
-  };
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 1023px)');
@@ -237,10 +228,10 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
             {user && (
               <div className="flex lg:hidden items-center gap-3 mt-3 pt-5 pb-3 px-3 border-t border-t-textThr">
                 <div className="shrink-0 w-20 h-20 rounded-full bg-textSub">
-                  <img
-                    src={profileImage()}
-                    alt={user.displayName || user.email || ''}
-                    className="rounded-full object-cover w-full h-full"
+                  <Avatar
+                    name={user.nickname || user.displayName || user.email?.split('@')[0] || '사용자'}
+                    photoURL={user.photoURL}
+                    className="size-20 text-3xl"
                   />
                 </div>
                 <div>
