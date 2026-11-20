@@ -182,6 +182,13 @@ TanStack Query는 아티스트 곡 조회에 먼저 적용했습니다. 아티�
 | [Playwright](.github/workflows/playwright.yml)    | `main`·`master` 대상 PR 및 push | Chromium 재생 데스크톱·모바일, 게시판 E2E                              |
 | [Verify and Deploy](.github/workflows/deploy.yml) | `main` push, 수동 실행          | 타입·린트·단위 테스트·빌드·규칙 테스트 통과 후 Cloudflare Workers 배포 |
 
+E2E에서 SoundCloud 이벤트와 게시판 서비스 응답은 테스트가 제어하며, 게시판 테스트는 운영 Firebase에 접근하지 않는 메모리 데이터를 사용합니다.
+
+AI가 만든 변경은 PR 단위로 나눠 코드 리뷰를 받고, 지적 사항을 우선순위대로 반영한 뒤 타입 검사·테스트·빌드와 실제 화면으로 확인했습니다.
+
+<details>
+<summary>검증 명령 보기</summary>
+
 로컬 실행:
 
 ```bash
@@ -210,9 +217,7 @@ Firestore 규칙 테스트는 Java가 설치된 환경에서 로컬 Emulator로 
 npm run test:rules
 ```
 
-E2E에서 SoundCloud 이벤트와 게시판 서비스 응답은 테스트가 제어하며, 게시판 테스트는 운영 Firebase에 접근하지 않는 메모리 데이터를 사용합니다.
-
-AI가 만든 변경은 PR 단위로 나눠 코드 리뷰를 받고, 지적 사항을 우선순위대로 반영한 뒤 타입 검사·테스트·빌드와 실제 화면으로 확인했습니다.
+</details>
 
 ## 설치·실행·배포
 
