@@ -88,9 +88,7 @@ function EditPostContent({ boardType, postId }: {
       });
 
       navigate(`/board/${boardType}${boardSearch}`);
-    } catch (error) {
-      console.error('게시글 수정 실패:', error);
-
+    } catch {
       const notification = {
         notificationId: Date.now(),
         message: '게시글 수정에 실패했습니다.',

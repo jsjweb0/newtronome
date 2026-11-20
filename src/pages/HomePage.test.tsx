@@ -38,6 +38,7 @@ function renderHomePage(status: PlaylistStatus) {
       <Routes>
         <Route element={<Outlet context={context} />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/playlists" element={<h1>Playlists</h1>} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -84,6 +85,14 @@ describe('HomePage playlist status', () => {
     expect(container.querySelector('.animate-pulse')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
     expect(retryLoad).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets the user browse other playlists when the current playlist fails', () => {
+    renderHomePage('error');
+
+    fireEvent.click(screen.getByRole('link', { name: '플레이리스트 둘러보기' }));
+
+    expect(screen.getByRole('heading', { name: 'Playlists' })).toBeTruthy();
   });
 
   it('exposes the selected view mode with aria-pressed', () => {
