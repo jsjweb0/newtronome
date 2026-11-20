@@ -1,4 +1,4 @@
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { selectCurrentTrack, usePlayerStore } from '../features/player/stores/usePlayerStore';
 import HomePageSkeleton from './HomePageSkeleton';
 import type { PlayerOutletContext } from '../layouts/MainLayout';
@@ -6,6 +6,8 @@ import type { PlayerTrack } from '../features/player/types/player.types';
 import RetryErrorState from '../components/ui/RetryErrorState';
 import PlaylistHero from '../features/playlists/components/PlaylistHero';
 import PlaylistTrackList from '../features/playlists/components/PlaylistTrackList';
+import { ROUTES } from '../constants/routes';
+import clsx from 'clsx';
 
 export default function HomePage() {
   const {
@@ -49,13 +51,23 @@ export default function HomePage() {
 
   if (playlistStatus === 'error') {
     return (
-      <RetryErrorState
-        message={
-          widgetError ??
-          '플레이리스트를 불러오지 못했습니다.'
-        }
-        onRetry={retryLoad}
-      />
+      <div className="flex flex-col md:flex-row gap-1 items-center">
+        <RetryErrorState
+          message={widgetError ?? '플레이리스트를 불러오지 못했습니다.'}
+          description="다시 시도하거나 다른 플레이리스트를 선택해 주세요."
+          onRetry={retryLoad}
+        />
+        <Link
+          to={ROUTES.playlists.path}
+          className={clsx(
+            'inline-flex items-center gap-2 min-h-11 px-4.5 rounded-full border border-textThr bg-background',
+            'text-sm font-bold text-textBase transition-colors',
+            'hover:border-primary hover:text-primary',
+            'focus-visible:border-primary focus-visible:text-primary',
+          )}
+        >플레이리스트 둘러보기
+        </Link>
+      </div>
     );
   }
 

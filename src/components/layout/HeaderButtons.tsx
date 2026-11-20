@@ -3,32 +3,24 @@ import { Link } from 'react-router-dom';
 import { LogOut, LogIn, UserRoundPlus } from 'lucide-react';
 import Tooltip from '../ui/Tooltip';
 import NotificationDropdown from '../ui/NotificationDropdown';
+import Avatar from '../ui/Avatar';
 
 type HeaderButtonsProps = {
   collapsed: boolean;
 }
 
 export default function HeaderButtons({ collapsed }: HeaderButtonsProps) {
-  const { user, logout, avatarUrl, nicknameUrl } = useAuth();
-
-  const profileImageSrc =
-    user?.photoURL || (user?.nickname ? nicknameUrl : avatarUrl);
-
-  const profileAlt =
-    user?.nickname ??
-    user?.displayName ??
-    user?.email ??
-    '사용자 프로필';
+  const { user, logout } = useAuth();
 
   return user ? (
     <div className="flex items-center justify-between">
       <NotificationDropdown collapsed={collapsed} />
       <div className="flex items-center gap-x-2">
         <Link to="/account" className="text-blue-700 text-sm md:text-base" aria-label="계정 페이지">
-          <img
-            src={profileImageSrc}
-            alt={profileAlt}
-            className="size-10 rounded-full object-cover"
+          <Avatar
+            name={user.nickname || user.displayName || user.email?.split('@')[0] || '사용자'}
+            photoURL={user.photoURL}
+            className="size-10 text-sm"
           />
         </Link>
         <Tooltip content="로그아웃" position="bottom">

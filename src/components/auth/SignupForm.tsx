@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { FirebaseError } from 'firebase/app';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import FormInput from '../ui/FormInput';
@@ -71,16 +72,29 @@ export default function SignupForm() {
 
       navigate('/');
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : '알 수 없는 오류가 발생했습니다.';
+      let message = '회원가입에 실패했습니다. 다시 시도해 주세요.';
 
-      console.error(message);
-      showToast({
-        message: `에러 발생: ${message}`,
-        type: 'error',
-      });
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            message = '이미 사용 중인 이메일입니다. 로그인하거나 다른 이메일을 입력해 주세요.';
+            break;
+          case 'auth/invalid-email':
+            message = '올바른 이메일 주소를 입력해 주세요.';
+            break;
+          case 'auth/weak-password':
+            message = '더 안전한 비밀번호를 입력해 주세요.';
+            break;
+          case 'auth/network-request-failed':
+            message = '네트워크 연결을 확인한 뒤 다시 시도해 주세요.';
+            break;
+          case 'auth/too-many-requests':
+            message = '요청이 많습니다. 잠시 후 다시 시도해 주세요.';
+            break;
+        }
+      }
+
+      showToast({ message, type: 'error' });
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);

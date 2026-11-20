@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
     doc,
@@ -73,8 +73,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             showToast({ message: "로그아웃 되었습니다.", type: "success" });
             navigate("/", { replace: true });
-        } catch (error) {
-            console.error("Logout failed:", error);
+        } catch {
             showToast({ message: "로그아웃 중 오류가 발생했습니다.", type: "error" });
         }
     };
@@ -127,15 +126,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         nickname: profile.nickname,
                         createdAt: profile.createdAt ?? accountCreatedAt,
                     });
-                } catch (error) {
+                } catch {
                     if (
                         !isMounted ||
                         requestId !== authRequestIdRef.current
                     ) {
                         return;
                     }
-
-                    console.error('Failed to fetch user profile:', error);
 
                     setUser({
                         uid: authUser.uid,
@@ -155,18 +152,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             unsubscribe();
         };
     }, []);
-
-    const avatarUrl = useMemo(() => {
-        if (!user?.email) return "";
-        return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}&size=128&length=1&background=random&color=ffffff&font-size=0.5&bold=true&uppercase=true`;
-    }, [user?.email]);
-
-    const nicknameUrl = useMemo(() => {
-        // AuthContext에서 user 프로필에 nickname 필드를 병합했다면
-        const name = user?.nickname || user?.displayName;
-        if (!name) return "";
-        return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=128&length=1&background=random&color=ffffff&font-size=0.5&bold=true`;
-    }, [user?.nickname, user?.displayName]);
 
     useEffect(() => {
         const subscribedUserId = user?.uid;
@@ -199,8 +184,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     });
                 }
             },
-            error => {
-                console.error('Profile onSnapshot error:', error);
+            () => {
                 showToast({
                     message: '프로필 자동 동기화가 중단됐습니다. 새로고침해주세요.',
                     type: 'error',
@@ -216,8 +200,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         signup,
         logout,
         loading,
-        avatarUrl,
-        nicknameUrl,
     };
 
     return (
