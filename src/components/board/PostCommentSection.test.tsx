@@ -172,3 +172,16 @@ describe('PostCommentSection request state', () => {
     await waitFor(() => expect(commentMocks.createCommentInFirestore).toHaveBeenCalledTimes(2));
   });
 });
+
+
+it('1,000자를 넘는 댓글은 입력을 유지하고 서버로 보내지 않는다', async () => {
+  state.user = { uid: 'user-1', email: 'user@example.com', displayName: '작성자', photoURL: null };
+  renderSection();
+  const input = await screen.findByRole<HTMLTextAreaElement>('textbox');
+  fireEvent.change(input, { target: { value: '가'.repeat(1001) } });
+  fireEvent.submit(input.closest('form')!);
+  expect(commentMocks.createCommentInFirestore).not.toHaveBeenCalled();
+  expect(input.value).toBe('가'.repeat(1001));
+  expect(document.activeElement).toBe(input);
+  expect(state.showToast).toHaveBeenCalledWith({ message: '댓글은 1,000자 이내로 입력해주세요.', type: 'warning' });
+});

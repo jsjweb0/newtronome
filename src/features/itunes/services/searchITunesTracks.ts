@@ -1,5 +1,5 @@
 import type { ITunesTrack } from "../types/itunes.types";
-import { isITunesSearchResponse, isITunesTrack } from "../utils/itunesResponse";
+import { isITunesSearchResponse, isITunesTrack, normalizeITunesTrackUrls } from "../utils/itunesResponse";
 
 export async function searchITunesTracks(
     keyword: string,
@@ -41,5 +41,5 @@ export async function searchITunesTracks(
         throw new Error('음악 검색 응답 형식이 올바르지 않습니다.');
     }
 
-    return tracks;
+    return tracks.map(normalizeITunesTrackUrls);
 }

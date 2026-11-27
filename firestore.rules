@@ -59,7 +59,43 @@ service cloud.firestore {
         && resource.data.get('writerUid', '') == request.auth.uid;
     }
 
-    function isValidPostCreate() {
+    function isValidText(value, maxLength) {
+      return value is string
+        && value.trim().size() > 0
+        // RE2의 각 Unicode 문자를 한 글자로 바꿔 JS 코드 포인트 계산과 맞춘다.
+        && value.replace('(?s).', 'x').size() <= maxLength;
+    }
+
+    function isValidCategory(boardType, value) {
+      return boardType == 'free'
+        ? value in ['chat', 'quote', 'recommendation', 'question']
+        : value == null;
+    }
+
+    function isValidChangedPostInputs(boardType) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let data = request.resource.data;
+      return (!changed.hasAny(['title']) || isValidText(data.get('title', null), 100))
+        && (!changed.hasAny(['content']) || isValidText(data.get('content', null), 10000))
+        && (!changed.hasAny(['category']) || isValidCategory(boardType, data.get('category', null)));
+    }
+
+    function isValidChangedCommentInputs() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['content'])
+        || isValidText(request.resource.data.get('content', null), 1000);
+    }
+
+    function isValidProfileCreate() {
+      let data = request.resource.data;
+      return !data.keys().hasAny(['nickname']) || isValidText(data.nickname, 8);
+    }
+
+    function isValidProfileUpdate() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['nickname'])
+        || isValidText(request.resource.data.get('nickname', null), 8);
+    }
+
+    function isValidPostCreate(boardType) {
       let data = request.resource.data;
 
       return data.keys().hasAll([
@@ -86,14 +122,11 @@ service cloud.firestore {
           'displayName',
           'photoURL'
         ])
-        && data.title is string
-        && data.content is string
+        && isValidText(data.title, 100)
+        && isValidText(data.content, 10000)
         && data.date is timestamp
         && data.date == request.time
-        && (
-          data.category == null
-          || data.category is string
-        )
+        && isValidCategory(boardType, data.category)
         && data.isNotice is bool
         && data.likeCount == 0
         && data.likedUsers is list
@@ -130,8 +163,9 @@ service cloud.firestore {
           'displayName',
           'photoURL'
         ])
-        && data.content is string
+        && isValidText(data.content, 1000)
         && data.createdAt is timestamp
+        && data.createdAt == request.time
         && data.likedUsers is list
         && data.likedUsers.size() == 0
         && data.likeCount == 0
@@ -396,8 +430,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow create: if isOwner(userId);
-      allow read, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidProfileCreate();
+      allow update: if isOwner(userId) && isValidProfileUpdate();
+      allow read, delete: if isOwner(userId);
 
       match /savedTracks/{trackId} {
         allow read, delete: if isOwner(userId);
@@ -421,12 +456,13 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isSignedIn()
         && isNextPostNumber('free', postId)
-        && isValidPostCreate()
+        && isValidPostCreate('free')
         && (
           request.resource.data.isNotice == false
           || isAdmin()
         );
       allow update: if isValidPostAfterUpdate()
+        && isValidChangedPostInputs('free')
         && (
           isValidPostContentUpdate()
           || isAdmin()
@@ -446,6 +482,7 @@ service cloud.firestore {
             /databases/$(database)/documents/free/$(postId)
           )
           && isValidCommentAfterUpdate()
+          && isValidChangedCommentInputs()
           && (
             isValidCommentContentUpdate()
             || isAdmin()
@@ -461,8 +498,9 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAdmin()
         && isNextPostNumber('notice', postId)
-        && isValidPostCreate();
+        && isValidPostCreate('notice');
       allow update: if isValidPostAfterUpdate()
+        && isValidChangedPostInputs('notice')
         && (
           isAdmin()
           || isValidLikeUpdate()
@@ -481,6 +519,7 @@ service cloud.firestore {
             /databases/$(database)/documents/notice/$(postId)
           )
           && isValidCommentAfterUpdate()
+          && isValidChangedCommentInputs()
           && (
             isValidCommentContentUpdate()
           || isAdmin()

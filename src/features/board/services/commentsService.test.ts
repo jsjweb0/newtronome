@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchMyComments } from './commentsService';
+import { createCommentInFirestore, fetchMyComments } from './commentsService';
 
 const firestore = vi.hoisted(() => ({
+    addDoc: vi.fn(),
+    collection: vi.fn(),
+    serverTimestamp: vi.fn(),
     collectionGroup: vi.fn(),
     getDoc: vi.fn(),
     getDocs: vi.fn(),
@@ -16,8 +19,6 @@ vi.mock('../../../firebase', () => ({
 
 vi.mock('firebase/firestore', () => ({
     ...firestore,
-    addDoc: vi.fn(),
-    collection: vi.fn(),
     deleteDoc: vi.fn(),
     doc: vi.fn(),
     getCountFromServer: vi.fn(),
@@ -107,5 +108,34 @@ describe('fetchMyComments', () => {
         expect(firestore.getDoc).toHaveBeenCalledTimes(2);
         expect(firestore.getDoc).toHaveBeenCalledWith(existingPost);
         expect(firestore.getDoc).toHaveBeenCalledWith(deletedPost);
+    });
+});
+
+
+describe('createCommentInFirestore', () => {
+    it('저장할 작성 시각은 서버에 맡기고 반환값에는 표시용 Date를 사용한다', async () => {
+        const serverTime = { type: 'server-timestamp' };
+        firestore.serverTimestamp.mockReturnValue(serverTime);
+        firestore.collection.mockReturnValue('comment-collection');
+        firestore.addDoc.mockResolvedValue({ id: 'new-comment' });
+        const input = {
+            content: '새 댓글', writerUid: 'user-1',
+            displayName: '작성자', photoURL: null,
+        };
+        const before = Date.now();
+        const result = await createCommentInFirestore('free', 'post-1', input);
+        const after = Date.now();
+
+        expect(firestore.collection).toHaveBeenCalledWith('test-db', 'free', 'post-1', 'comments');
+        expect(firestore.addDoc).toHaveBeenCalledWith('comment-collection', {
+            ...input, createdAt: serverTime, likedUsers: [], likeCount: 0,
+        });
+        expect(result).toMatchObject({
+            ...input, id: 'new-comment', boardType: 'free', postId: 'post-1',
+            likeCount: 0, liked: false,
+        });
+        expect(result.createdAt).toBeInstanceOf(Date);
+        expect(result.createdAt.getTime()).toBeGreaterThanOrEqual(before);
+        expect(result.createdAt.getTime()).toBeLessThanOrEqual(after);
     });
 });

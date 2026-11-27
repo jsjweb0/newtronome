@@ -47,33 +47,41 @@ export default function TrackBookmarkButton({
             : '북마크 추가';
 
   return (
-    <button
-      type="button"
-      onClick={error !== null ? retrySubscription : toggleBookmark}
-      disabled={isLoading || isSaving || isAddBlocked}
-      aria-pressed={error !== null || isLoading ? undefined : isBookmarked}
-      title={buttonLabel}
-      aria-describedby={ariaDescribedBy}
-      className={clsx(
-        'inline-flex items-center justify-center disabled:cursor-wait disabled:opacity-50',
-        (isLoading || isSaving) && 'cursor-wait',
-        isAddBlocked && 'cursor-not-allowed',
-        className,
-      )}
-    >
-      <Heart
-        aria-hidden="true"
+    <span className="inline-flex relative min-w-0 flex-col items-center gap-1">
+      <button
+        type="button"
+        onClick={error !== null ? retrySubscription : toggleBookmark}
+        disabled={isLoading || isSaving || isAddBlocked}
+        aria-busy={isSaving}
+        aria-pressed={error !== null || isLoading ? undefined : isBookmarked}
+        title={buttonLabel}
+        aria-describedby={ariaDescribedBy}
         className={clsx(
-          'size-6',
-          !isLoading &&
-          error === null &&
-          isBookmarked &&
-          'fill-primary text-primary',
-          iconClassName
+          'inline-flex items-center justify-center disabled:cursor-wait disabled:opacity-50',
+          (isLoading || isSaving) && 'cursor-wait',
+          isAddBlocked && 'cursor-not-allowed',
+          className,
         )}
-      />
-      {children}
-      <span className="sr-only">{buttonLabel}</span>
-    </button>
+      >
+        <Heart
+          aria-hidden="true"
+          className={clsx(
+            'size-6',
+            !isLoading &&
+            error === null &&
+            isBookmarked &&
+            'fill-primary text-primary',
+            iconClassName
+          )}
+        />
+        {children}
+        <span className="sr-only">{buttonLabel}</span>
+      </button>
+      {isSaving && (
+        <span role="status" className="absolute w-full text-center text-[11px] leading-tight text-textSub">
+          서버 반영 중
+        </span>
+      )}
+    </span>
   );
 }

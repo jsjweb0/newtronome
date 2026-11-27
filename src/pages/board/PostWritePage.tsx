@@ -31,7 +31,7 @@ function PostWriteContent({
   const { mutateAsync: createPost } = useCreatePost();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (
@@ -73,6 +73,14 @@ function PostWriteContent({
       addNotification(notification);
     }
   };
+
+  if (loading) {
+    return (
+      <p role="status" className="mt-10 text-center text-sm text-textSub">
+        로그인 상태를 확인하는 중입니다.
+      </p>
+    );
+  }
 
   if (!user) return <Navigate to="/login" replace />;
 

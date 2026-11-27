@@ -1,3 +1,5 @@
+import { countCharacters } from '../../utils/text';
+import { COMMENT_MAX_LENGTH } from '../../constants/boardValidation';
 import dayjs from 'dayjs';
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
@@ -68,6 +70,15 @@ export default function Comment({
     const content = editText.trim();
 
     if (savingRef.current || !content) return;
+
+    if (countCharacters(content) > COMMENT_MAX_LENGTH) {
+      editTextareaRef.current?.focus();
+      showToast({
+        message: `댓글은 ${COMMENT_MAX_LENGTH.toLocaleString('ko-KR')}자 이내로 입력해주세요.`,
+        type: 'warning',
+      });
+      return;
+    }
 
     savingRef.current = true;
 

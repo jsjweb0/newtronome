@@ -87,25 +87,34 @@ export default function PlaylistActions({ playlist, isPlaying, onPlay }: Playlis
         <ExternalLinkIcon aria-hidden="true" className="size-4 text-textSub" />
       </ExternalLink>
 
-      <button
-        type="button"
-        onClick={error !== null ? retrySubscription : toggleSaved}
-        disabled={isLoading || isSaving}
-        aria-pressed={isLoading || error !== null ? undefined : isSaved}
-        aria-label={likeLabel}
-        title={likeLabel}
-        className={clsx(
-          'inline-flex items-center justify-center size-13 rounded-full disabled:opacity-50 disabled:cursor-wait',
-          outlineClass,
-          focusRingClass,
-          'aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary'
+      <div className="inline-flex items-center relative">
+        <button
+          type="button"
+          onClick={error !== null ? retrySubscription : toggleSaved}
+          disabled={isLoading || isSaving}
+          aria-busy={isSaving}
+          aria-pressed={isLoading || error !== null ? undefined : isSaved}
+          aria-label={likeLabel}
+          title={likeLabel}
+          className={clsx(
+            'inline-flex items-center justify-center size-13 rounded-full disabled:opacity-50 disabled:cursor-wait',
+            outlineClass,
+            focusRingClass,
+            'aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary'
+          )}
+        >
+          <Heart
+            aria-hidden="true"
+            className={clsx('size-5', isSaved && 'fill-primary text-primary')}
+          />
+        </button>
+
+        {isSaving && (
+          <span role="status" className="absolute inset-0 w-max text-xs -mt-1.5 text-textSub">
+            서버 반영 중
+          </span>
         )}
-      >
-        <Heart
-          aria-hidden="true"
-          className={clsx('size-5', isSaved && 'fill-primary text-primary')}
-        />
-      </button>
+      </div>
 
       <button
         type="button"

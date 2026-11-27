@@ -165,4 +165,44 @@ describe('PlaylistActions', () => {
     });
     expect(mocks.savePlaylist).not.toHaveBeenCalled();
   });
+
+  it.each([false, true])('기존 저장=%s: 서버 응답 전에는 안내와 잠금을 유지하고 성공하면 해제한다', async (saved) => {
+    let resolveWrite!: () => void;
+    const write = saved ? mocks.removeSavedPlaylist : mocks.savePlaylist;
+    write.mockReturnValueOnce(new Promise<void>((resolve) => { resolveWrite = resolve; }));
+    renderActions();
+    expect(screen.queryByRole('status')).toBeNull();
+    act(() => mocks.savedCallback?.(saved));
+    const button = screen.getByRole<HTMLButtonElement>('button', { name: saved ? '플레이리스트 저장 취소' : '플레이리스트 저장' });
+    fireEvent.click(button);
+    expect(screen.getByRole('status').textContent).toBe('서버 반영 중');
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    act(() => mocks.savedCallback?.(!saved));
+    fireEvent.click(button);
+    expect(write).toHaveBeenCalledOnce();
+    expect(screen.getByRole('status')).toBeTruthy();
+    await act(async () => { resolveWrite(); });
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-busy')).toBe('false');
+    expect(button.getAttribute('aria-pressed')).toBe(String(!saved));
+  });
+
+  it.each([false, true])('기존 저장=%s: 실패하면 대기 안내와 잠금을 해제한다', async (saved) => {
+    let rejectWrite!: (error: Error) => void;
+    const write = saved ? mocks.removeSavedPlaylist : mocks.savePlaylist;
+    write.mockReturnValueOnce(new Promise<void>((_resolve, reject) => { rejectWrite = reject; }));
+    renderActions();
+    act(() => mocks.savedCallback?.(saved));
+    const button = screen.getByRole<HTMLButtonElement>('button', { name: saved ? '플레이리스트 저장 취소' : '플레이리스트 저장' });
+    fireEvent.click(button);
+    expect(screen.getByRole('status')).toBeTruthy();
+    await act(async () => { rejectWrite(new Error('write failed')); });
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-busy')).toBe('false');
+    expect(mocks.showToast).toHaveBeenCalledWith({ message: '플레이리스트 저장에 실패했습니다.', type: 'error' });
+  });
+
 });

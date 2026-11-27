@@ -1,3 +1,4 @@
+import { toHttpsUrl } from '../../../utils/url';
 import type { PlayerTrack } from '../types/player.types';
 
 const parseSoundCloudTags = (tagList: string): string[] => {
@@ -54,8 +55,8 @@ export function mapSoundCloudWidgetTrack(
     playbackStatus,
     title: value.title.trim(),
     artist: artist || '알 수 없는 아티스트',
-    artworkUrl: typeof value.artwork_url === 'string' ? value.artwork_url : null,
-    permalinkUrl: typeof value.permalink_url === 'string' ? value.permalink_url : null,
+    artworkUrl: toHttpsUrl(value.artwork_url),
+    permalinkUrl: toHttpsUrl(value.permalink_url),
     durationMs:
       typeof value.duration === 'number' &&
         Number.isFinite(value.duration) &&

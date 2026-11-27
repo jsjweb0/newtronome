@@ -235,3 +235,45 @@ describe('TrackBookmarkButton playback restrictions', () => {
     expect(saveTrack).toHaveBeenCalledWith('user-1', previewTrack);
   });
 });
+
+
+describe('TrackBookmarkButton 저장 대기 안내', () => {
+  it.each([false, true])('기존 저장=%s: 응답 전에는 대기를 안내하고 성공 후 해제한다', async (saved) => {
+    let resolveWrite!: () => void;
+    const write = saved ? removeSavedTrack : saveTrack;
+    vi.mocked(write).mockReturnValueOnce(new Promise<void>((resolve) => { resolveWrite = resolve; }));
+    render(<TrackBookmarkButton track={track} />);
+    expect(screen.queryByRole('status')).toBeNull();
+    act(() => subscriptions[0].onSuccess(saved));
+    const button = screen.getByRole<HTMLButtonElement>('button', { name: saved ? '북마크 삭제' : '북마크 추가' });
+    fireEvent.click(button);
+    expect(screen.getByRole('status').textContent).toBe('서버 반영 중');
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    act(() => subscriptions[0].onSuccess(!saved));
+    fireEvent.click(button);
+    expect(write).toHaveBeenCalledOnce();
+    expect(screen.getByRole('status')).toBeTruthy();
+    await act(async () => { resolveWrite(); });
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-busy')).toBe('false');
+    expect(button.getAttribute('aria-pressed')).toBe(String(!saved));
+  });
+
+  it.each([false, true])('기존 저장=%s: 실패하면 대기 안내를 없애고 다시 조작할 수 있다', async (saved) => {
+    let rejectWrite!: (error: Error) => void;
+    const write = saved ? removeSavedTrack : saveTrack;
+    vi.mocked(write).mockReturnValueOnce(new Promise<void>((_resolve, reject) => { rejectWrite = reject; }));
+    render(<TrackBookmarkButton track={track} />);
+    act(() => subscriptions[0].onSuccess(saved));
+    const button = screen.getByRole<HTMLButtonElement>('button', { name: saved ? '북마크 삭제' : '북마크 추가' });
+    fireEvent.click(button);
+    expect(screen.getByRole('status')).toBeTruthy();
+    await act(async () => { rejectWrite(new Error('write failed')); });
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-busy')).toBe('false');
+    expect(mocks.showToast).toHaveBeenCalledWith({ message: '북마크 처리에 실패했습니다.', type: 'error' });
+  });
+});

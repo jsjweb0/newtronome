@@ -1,3 +1,4 @@
+import { countCharacters } from '../../utils/text';
 import { BaseButton } from '../ui/BaseButton';
 import {
   useEffect,
@@ -15,7 +16,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AuthAccess } from '../auth/AuthAccess';
 import FormTextarea from '../ui/FormTextarea';
 import type { CommunityBoardType, Post } from '../../features/board/types/post';
-import { FREE_BOARD_CATEGORIES, LEGACY_FREE_BOARD_CATEGORY_VALUES, } from '../../constants/freeBoardCategories';
+import { FREE_BOARD_CATEGORIES, LEGACY_FREE_BOARD_CATEGORY_VALUES, isFreeBoardCategoryValue, } from '../../constants/freeBoardCategories';
+import { POST_TITLE_MAX_LENGTH, POST_CONTENT_MAX_LENGTH } from '../../constants/boardValidation';
 import { normalizeLegacyPostContent } from '../../utils/postContent';
 
 type PostFormMode = 'create' | 'edit';
@@ -87,21 +89,38 @@ export default function PostForm({
     event.preventDefault();
     if (submittingRef.current) return;
 
+    const title = inputTitle.trim();
+    const content = inputContent.trim();
+    const titleChanged = mode === 'create' || title !== initialData?.title;
+    const contentChanged = mode === 'create' || content !== initialData?.content;
+
     const newErrors = { category: '', title: '', content: '' };
     let hasError = false;
 
-    if (boardType === 'free' && !selectedCategory) {
+    if (boardType === 'free' && !isFreeBoardCategoryValue(selectedCategory)) {
       newErrors.category = '카테고리를 선택해 주세요.';
       showToast({ message: '카테고리를 선택해 주세요.', type: 'error' });
       hasError = true;
-    } else if (!inputTitle.trim()) {
+    } else if (titleChanged && !title) {
       newErrors.title = '제목을 입력해주세요.';
       showToast({ message: '제목을 입력해주세요.', type: 'error' });
       hasError = true;
       titleRef.current?.focus();
-    } else if (!inputContent.trim()) {
+    } else if (titleChanged && countCharacters(title) > POST_TITLE_MAX_LENGTH) {
+      newErrors.title = `제목은 ${POST_TITLE_MAX_LENGTH}자 이내로 입력해주세요.`;
+      showToast({ message: newErrors.title, type: 'error' });
+      hasError = true;
+      titleRef.current?.focus();
+    } else if (contentChanged && !content) {
       newErrors.content = '내용을 입력해주세요.';
       showToast({ message: '내용을 입력해주세요.', type: 'error' });
+      hasError = true;
+      contentRef.current?.focus();
+    }
+
+    if (!hasError && contentChanged && countCharacters(content) > POST_CONTENT_MAX_LENGTH) {
+      newErrors.content = `본문은 ${POST_CONTENT_MAX_LENGTH.toLocaleString('ko-KR')}자 이내로 입력해주세요.`;
+      showToast({ message: newErrors.content, type: 'error' });
       hasError = true;
       contentRef.current?.focus();
     }
@@ -110,8 +129,8 @@ export default function PostForm({
     if (hasError) return;
 
     const payload: PostFormValues = {
-      title: inputTitle.trim(),
-      content: inputContent.trim(),
+      title,
+      content,
       category: selectedCategory || null,
       isNotice,
     };

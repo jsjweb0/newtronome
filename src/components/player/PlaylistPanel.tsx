@@ -393,6 +393,8 @@ export default function PlaylistPanel({
                                 <img
                                   src={toHighResArtwork(track.artworkUrl)}
                                   alt=""
+                                  loading="lazy"
+                                  decoding="async"
                                   className="size-full object-cover"
                                   onError={(event) => {
                                     event.currentTarget.src = noImage;

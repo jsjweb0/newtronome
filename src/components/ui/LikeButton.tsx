@@ -61,13 +61,20 @@ export default function LikeButton({
     [collection, commentDocId, parentId, subCollection]
   );
 
+  const isUnavailable = lookupStatus === 'loading' || isSaving;
+
+  const usesInitialCount = !uid && (!showCount || initialCount !== undefined);
+
   useEffect(() => {
-    if (!uid && (!showCount || initialCount !== undefined)) {
-      setLiked(false);
-      setCount(normalizeLikeCount(initialCount));
-      setLookupStatus('ready');
-      return;
-    }
+    if (!usesInitialCount) return;
+
+    setLiked(false);
+    setCount(normalizeLikeCount(initialCount));
+    setLookupStatus('ready');
+  }, [usesInitialCount, initialCount]);
+
+  useEffect(() => {
+    if (usesInitialCount) return;
 
     let active = true;
     setLookupStatus('loading');
@@ -111,8 +118,7 @@ export default function LikeButton({
     docRef,
     uid,
     retryCount,
-    initialCount,
-    showCount,
+    usesInitialCount,
   ]);
 
   const retryLookup = () => {
@@ -185,8 +191,6 @@ export default function LikeButton({
         <>
           <button
             type="button"
-            onClick={lookupStatus === 'error' ? retryLookup : handleLike}
-            disabled={lookupStatus === 'loading' || isSaving}
             aria-label={
               lookupStatus === 'error'
                 ? '좋아요 상태를 확인하지 못했습니다. 다시 시도'
@@ -194,7 +198,22 @@ export default function LikeButton({
             }
             aria-describedby={ariaDescribedBy}
             aria-pressed={liked}
-            className={clsx('group flex items-center px-2 hover:text-gray-800', className)}
+            aria-disabled={isUnavailable}
+            aria-busy={isSaving}
+            onClick={() => {
+              if (isUnavailable || savingRef.current) return;
+
+              if (lookupStatus === 'error') {
+                retryLookup();
+                return;
+              }
+
+              void handleLike();
+            }}
+            className={clsx('group flex items-center px-2 hover:text-gray-800',
+              'aria-disabled:opacity-50 aria-disabled:cursor-wait',
+              className
+            )}
           >
             <Heart
               className={clsx(
@@ -213,8 +232,6 @@ export default function LikeButton({
         <>
           <button
             type="button"
-            onClick={lookupStatus === 'error' ? retryLookup : handleLike}
-            disabled={lookupStatus === 'loading' || isSaving}
             aria-label={
               lookupStatus === 'error'
                 ? '좋아요 상태를 확인하지 못했습니다. 다시 시도'
@@ -222,8 +239,22 @@ export default function LikeButton({
             }
             aria-describedby={ariaDescribedBy}
             aria-pressed={liked}
+            aria-disabled={isUnavailable}
+            aria-busy={isSaving}
+            onClick={() => {
+              if (isUnavailable || savingRef.current) return;
+
+              if (lookupStatus === 'error') {
+                retryLookup();
+                return;
+              }
+
+              void handleLike();
+            }}
             className={clsx(
-              'group flex items-center justify-center min-h-9 min-w-9 rounded-full text-[13px] hover:bg-field hover:text-textBase focus-visible:outline-2 focus-visible:outline-primary',
+              'group flex items-center justify-center min-h-9 min-w-9 rounded-full text-[13px]',
+              'hover:bg-field hover:text-textBase focus-visible:outline-2 focus-visible:outline-primary',
+              'aria-disabled:opacity-50 aria-disabled:cursor-wait',
               liked ? 'text-primary font-bold' : 'text-textSub'
             )}
           >
@@ -238,6 +269,12 @@ export default function LikeButton({
           </button>
           {showCount && <span className="inline-block -ml-1 mr-1.5 text-[13px] text-textSub tabular-nums">{count}</span>}
         </>
+      )}
+
+      {isSaving && (
+        <span role="status" className="ml-2 text-xs text-textSub">
+          서버에 반영하는 중입니다.
+        </span>
       )}
     </div>
   );

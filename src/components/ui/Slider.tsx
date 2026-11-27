@@ -93,6 +93,7 @@ export default function ImageSlider({
           effect="coverflow"
           centeredSlides
           slidesPerView="auto"
+          lazyPreloadPrevNext={1}
           grabCursor
           loop={canLoop}
           rewind={!canLoop && hasMultipleImages}

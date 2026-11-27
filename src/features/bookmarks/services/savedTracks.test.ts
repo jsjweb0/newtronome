@@ -124,3 +124,21 @@ it('discards legacy playback fields when reading bookmarks', () => {
   expect(result).not.toHaveProperty('playbackStatus');
   expect(result).not.toHaveProperty('playbackStatusCheckedAt');
 });
+
+
+it('저장된 URL이 잘못돼도 곡 목록을 유지하고 선택 URL만 null로 정리한다', () => {
+  const track = { id: 123, title: 'Track', artist: 'Artist', artworkUrl: 'http://example.com/image',
+    permalinkUrl: 'javascript:alert(1)', durationMs: 1000, genre: '', tags: [], savedAt: null };
+  const onSuccess = vi.fn();
+  const onError = vi.fn();
+  subscribeToSavedTracks('user-1', onSuccess, onError);
+  firestore.onSnapshot.mock.calls[0][1]({ docs: [{ id: '123', data: () => track }] });
+  expect(onError).not.toHaveBeenCalled();
+  expect(onSuccess).toHaveBeenCalledWith([{ ...track, artworkUrl: null, permalinkUrl: null }]);
+});
+
+it('새 북마크를 저장할 때도 URL을 정리한다', async () => {
+  await saveTrack('user-1', { id: 1, title: 'Track', artist: 'Artist', artworkUrl: 'data:image/png,test',
+    permalinkUrl: 'https://soundcloud.com/artist/song', durationMs: 1000, genre: '', tags: [] });
+  expect(firestore.setDoc.mock.calls[0][1]).toMatchObject({ artworkUrl: null, permalinkUrl: 'https://soundcloud.com/artist/song' });
+});

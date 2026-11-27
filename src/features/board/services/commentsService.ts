@@ -9,7 +9,7 @@ import {
     where,
     getCountFromServer,
     orderBy,
-    Timestamp,
+    serverTimestamp,
     updateDoc,
     getDoc,
 } from 'firebase/firestore';
@@ -176,10 +176,10 @@ export async function createCommentInFirestore(
     postId: string,
     input: CreateCommentInput,
 ): Promise<Comment> {
-    const createdAt = Timestamp.now();
+    const localCreatedAt = new Date();
     const data = {
         content: input.content,
-        createdAt,
+        createdAt: serverTimestamp(),
         likedUsers: [],
         likeCount: 0,
         writerUid: input.writerUid,
@@ -202,7 +202,7 @@ export async function createCommentInFirestore(
         boardType,
         postId,
         content: data.content,
-        createdAt: createdAt.toDate(),
+        createdAt: localCreatedAt,
         likeCount: data.likeCount,
         liked: false,
         writerUid: data.writerUid,
