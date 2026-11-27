@@ -142,3 +142,16 @@ describe('getArtistTracks', () => {
     await expect(getArtistTracks({ artistId: 100 })).rejects.toThrow(SyntaxError);
   });
 });
+
+
+it('선택 URL이 유효하지 않아도 정상 곡은 반환하고 해당 기능만 숨긴다', async () => {
+  respondWith({ resultCount: 1, results: [{ ...validTrack,
+    artworkUrl100: 'javascript:alert(1)', previewUrl: 'http://example.com/audio',
+    trackViewUrl: 'https://music.apple.com/us/song/test?i=1',
+  }] });
+  const tracks = await getArtistTracks({ artistId: 100 });
+  expect(tracks).toHaveLength(1);
+  expect(tracks[0]).toMatchObject({ trackId: 1, trackViewUrl: 'https://music.apple.com/us/song/test?i=1' });
+  expect(tracks[0].artworkUrl100).toBeUndefined();
+  expect(tracks[0].previewUrl).toBeUndefined();
+});

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Post } from '../../features/board/types/post';
 import {
@@ -10,11 +10,14 @@ import {
   updatePostInFirestore,
 } from '../../features/board/services/postsService';
 import BoardPage from './BoardPage';
+import PostWritePage from './PostWritePage';
+import type { AuthUser } from '../../contexts/AuthContext';
 import PostView from './PostView';
 import EditPostPage from './EditPostPage';
 import { fetchCommentCount } from '../../features/board/services/commentsService';
 
 vi.mock('../../features/board/services/postsService', () => ({
+  createPostInFirestore: vi.fn(),
   fetchPostsFromFirestore: vi.fn(),
   fetchPostFromFirestore: vi.fn(),
   incrementPostViewCount: vi.fn().mockResolvedValue(undefined),
@@ -22,12 +25,12 @@ vi.mock('../../features/board/services/postsService', () => ({
   deletePostFromFirestore: vi.fn(),
 }));
 
-vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({
-    user: { uid: 'user-1', email: 'user@example.com', displayName: '작성자', isAdmin: true },
-    loading: false,
-  }),
-}));
+const authState = vi.hoisted(() => ({ user: null as AuthUser | null, loading: false }));
+vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => authState }));
+beforeEach(() => {
+  authState.user = { uid: 'user-1', email: 'user@example.com', displayName: '작성자', isAdmin: true, photoURL: null };
+  authState.loading = false;
+});
 vi.mock('../../contexts/ToastContext', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
@@ -103,11 +106,13 @@ function renderBoardRoute(url: string, options: RenderBoardRouteOptions = {}) {
   vi.mocked(fetchCommentCount).mockResolvedValue(0);
   vi.mocked(updatePostInFirestore).mockImplementation(updatePost);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+  const route = () => (
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[url]}>
         <LocationDisplay />
         <Routes>
+          <Route path="/login" element={<p>로그인 화면</p>} />
+          <Route path="/board/:boardType/write" element={<PostWritePage />} />
           <Route path="/board/:boardType" element={<BoardPage />} />
           <Route path="/board/:boardType/:id" element={<PostView />} />
           <Route path="/board/:boardType/edit/:id" element={<EditPostPage />} />
@@ -115,7 +120,8 @@ function renderBoardRoute(url: string, options: RenderBoardRouteOptions = {}) {
       </MemoryRouter>
     </QueryClientProvider>
   );
-  return { getPosts, getPost, updatePost };
+  const view = render(route());
+  return { getPosts, getPost, updatePost, refresh: () => view.rerender(route()) };
 }
 
 afterEach(() => {
@@ -287,5 +293,37 @@ describe('Board list conditions across routes', () => {
     fireEvent.click(screen.getByRole('button', { name: '수정' }));
     await screen.findByRole('textbox', { name: '검색어' });
     expectConditions(currentUrl(), '/board/free', expected);
+  });
+});
+
+
+describe('게시판 인증 복원 대기', () => {
+  it.each(['/board/free/write', '/board/free/edit/post-11'])(
+    '%s에서 인증 복원 전에는 이동하지 않고 복원 후 폼을 표시한다', async (url) => {
+      authState.user = null;
+      authState.loading = true;
+      const { refresh, getPost } = renderBoardRoute(url);
+      if (url.includes('/edit/')) await waitFor(() => expect(getPost).toHaveBeenCalled());
+      expect(screen.getByText('로그인 상태를 확인하는 중입니다.').getAttribute('role')).toBe('status');
+      expect(currentUrl()).toBe(url);
+      authState.user = { uid: 'user-1', email: null, displayName: '작성자', photoURL: null, isAdmin: false };
+      authState.loading = false;
+      refresh();
+      await screen.findByPlaceholderText('제목을 입력해주세요');
+      expect(currentUrl()).toBe(url);
+    },
+  );
+
+  it.each([
+    ['/board/free/write', '/login'],
+    ['/board/free/edit/post-11', '/board/free'],
+  ])('%s에서 비로그인이 확정되면 %s로 이동한다', async (url, target) => {
+    authState.user = null;
+    authState.loading = true;
+    const { refresh } = renderBoardRoute(url);
+    expect(currentUrl()).toBe(url);
+    authState.loading = false;
+    refresh();
+    await waitFor(() => expect(currentUrl()).toBe(target));
   });
 });

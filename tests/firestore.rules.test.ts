@@ -94,7 +94,7 @@ function createValidPostData(uid = 'user-1') {
 function createValidCommentData(uid = 'user-1') {
   return {
     content: '테스트 댓글',
-    createdAt: Timestamp.fromDate(new Date('2026-01-01')),
+    createdAt: serverTimestamp(),
     likedUsers: [],
     likeCount: 0,
     writerUid: uid,
@@ -700,7 +700,7 @@ describe('수정 후 문서 유효성 규칙', () => {
       updateDoc(doc(userDb, 'free', 'post-1'), {
         title: '수정된 제목',
         content: '수정된 본문',
-        category: null,
+        category: 'chat',
         updatedAt: new Date('2026-02-01').toISOString(),
       })
     );
@@ -853,5 +853,149 @@ describe('수정 후 문서 유효성 규칙', () => {
         updatedAt: new Date('2026-02-01').toISOString(),
       })
     );
+  });
+});
+
+
+describe.each(['free', 'notice'] as const)('%s 댓글 작성 시각', (boardType) => {
+  async function prepareParent() {
+    if (boardType === 'free') await createFreePost('time-post');
+    else await createNotice();
+  }
+
+  function commentRef() {
+    const db = testEnvironment.authenticatedContext('user-1').firestore();
+    return doc(db, boardType, boardType === 'free' ? 'time-post' : 'notice-1', 'comments', 'time-comment');
+  }
+
+  it('서버 작성 시각으로 댓글을 생성할 수 있다', async () => {
+    await prepareParent();
+    await assertSucceeds(setDoc(commentRef(), createValidCommentData()));
+  });
+
+  it.each(['2000-01-01', '2100-01-01'])(
+    '클라이언트가 지정한 시각 %s로 생성할 수 없다', async (date) => {
+      await prepareParent();
+      await assertFails(setDoc(commentRef(), {
+        ...createValidCommentData(),
+        createdAt: Timestamp.fromDate(new Date(date)),
+      }));
+    },
+  );
+});
+
+
+describe.each(['free', 'notice'] as const)('%s 입력 제약', (boardType) => {
+  const uid = boardType === 'notice' ? 'admin-user' : 'user-1';
+  const claims = boardType === 'notice' ? { admin: true } : {};
+  const validPost = () => ({ ...createValidPostData(uid), category: boardType === 'notice' ? null : 'chat' });
+
+  it('Unicode 최대 길이 제목·본문으로 생성할 수 있다', async () => {
+    await createPostCounter(boardType);
+    const db = testEnvironment.authenticatedContext(uid, claims).firestore();
+    await assertSucceeds(writeNumberedPost(db, { boardType, data: {
+      ...validPost(), title: '😀'.repeat(100), content: '가'.repeat(10000),
+    } }));
+  });
+
+  it.each([
+    ['title', '가'.repeat(101)], ['title', '😀'.repeat(101)], ['title', '  \t\n'],
+    ['content', '가'.repeat(10001)], ['content', ' \n '], ['category', 'unknown'],
+  ])('생성할 때 잘못된 %s 값을 거부한다', async (field, value) => {
+    await createPostCounter(boardType);
+    const db = testEnvironment.authenticatedContext(uid, claims).firestore();
+    await assertFails(writeNumberedPost(db, { boardType, data: { ...validPost(), [field]: value } }));
+  });
+
+  it.each(['author', 'admin'] as const)('%s 수정에도 새 입력 제한을 적용한다', async (actor) => {
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), boardType, 'input-post'), validPost());
+    });
+    const db = testEnvironment.authenticatedContext(actor === 'admin' ? 'admin-user' : uid,
+      actor === 'admin' ? { admin: true } : claims).firestore();
+    const ref = doc(db, boardType, 'input-post');
+    await assertFails(updateDoc(ref, { title: '가'.repeat(101) }));
+    await assertFails(updateDoc(ref, { content: ' \n ' }));
+    await assertFails(updateDoc(ref, { category: 'unknown' }));
+    await assertSucceeds(updateDoc(ref, { title: '정상 제목' }));
+  });
+
+  it('기존 긴 본문·예전 카테고리의 좋아요·조회수·제목만 수정할 수 있다', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), boardType, 'legacy-input'), {
+        ...validPost(), title: '가'.repeat(101), content: '가'.repeat(10001), category: '카테고리1',
+      });
+    });
+    const userDb = testEnvironment.authenticatedContext('reader').firestore();
+    await assertSucceeds(updateDoc(doc(userDb, boardType, 'legacy-input'), { likeCount: 1, likedUsers: ['reader'] }));
+    await assertSucceeds(updateDoc(doc(testEnvironment.unauthenticatedContext().firestore(), boardType, 'legacy-input'), { viewCount: 1 }));
+    const authorDb = testEnvironment.authenticatedContext(uid, claims).firestore();
+    await assertSucceeds(updateDoc(doc(authorDb, boardType, 'legacy-input'), { title: '고친 제목' }));
+  });
+
+  async function seedParent() {
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), boardType, 'comment-input'), validPost());
+    });
+  }
+
+  it('최대 길이 댓글을 생성할 수 있다', async () => {
+    await seedParent();
+    const db = testEnvironment.authenticatedContext('user-1').firestore();
+    await assertSucceeds(setDoc(doc(db, boardType, 'comment-input', 'comments', 'input'), {
+      ...createValidCommentData(), content: '😀'.repeat(1000),
+    }));
+  });
+
+  it.each(['가'.repeat(1001), ' \t\n '])('잘못된 댓글 생성과 관리자 수정을 거부한다', async (content) => {
+    await seedParent();
+    const db = testEnvironment.authenticatedContext('user-1').firestore();
+    await assertFails(setDoc(doc(db, boardType, 'comment-input', 'comments', 'input'), {
+      ...createValidCommentData(), content,
+    }));
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), boardType, 'comment-input', 'comments', 'input'), createValidCommentData());
+    });
+    const adminDb = testEnvironment.authenticatedContext('admin-user', { admin: true }).firestore();
+    await assertFails(updateDoc(doc(adminDb, boardType, 'comment-input', 'comments', 'input'), { content }));
+  });
+
+  it('예전 긴 댓글도 좋아요와 정상 길이로의 수정이 가능하다', async () => {
+    await seedParent();
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), boardType, 'comment-input', 'comments', 'legacy'), {
+        ...createValidCommentData(), content: '가'.repeat(1001),
+      });
+    });
+    const db = testEnvironment.authenticatedContext('user-1').firestore();
+    const ref = doc(db, boardType, 'comment-input', 'comments', 'legacy');
+    await assertSucceeds(updateDoc(ref, { likeCount: 1, likedUsers: ['user-1'] }));
+    await assertSucceeds(updateDoc(ref, { content: '고친 댓글' }));
+  });
+});
+
+describe('프로필 닉네임 제약', () => {
+  it.each(['', ' \t\n ', '가'.repeat(9), '😀'.repeat(9)])('잘못된 닉네임 생성·수정을 거부한다', async (nickname) => {
+    const db = testEnvironment.authenticatedContext('user-1').firestore();
+    const ref = doc(db, 'users', 'user-1');
+    await assertFails(setDoc(ref, { nickname }));
+    await assertSucceeds(setDoc(ref, { nickname: '사용자' }));
+    await assertFails(updateDoc(ref, { nickname }));
+  });
+  it('8자 이모지 닉네임을 허용하고 다른 계정의 수정을 차단한다', async () => {
+    const db = testEnvironment.authenticatedContext('user-1').firestore();
+    await assertSucceeds(setDoc(doc(db, 'users', 'user-1'), { nickname: '😀'.repeat(8) }));
+    const otherDb = testEnvironment.authenticatedContext('other').firestore();
+    await assertFails(updateDoc(doc(otherDb, 'users', 'user-1'), { nickname: '변경' }));
+  });
+  it('닉네임 없는 프로필 생성과 기존 긴 닉네임의 다른 필드 갱신을 유지한다', async () => {
+    const db = testEnvironment.authenticatedContext('user-1').firestore();
+    const ref = doc(db, 'users', 'user-1');
+    await assertSucceeds(setDoc(ref, { photoURL: '' }));
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'users', 'user-1'), { nickname: '가'.repeat(9) });
+    });
+    await assertSucceeds(updateDoc(ref, { photoURL: 'https://example.com/photo.png' }));
+    await assertSucceeds(updateDoc(ref, { nickname: '새이름' }));
   });
 });

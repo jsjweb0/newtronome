@@ -1,5 +1,5 @@
 import type { ITunesTrack } from "../types/itunes.types";
-import { isITunesSearchResponse, isITunesTrack } from "../utils/itunesResponse";
+import { isITunesSearchResponse, isITunesTrack, normalizeITunesTrackUrls } from "../utils/itunesResponse";
 
 interface GetArtistTracksParams {
     artistId: number;
@@ -41,5 +41,5 @@ export async function getArtistTracks({
         );
     }
 
-    return data.results.filter(isITunesTrack).slice(0, 5);
+    return data.results.filter(isITunesTrack).slice(0, 5).map(normalizeITunesTrackUrls);
 }

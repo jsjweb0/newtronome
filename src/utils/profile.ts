@@ -1,3 +1,5 @@
+import { countCharacters } from './text';
+
 /**
  * 프로필 변경값 유효성 검사
  * @param {{ nickname: string; photoURL: string; currentPassword?: string; password?: string; confirmPassword?: string; }} vals
@@ -28,7 +30,7 @@ export function validateProfile(vals: ProfileFormValues): ProfileValidationResul
 
   if (!vals.nickname?.trim()) {
     errors.nickname = '닉네임을 입력해주세요.';
-  } else if (vals.nickname.length > 8) {
+  } else if (countCharacters(vals.nickname) > 8) {
     errors.nickname = '닉네임은 최대 8자까지 가능합니다.';
   }
 
@@ -65,23 +67,4 @@ export function validateProfile(vals: ProfileFormValues): ProfileValidationResul
     isValid: Object.keys(errors).length === 0,
     errors,
   };
-}
-
-/**
- * 원본 프로필(original)과 편집값(current)을 비교해
- * 실제로 수정된 필드가 있는지 확인
- * @param {{ nickname?: string; photoURL?: string }} original
- * @param {{ nickname?: string; photoURL?: string; currentPassword?: string; password?: string; confirmPassword?: string }} current
- * @return {boolean} 하나라도 다르면 true
- */
-type OriginalProfile = Partial<Pick<ProfileFormValues, 'nickname' | 'photoURL'>>;
-
-type CurrentProfile = Partial<ProfileFormValues>;
-
-export function isProfileModified(original: OriginalProfile, current: CurrentProfile) {
-  return (
-    original.nickname !== current.nickname ||
-    original.photoURL !== current.photoURL ||
-    Boolean(current.password)
-  );
 }

@@ -1,3 +1,5 @@
+import { countCharacters } from '../../utils/text';
+import { COMMENT_MAX_LENGTH } from '../../constants/boardValidation';
 import { useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -62,6 +64,15 @@ export default function PostCommentSection({
     if (!content) {
       textareaRef.current?.focus();
       showToast({ message: '내용을 입력해주세요!', type: 'warning' });
+      return;
+    }
+
+    if (countCharacters(content) > COMMENT_MAX_LENGTH) {
+      textareaRef.current?.focus();
+      showToast({
+        message: `댓글은 ${COMMENT_MAX_LENGTH.toLocaleString('ko-KR')}자 이내로 입력해주세요.`,
+        type: 'warning',
+      });
       return;
     }
 

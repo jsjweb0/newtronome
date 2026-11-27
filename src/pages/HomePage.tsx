@@ -51,7 +51,7 @@ export default function HomePage() {
 
   if (playlistStatus === 'error') {
     return (
-      <div className="flex flex-col md:flex-row gap-1 items-center">
+      <div className="flex flex-col items-center">
         <RetryErrorState
           message={widgetError ?? '플레이리스트를 불러오지 못했습니다.'}
           description="다시 시도하거나 다른 플레이리스트를 선택해 주세요."

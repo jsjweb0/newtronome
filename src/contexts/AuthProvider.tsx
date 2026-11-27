@@ -14,7 +14,6 @@ import {
     signOut,
 } from 'firebase/auth';
 import { auth, db } from '../firebase';
-
 import { AuthContext } from './AuthContext';
 import type {
     AuthContextValue,
@@ -22,6 +21,7 @@ import type {
 } from './AuthContext';
 import { useToast } from './ToastContext';
 import { useNavigate } from 'react-router-dom';
+import { useNotifications } from './NotificationContext';
 
 interface AuthProviderProps {
     children: ReactNode;
@@ -50,6 +50,9 @@ function normalizeUserProfile(data: DocumentData): UserProfile {
 export function AuthProvider({ children }: AuthProviderProps) {
     const navigate = useNavigate();
     const { showToast } = useToast();
+
+    const { clearNotifications } = useNotifications();
+    const previousAuthUidRef = useRef<string | null>(null);
 
     const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
@@ -86,6 +89,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (!isMounted) return;
 
+            const nextUid = authUser?.uid ?? null;
+
+            if (previousAuthUidRef.current !== nextUid) {
+                previousAuthUidRef.current = nextUid;
+                clearNotifications();
+            }
+
             if (!authUser) {
                 setUser(null);
             } else {
@@ -100,8 +110,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         : null;
 
                 try {
-                    // Firestore 프로필과 Firebase Auth Claim을 함께 읽기
-                    const [snap, tokenResult] = await Promise.all([
+                    const [profileResult, tokenResult] = await Promise.allSettled([
                         getDoc(doc(db, 'users', authUser.uid)),
                         getIdTokenResult(authUser),
                     ]);
@@ -113,16 +122,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         return;
                     }
 
-                    const profile = snap.exists()
-                        ? normalizeUserProfile(snap.data())
-                        : {};
+                    const profile: UserProfile =
+                        profileResult.status === 'fulfilled' && profileResult.value.exists()
+                            ? normalizeUserProfile(profileResult.value.data())
+                            : {};
+
+                    const isAdmin =
+                        tokenResult.status === 'fulfilled' &&
+                        tokenResult.value.claims.admin === true;
 
                     setUser({
                         uid: authUser.uid,
                         email: authUser.email,
                         displayName: authUser.displayName,
                         photoURL: profile.photoURL ?? authUser.photoURL,
-                        isAdmin: tokenResult.claims.admin === true,
+                        isAdmin,
                         nickname: profile.nickname,
                         createdAt: profile.createdAt ?? accountCreatedAt,
                     });
@@ -151,7 +165,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isMounted = false;
             unsubscribe();
         };
-    }, []);
+    }, [clearNotifications]);
 
     useEffect(() => {
         const subscribedUserId = user?.uid;

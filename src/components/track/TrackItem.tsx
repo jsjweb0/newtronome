@@ -111,6 +111,8 @@ export default function TrackItem({
             )}>
                 <img src={toHighResArtwork(track.artworkUrl)}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className={clsx(
                         "block object-cover w-full h-full transition-transform",
                         viewModeClass(viewMode, "absolute top-0 left-0"),

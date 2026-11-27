@@ -137,23 +137,24 @@ export default function AccountProfile() {
       }
     }
 
+    if (profileChanged) {
+      const validation = validateProfile({ nickname, photoURL });
+      if (!validation.isValid) {
+        setErrors(validation.errors);
+        showToast({
+          message: Object.values(validation.errors)[0],
+          type: 'error',
+        });
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       const currentUser = auth.currentUser;
 
       if (!currentUser) {
         throw new Error('인증 사용자 정보를 확인할 수 없습니다.');
-      }
-
-      if (profileChanged) {
-        const validation = validateProfile({ nickname, photoURL });
-        if (!validation.isValid) {
-          setErrors(validation.errors);
-          showToast({
-            message: Object.values(validation.errors)[0],
-            type: 'error',
-          });
-          return;
-        }
       }
 
       // 2) 원본과 비교해 변경사항이 없으면 리턴

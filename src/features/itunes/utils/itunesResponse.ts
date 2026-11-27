@@ -1,3 +1,4 @@
+import { toHttpsUrl } from '../../../utils/url';
 import { isNonNegativeFiniteNumber, isNonNegativeInteger } from "../../../utils/numberValidation";
 import type { ITunesSearchResponse, ITunesTrack } from "../types/itunes.types";
 
@@ -55,3 +56,12 @@ export const isITunesSearchResponse = (
         Array.isArray(value.results)
     );
 };
+
+export function normalizeITunesTrackUrls(track: ITunesTrack): ITunesTrack {
+    return {
+        ...track,
+        artworkUrl100: toHttpsUrl(track.artworkUrl100) ?? undefined,
+        previewUrl: toHttpsUrl(track.previewUrl) ?? undefined,
+        trackViewUrl: toHttpsUrl(track.trackViewUrl) ?? undefined,
+    };
+}

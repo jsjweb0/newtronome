@@ -1,3 +1,4 @@
+import { toHttpsUrl } from '../../../utils/url';
 import {
   collection,
   deleteDoc,
@@ -48,8 +49,8 @@ export async function saveTrack(uid: string, track: PlayerTrack): Promise<void> 
     id: track.id,
     title: track.title,
     artist: track.artist,
-    artworkUrl: track.artworkUrl,
-    permalinkUrl: track.permalinkUrl,
+    artworkUrl: toHttpsUrl(track.artworkUrl),
+    permalinkUrl: toHttpsUrl(track.permalinkUrl),
     durationMs: track.durationMs,
     genre: track.genre,
     tags: track.tags,
@@ -113,8 +114,8 @@ export function subscribeToSavedTracks(
           id: savedTrack.id,
           title: savedTrack.title,
           artist: savedTrack.artist,
-          artworkUrl: savedTrack.artworkUrl,
-          permalinkUrl: savedTrack.permalinkUrl,
+          artworkUrl: toHttpsUrl(savedTrack.artworkUrl),
+          permalinkUrl: toHttpsUrl(savedTrack.permalinkUrl),
           durationMs: savedTrack.durationMs,
           genre: savedTrack.genre,
           tags: savedTrack.tags,

@@ -36,7 +36,7 @@ function EditPostContent({ boardType, postId }: {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { addNotification } = useNotifications();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const role = getUserRole(user);
 
   const [searchParams] = useSearchParams();
@@ -102,6 +102,14 @@ function EditPostContent({ boardType, postId }: {
       addNotification(notification);
     }
   };
+
+  if (authLoading) {
+    return (
+      <p role="status" className="mt-10 text-center text-sm text-textSub">
+        로그인 상태를 확인하는 중입니다.
+      </p>
+    );
+  }
 
   if (isPending) return <p role="status" className="mt-10 text-center text-sm text-textSub">게시글을 불러오는 중입니다.</p>;
 
